@@ -20,6 +20,7 @@ From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples
 From GV Require Import static.Skeleton examples.Rejects.
 From GV Require Import examples.Descent.
 From GV Require Import examples.FlagPair examples.RxChain examples.BitProgram examples.MilnerSched.
+From GV Require Import algorithmic.Decide.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -386,3 +387,17 @@ Print Assumptions bit_deadlock_free.
 Print Assumptions ms_wf_new.
 Print Assumptions ms_dftyped.
 Print Assumptions ms_deadlock_free.
+(** algorithmic/Sound.v, algorithmic/Complete.v *)
+Print Assumptions algo_sound.
+Print Assumptions algo_complete.
+Print Assumptions algo_iff.
+Print Assumptions algo_iff_df.
+(** algorithmic/Oracles.v, algorithmic/Decide.v *)
+Print Assumptions tsub_dec.
+Print Assumptions alg_sound.
+Print Assumptions alg_complete.
+Print Assumptions syn_det.
+Print Assumptions chk_det.
+Print Assumptions syn_dec.
+Print Assumptions chk_dec.
+Print Assumptions typed_annot_dec.

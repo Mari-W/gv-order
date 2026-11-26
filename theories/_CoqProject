@@ -152,4 +152,10 @@ soup/LFCompose.v
 soup/LFTyped.v
 soup/LFConnectN.v
 test/SoupNotations.v
+algorithmic/Annot.v
+algorithmic/Algo.v
+algorithmic/Sound.v
+algorithmic/Complete.v
+algorithmic/Oracles.v
+algorithmic/Decide.v
 CheckAll.v

@@ -1,5 +1,188 @@
 # Algorithmic typing, a plan
 
+## 2026-11-26. The algorithmic system in Rocq, final state
+
+Branch algorithmic, theories/algorithmic. No change to `typed`, the relation or
+any existing statement. No admit, no axiom. `make`, `make check` and
+`make test` pass, and the main theorems are in CheckAll.v.
+
+### Files
+
+| file | content |
+|---|---|
+| Annot.v | annotated terms `aexpr`, `erase`, the split by occurrence `tpart` and `lpart`, weakening lemmas, `box_inst` |
+| Algo.v | the judgments `syn` (synthesis) and `chk` (checking), mutually inductive |
+| Sound.v | `algo_sound`, and `box_body_all` (one instance of a box body gives all) |
+| Complete.v | `algo_complete`, `algo_complete_at`, `algo_iff`, `algo_iff_df` |
+| Oracles.v | the oracle classes, decidable equality of types, `tsub_dec` and the other derived decision procedures |
+| Decide.v | the function `alg`, `alg_sound`, `alg_complete`, `syn_dec`, `chk_dec`, `syn_det`, `chk_det`, `typed_annot_dec` |
+| .claude/notes/redesign/algorithmic-map.py | writes the map section `algorithmic` |
+
+### Statements
+
+    algo_sound W N :
+      (∀ Θ Γ Δ F t T c, syn W N Θ Γ Δ F t T c → typed W N Θ Γ Δ F (erase t) T c) ∧
+      (∀ Θ Γ Δ F t T c, chk W N Θ Γ Δ F t T c → typed W N Θ Γ Δ F (erase t) T c)
+
+    algo_complete W N Θ Γ Δ F e T c :
+      typed W N Θ Γ Δ F e T c → tenv_contr Θ →
+      ∀ Δ', lenv_wk Δ Δ' → lenv_contr Δ' →
+      ∃ t, erase t = e ∧ syn W N Θ Γ Δ' F t T c
+
+    algo_iff W N Θ Γ Δ F e T c : tenv_contr Θ → lenv_contr Δ →
+      typed W N Θ Γ Δ F e T c ↔ ∃ t, erase t = e ∧ syn W N Θ Γ Δ F t T c
+
+    algo_iff_df W Θ Γ Δ F e T : tenv_contr Θ → lenv_contr Δ →
+      dftyped W Θ Γ Δ F e T ↔
+      ∃ t, erase t = e ∧ syn W None (tenv_df Θ) Γ (lenv_df Δ) F t (ty_df T) None
+
+    alg_sound t (under the oracles) :
+      ((alg t).1 Θ Γ Δ F = Some (T, c) → syn W N Θ Γ Δ F t T c) ∧
+      ((alg t).2 Θ Γ Δ F T = Some c → chk W N Θ Γ Δ F t T c)
+    alg_complete : the converse of both, for every derivation
+    syn_dec : {Tc | syn … t Tc.1 Tc.2} + {∀ T c, ¬ syn … t T c}
+    chk_dec : {c | chk … t T c} + {∀ c, ¬ chk … t T c}
+    syn_det, chk_det : at most one result
+
+The fragment of completeness is the contractive contexts, `tenv_contr Θ` and
+`lenv_contr Δ`. P-Term types its thread over contractive interface ends and no
+variables, so every program and every thread of a configuration is in it. Every
+theorem holds for each N, so for the deadlock-free instance (N = ∞) and for the
+lock-free one.
+
+### Design
+
+- Annotated terms. The term formers of `expr`, plus `new[C, S, m1, m2]` (E-New),
+  `new[x·κ, S, m1, m2]` (E-New-Field), `force[xs, ss] t` (E-Force), `(t : T ! c)`
+  (E-Sub), `pack[xs] t : ∃^l ῑ. C. T` (E-Pack) and `open i : U in t` (E-Open).
+  Inside `open` the annotations use the de Bruijn points of the premise of
+  E-Open, so the opened points have names (finding 6.2). This is the `unpack`
+  alternative of 6.2. The other alternative, point expressions `pt(a)`, would
+  need a resolution function from variables to points and keeps E-Open
+  placement open, which 6.3 shows is not determined.
+- Modes. A λ, an injection, a case and a box are checked only. A let checks
+  or synthesizes its body in the mode of the conclusion. Every other form
+  synthesizes, and checks by synthesis followed by `tsub` (`c_sub`, guarded
+  by `by_sub` so that the judgment stays syntax-directed). The first premise
+  of let-unit is checked against ∗.
+- Splits. `tpart` gives the first premise the ends of the erased first
+  subterm. `lpart` gives it the linear variables that the first subterm
+  mentions, and both premises the unlimited ones. Completeness absorbs the
+  difference to the declarative split by quantifying over weakenings Δ' of Δ
+  (`lpart_wk`, uses `typed_tfacts`).
+- Box bodies. Checked once, at the session variables `box_inst M k` with
+  `M = box_base k U Δ`, above every free session variable of the box context.
+  The rule asks `lenv_contr Δ` and `tcontr U`. `box_body_all` turns the one
+  instance into all through `typed_sinst`. The identity instance is wrong when
+  the context has free session variables, because `slist` shifts the outer
+  variables.
+- Numbers. Credits, tickets, costs and N are literals of the annotations or
+  computed from them. Checking returns the cost of the term, and Chk-Lam,
+  Chk-Box and the ascription ask it at most the annotated cost. Every oracle
+  call is on ground types (6.6).
+
+Alternatives not taken, each a refinement that keeps the theorems above as the
+reference.
+
+- Subsumption only at the switch, E-Pack folded into it, and E-Open placed by
+  the rule of plan section 3.6. Completeness then needs `tsub_trans`,
+  type-keeping generation lemmas and permutation lemmas for E-Open, and fails
+  for existentials whose lower bound is not below their body (6.3).
+- Unknown credits, tickets and N with linear constraints (phase 2 of 3.1).
+  This removes the numbers from the annotations. It needs a symbolic version
+  of `syn` over number variables and a solver interface. Not in Rocq.
+- Inference of the constraint of `new` from the goals of its scope (3.4).
+
+### Oracles
+
+One class per oracle, each a decision procedure taken as an instance
+argument. `SltOracle` (entailment `slt`), `HoldOracle` (`hold_at`),
+`ConsOracle` (`cons_open`), `NewOracle` (`new_ok`), `BcsOracle` (equality of
+constraints), `SequivOracle` (`sequiv`), `SsubOracle` (`ssub`). From them
+Oracles.v derives equality of types and session types, `ub_below_s`,
+`ub_below_u`, `lbx_below_h`, `below_ty`, `ex_wf`, `pscoped`, `sinsts`, `teq`
+and `tsub` (`tsub_dec`, by recursion on one side, both orientations at once
+because arrows are contravariant). Decide.v adds aging (`tage_f`, `thage_f`,
+`lage_f`, each proved equivalent to the relation), `lenv_unl`, `lenv_only`
+and `lenv_contr`.
+
+### Decidability
+
+Proved. `alg` is a Rocq function, and `alg_sound` with `alg_complete` show that
+it returns exactly what the judgments derive. So `syn` and `chk` are decidable
+relative to the seven oracles and deterministic. For finite constraints the
+first four oracles and `BcsOracle` reduce to searches over the facts
+(section 4 below), which are not mechanized. Session equivalence and
+subtyping stay oracles as decided.
+
+### Proposed declarative changes
+
+None needed. Completeness holds for the full judgment over contractive
+contexts, without changing a rule. The static premise on existential types of
+6.3 is no longer needed, because E-Open placement is an annotation.
+
+### Not done
+
+- Phase 2, inference of numbers.
+- Process typing. P-Term and P-Connect are already syntax-directed up to the
+  worlds, the cut and the restricted channels (6.10). No algorithmic process
+  judgment is in Rocq.
+- Decision procedures for the oracles on finite constraints (section 4).
+
+## 2026-11-26. Section 6 against main at 39b7f18b
+
+Branch algorithmic. Each finding of section 6 read again against
+theories/static (Typing.v, Contexts.v, Inversion.v, Constants.v, Sinst.v) and
+types (Points.v, Worlds.v, Types.v, Costs.v).
+
+- 6.1 fixed. `sinsts` asks `contractive` and `sscoped` of every instance, and
+  `typed_sinst` (static/Sinst.v) instantiates a derivation over contractive
+  contexts at any instance with `sinst_ok`. So a box body checked at one
+  instance types at all of them when the box context is contractive. The
+  instance to check at maps the k box variables to fresh variables above
+  every free session variable of the box context, the instance that the E-Box
+  case of `typed_sinst` itself uses. The identity instance is wrong when the
+  context has free session variables, because `slist` shifts the outer
+  variables down by k.
+- 6.2 holds. E-Open binds de Bruijn point variables that no term names. The
+  algorithmic layer makes the opening a node of the annotated term,
+  `open x : U in a`, and annotations inside a use the shifted de Bruijn
+  points, the opened ones at 0 to m − 1. This is the `unpack` fix of 6.2. The
+  node also fixes where E-Open applies.
+- 6.3 changed. Plain `new` has two rules now. E-New creates at a fresh base
+  with a constraint C under `new_ok` and returns `∃^⊥ ρ. C. (S@ρ)^{m1} ⊗
+  (S̄@ρ̄)^{m2}`. E-New-Field creates at `x·κ` for any point x and any field κ,
+  with no constraint. Neither the constraint nor the position is in the term.
+  The annotated term carries them, `new[C, S, m1, m2]` and
+  `new[x·κ, S, m1, m2]`. The static premise on existential types landed as
+  `ex_wf`, a premise of E-Pack, and Sub-Ex gained `lb_lower`. Types in
+  contexts are still not asked well formed, so a λ may bind an existential
+  whose lower bound is not below its body, and the η-law for existentials
+  still fails for such an entry. With E-Open placement annotated, this no
+  longer blocks completeness.
+- 6.4 holds. `cs_P`, `fmx_P` and `rg_P` are still infinite. It concerns the
+  oracles, which are parameters here.
+- 6.5 holds as written. The algorithm splits by occurrence. A linear entry
+  goes to the side whose erased term mentions it. An unlimited entry, which is
+  a box, goes to both sides. A box has no heads, no ⊥ flag and ages to itself,
+  so this split is complete by weakening.
+- 6.6 holds. `eqT` compares credits, tickets and costs on the nose. In the
+  algorithm every number is a literal of an annotation or computed from one,
+  so every call of the equivalence oracle is on ground types.
+- 6.7 fixed. Sub-Ex asks the target constraint entailed under the source
+  (`hold_at` under `hc_open`) and lets the lower bound fall by `lb_lower`.
+- 6.8 holds. The algorithm takes `force[xs, ss]`.
+- 6.9 holds. A λ is checked against its arrow.
+- 6.10 holds. P-Term asks `∃ S x m m'` for each restricted channel. The
+  algorithm stops at terms.
+- 6.11 holds, and `new_ok` adds one more such premise. At finite N it asks a
+  partner relation `∃ Sr, gen_new_rel W Γ C Sr`.
+- 6.12 fixed. Creation takes any tickets with `tsum_ok N m1 m2`.
+- 6.13. `typed_sinst` exists. `tsub_trans` and type-keeping generation lemmas
+  are still missing. The algorithm below needs neither, because E-Sub is an
+  annotation node and the switch from checking to synthesis is the only other
+  place where subtyping enters.
+
 2026-11-21, branch redesign. A plan, not the system. No Rocq change. It reads
 the declarative judgment of redesign-clean3 at 933ca2e
 (.claude/worktrees/redesign-s4, v2/static/Typing.v, Contexts.v, Inversion.v,

@@ -298,3 +298,37 @@
 \mapfit{\mapblock{th-terms}}
 \mapsource{static/Fundamental.v: typed\_sem, fundamental, live\_fundamental\_ranked; cost/CostFund.v: fsem\_of\_cost}
 
+\section{Algorithmic typing}\label{app:algorithmic}
+
+\mapblockhead{Annotated terms}{alg-annot}{}
+\mapfit{\mapblock{alg-annot}}
+\mapsource{algorithmic/Annot.v: aexpr, erase}
+
+\mapblockhead{Algorithmic judgments}{alg-judgment}{}
+\mapfit{\mapblock{alg-judgment}}
+\mapsource{algorithmic/Algo.v: syn, chk, fut1; algorithmic/Annot.v: tpart, lpart, lpart\_wk}
+
+\mapblockhead{Leaves and creation}{alg-leaves}{}
+\mapfit{\mapblock{alg-leaves}}
+\mapsource{algorithmic/Algo.v: a\_unit, a\_var, a\_chan, a\_new, a\_new\_fld}
+
+\mapblockhead{Application, pairs and let}{alg-elim}{}
+\mapfit{\mapblock{alg-elim}}
+\mapsource{algorithmic/Algo.v: a\_app, a\_pair, a\_letu, a\_letp, c\_letu, c\_letp}
+
+\mapblockhead{Checked forms}{alg-intro}{}
+\mapfit{\mapblock{alg-intro}}
+\mapsource{algorithmic/Algo.v: c\_lam, c\_inj, c\_case, c\_box, c\_sub, by\_sub; algorithmic/Annot.v: box\_inst, box\_base; algorithmic/Sound.v: box\_body\_all; static/Sinst.v: typed\_sinst}
+
+\mapblockhead{Constants, force and the annotation rules}{alg-struct}{}
+\mapfit{\mapblock{alg-struct}}
+\mapsource{algorithmic/Algo.v: a\_send, a\_recv, a\_close, a\_select, a\_branch, a\_link, a\_spawn, a\_force, a\_asc, a\_pack, a\_open}
+
+\mapblockhead{Oracles}{alg-oracles}{}
+\mapfittext{\maptable{alg-oracles}}
+\mapsource{algorithmic/Oracles.v: SltOracle, HoldOracle, ConsOracle, NewOracle, BcsOracle, SequivOracle, SsubOracle, tsub\_dec, ty\_eq\_dec}
+
+\mapblockhead{Soundness, completeness and decidability}{alg-thms}{}
+\mapfit{\mapblock{alg-thms}}
+\mapsource{algorithmic/Sound.v: algo\_sound; algorithmic/Complete.v: algo\_complete, algo\_iff, algo\_iff\_df; algorithmic/Decide.v: alg, alg\_sound, alg\_complete, syn\_dec, chk\_dec, syn\_det, chk\_det, typed\_annot\_dec}
+
