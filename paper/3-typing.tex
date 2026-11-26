@@ -18,19 +18,30 @@
 % GAP: no map program uses sequencing S.S (ex-sinst uses it only in types, ex-ring uses mu, ex-controller uses Skip in the lock-free view)
 % PAR: contractivity, why session instances must be contractive | example: ex-sinst | figure/rule: app:ex-sinst, Sub-Box | map: ty-session, t-subs
 
+\begin{convention}[Premises left implicit]
+\label{conv:implicit}
+The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the following premises, which the Rocq rules state explicitly (\cref{app:typing}).
+\begin{itemize}
+  \item Every session type that enters a derivation is contractive. Each recursion $\mu Z.S$ passes an action, a choice or $\Close$ before it reaches $Z$, so $\unfold$ always finds a first action (\cref{app:ty-session}). In the Rocq this is a premise of \ruleref{E-Abs}, E-Inj, \ruleref{E-Box}, \ruleref{E-New} and \ruleref{P-Term}.
+  \item A payload $!(\bar\iota.\,T)$ or $?(\bar\iota.\,T)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
+  \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\Gamma$, $\Delta$, $F$ and the result type.
+  \item The instances $\bar s$ of \ruleref{E-Box} and \ruleref{E-Force} are contractive session types whose payloads mention only their own point variables.
+\end{itemize}
+\end{convention}
+
 \subsection{The Typing Judgment}
 \label{sec:judgment}
 
 % PAR: judgment Gamma, Delta, future F, world W | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment
 \begin{definition}[Typing judgment, futures and side conditions]
 \label{def:judgment}
-The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the facts $\Gamma$, holding the ends and variables $\Delta$, with the future $F$, in the world $W$. The rules leave $W$ implicit.
+The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the facts $\Gamma$, holding the ends and variables $\Delta$, with the future $F$, in the world $W$. The rules leave $W$ implicit, because it is fixed for a whole derivation.
 \begin{itemize}
-  \item $\Delta$ maps ends to end types $S_x$ and variables to types, and $\Delta_1, \Delta_2$ splits it. $\Gamma$ is a list of constraints $C[\bar x]$ instantiated at points. $\Gamma \vdash_W x \prec y$ holds when $x \prec y$ follows from the facts of $\Gamma$ and the order $\ordW$, transitively (\cref{app:t-contexts}).
-  \item A future is $F = X \cup \up{v}$, a finite set $X$ of bounds and the points $\up{v}$ above a bound $v$.
-  \item $u \prec F$ holds when $\Gamma \vdash_W u \prec y$ for each $y \in X$ and $\Gamma \vdash_W u \preccurlyeq v$. For a type or context $H$, $x \prec H$ and $l \preccurlyeq H$ compare with each point of $\ap(H)$.
-  \item $F \held H = F \cup \ap(H)$ is the future of a term that runs while the thread holds $H$.
-  \item $\Gamma \vdash C[\bar x]$ holds when each fact of $C$ at $\bar x$ is derivable. $\unl\,\Delta$ holds when each entry of $\Delta$ is a box type. $T \leq U$ is subtyping, which compares session types up to equivalence (\cref{app:t-subs}).
+  \item Contexts. $\Delta$ maps ends $o$ to end types $S_x$ and variables to types. $\Delta_1, \Delta_2$ splits $\Delta$ so that each end and each variable goes to one side. $\unl\,\Delta$ holds when every entry of $\Delta$ is a box type. $\Gamma$ is a list of constraints $C[\bar x]$, each instantiated at points $\bar x$.
+  \item Order judgment. $\Gamma \vdash_W x \prec y$ holds when $x \prec y$ follows by transitivity from the order $\ordW$ and the facts of the instances in $\Gamma$ (rules Ord-World, Ord-Fact and Ord-Trans in \cref{app:t-contexts}). $\Gamma \vdash_W x \preccurlyeq y$ adds the case $x = y$, and $\Gamma \vdash C[\bar x]$ holds when each fact of $C$ at $\bar x$ is derivable.
+  \item Futures. A future $F = X \cup \up{v}$ is a finite set $X$ of bounds together with all points above a bound $v$. It records where the thread acts after $e$ returns. $F \held H = F \cup \ap(H)$ is the future of a subterm that runs while the thread holds the entries $H$.
+  \item Side conditions. $u \prec F$ holds when $\Gamma \vdash_W u \prec y$ for each $y \in X$ and $\Gamma \vdash_W u \preccurlyeq v$. For a type or a context $H$, $x \prec H$ and $l \preccurlyeq H$ compare $x$ or $l$ with each point of $\ap(H)$ in the same way. With $\bot$ below and $\top$ above every bound, $\bot \prec F$ always holds and $x \prec F$ fails for every point $x$ as soon as $\bot \in X$ or $v = \bot$.
+  \item Subtyping. $T \leq U$ compares session types up to $\approx$, weakens the constraint of an existential and is covariant in the usual places (\cref{app:t-subs}).
 \end{itemize}
 \end{definition}
 % PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment, t-contexts
@@ -71,11 +82,11 @@ The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the
 % PAR: acyc_new, acyclic in the new tree, conservative over the context | example: ex-cycle | figure/rule: E-New | map: r-new, r-ex
 \begin{definition}[Creation constraints \rocq{acyc_new}]
 \label{def:creation}
-Let $\tree(\bar\iota)$ be the set of points whose base is one of $\bar\iota$.
+The tree $\tree(\bar\iota)$ of the bases $\bar\iota$ is the set of points whose base is one of $\bar\iota$, such as $\iota$, $\pplus{\iota}$, $\dual{\iota}$ and the fields $\fld{\iota}{\kappa}$ with their steps and duals.
 \begin{itemize}
-  \item $x \prec^{\rho}_{C} y$ holds for $x, y \in \tree(\rho)$ when $(x \prec y) \in C$, $y = \pplus{x}$ or $y = \pplus{\dual{x}}$.
-  \item $\acyc_{\rho}(C)$ holds when no point of $\tree(\rho)$ lies below itself in the transitive closure of $\prec^{\rho}_{C}$.
-  \item $\conserv_{\Gamma}(\bar\iota, C)$ holds when $C$ orders two points outside $\tree(\bar\iota)$ only as $\Gamma$ does. For all $z, y \notin \tree(\bar\iota)$, $\Gamma, C(\bar\iota) \vdash z \prec y$ implies $\Gamma \vdash_W z \prec y$.
+  \item Order on the new tree. $x \prec^{\rho}_{C} y$ holds for $x, y \in \tree(\rho)$ when $(x \prec y) \in C$, $y = \pplus{x}$ or $y = \pplus{\dual{x}}$.
+  \item Acyclic. $\acyc_{\rho}(C)$ holds when no point of $\tree(\rho)$ lies below itself in the transitive closure of $\prec^{\rho}_{C}$.
+  \item Conservative. $\conserv_{\Gamma}(\bar\iota, C)$ holds when the hypothesis $C(\bar\iota)$ orders two points outside the tree only as $\Gamma$ already does. For all $z, y \notin \tree(\bar\iota)$, $\Gamma, C(\bar\iota) \vdash_W z \prec y$ implies $\Gamma \vdash_W z \prec y$.
 \end{itemize}
 \end{definition}
 % PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
@@ -100,7 +111,7 @@ Let $\tree(\bar\iota)$ be the set of points whose base is one of $\bar\iota$.
 % PAR: six channels at one base and its fields, facts rise with the field label | example: ex-milner | figure/rule: E-New | map: r-new
 \end{example}
 
-\begin{example}[Recursive fork-join with replies \rocq{fj_deadlock_free}]
+\begin{example}[Recursive fork-join with replies \rocq{fjr_deadlock_free}]
 \label{ex:forkjoin}
 \input{gen/examples/ex-forkjoin}
 % PAR: infinite descending chain, consistent, deadlock free, revisited in sec:lf-ranked | example: ex-forkjoin | figure/rule: E-New | map: r-new, w-wf
@@ -119,7 +130,7 @@ Let $\tree(\bar\iota)$ be the set of points whose base is one of $\bar\iota$.
 
 \begin{lemma}[Two closes \rocq{cl2_needs}]
 \label{lem:two-closes}
-Let $a \neq b$, $\Delta(a) = S_x$ and $\Delta(b) = S'_y$. If $\Gamma ; \Delta \vdash^{F}_{W} \tletu{\tclose\,a}{\tclose\,b} : T$, then $\Gamma \vdash_W x \prec \dual{y}$.
+Let $a \neq b$ be ends with $\Delta(a) = S_x$ and $\Delta(b) = S'_y$. If $\Gamma ; \Delta \vdash^{F}_{W} \tletu{\tclose\,a}{\tclose\,b} : T$, then $\Gamma \vdash_W x \prec \dual{y}$.
 \end{lemma}
 
 % Listing in the appendix (app:ex-ring3), cut from the body for space.
