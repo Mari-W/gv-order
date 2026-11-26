@@ -63,9 +63,9 @@
 \renewcommand{\themapblk}{\thesection.\arabic{mapblk}}
 \newcommand{\mapblockhead}[3]{%
   \par\medskip\noindent\refstepcounter{mapblk}%
-  {\bfseries\themapblk\quad #1\ifx&#3&\else\ \lfadd{\textsf{(LF)}}\fi}%
+  {\bfseries\themapblk\quad #1\ifx&#3&\else\ \lfadd{\textsf{(LF)}}\fi}\label{app:#2}%
   \hfill{\scriptsize\texttt{#2}}\par\nopagebreak\smallskip}
-\newcommand{\mapexamplehead}[2]{\paragraph{#1}\hfill{\scriptsize\texttt{#2}}\par\nopagebreak}
+\newcommand{\mapexamplehead}[2]{\par\medskip\noindent{\itshape #1}\label{app:#2}\hfill{\scriptsize\texttt{#2}}\par\nopagebreak}
 \newcommand{\mapdfvariant}{\par\noindent{\small Deadlock-free instance.}\par\nopagebreak}
 \newcommand{\mapsource}[1]{\par\noindent{\scriptsize\raggedright Rocq: #1\par}\medskip}
 

@@ -3,333 +3,270 @@
 \section{Syntax}\label{app:syntax}
 
 \mapblockhead{Ends}{syn-ends}{}
-\label{app:syn-ends}
 \mapfit{\mapblock{syn-ends}}
 \mapsource{lang/Syntax.v: cend, edual, ech}
 
 \mapblockhead{Constants}{syn-prims}{}
-\label{app:syn-prims}
 \mapfit{\mapblock{syn-prims}}
 \mapsource{lang/Syntax.v: prim}
 
 \mapblockhead{Terms}{syn-terms}{}
-\label{app:syn-terms}
 \mapfit{\mapblock{syn-terms}}
 \mapsource{lang/Syntax.v: expr}
 
 \mapblockhead{Derived let}{syn-let}{}
-\label{app:syn-let}
 \mapfit{\mapblock{syn-let}}
 \mapsource{lang/Syntax.v: ELet}
 
 \mapblockhead{Values}{syn-values}{}
-\label{app:syn-values}
 \mapfit{\mapblock{syn-values}}
 \mapsource{lang/Syntax.v: is\_val}
 
 \mapblockhead{Ends a term mentions}{syn-fends}{}
-\label{app:syn-fends}
 \mapfit{\mapblock{syn-fends}}
 \mapsource{lang/Syntax.v: fends, fchans}
 
 \mapblockhead{Processes and configurations}{syn-procs}{}
-\label{app:syn-procs}
 \mapfit{\mapblock{syn-procs}}
 \mapsource{lang/Syntax.v: proc; lang/Process.v: config, erase}
 
 \mapblockhead{Field labels}{syn-labels}{}
-\label{app:syn-labels}
 \mapfit{\mapblock{syn-labels}}
 \mapsource{lang/Syntax.v: field}
 
 \mapblockhead{Points}{syn-points}{}
-\label{app:syn-points}
 \mapfit{\mapblock{syn-points}}
 \mapsource{types/Points.v: pname, point}
 
 \mapblockhead{Where an end moves}{syn-moves}{}
-\label{app:syn-moves}
 \mapfit{\mapblock{syn-moves}}
 \mapsource{types/Points.v: sel\_pt, bra\_pt, payload\_pts}
 
 \mapblockhead{Link substitution}{syn-csub}{}
-\label{app:syn-csub}
 \mapfit{\mapblock{syn-csub}}
 \mapsource{lang/Syntax.v: csub}
 
 \section{Semantics}\label{app:semantics}
 
 \mapblockhead{Thread labels}{sem-labels}{}
-\label{app:sem-labels}
 \mapfit{\mapblock{sem-labels}}
 \mapsource{lang/Semantics.v: tlabel, slabel}
 
 \mapblockhead{Head steps (T-Act rules)}{sem-head}{}
-\label{app:sem-head}
 \mapfit{\mapblock{sem-head}}
 \mapsource{lang/Semantics.v: head\_step}
 
 \mapblockhead{Evaluation frames (T-Act-Ctx)}{sem-ctx}{}
-\label{app:sem-ctx}
 \mapfit{\mapblock{sem-ctx}}
 \mapsource{lang/Semantics.v: tstep, frame\_val}
 
 \mapblockhead{Process steps (P-Act rules)}{sem-proc}{}
-\label{app:sem-proc}
 \mapfit{\mapblock{sem-proc}}
 \mapsource{lang/Process.v: istep}
 
 \mapblockhead{Events}{sem-events}{}
-\label{app:sem-events}
 \mapfit{\mapblock{sem-events}}
 \mapsource{lang/Process.v: event, ev\_parts, ev\_admin, ev\_tau}
 
 \mapblockhead{Properties}{sem-props}{}
-\label{app:sem-props}
 \mapfit{\mapblock{sem-props}}
 \mapsource{lang/Safety.v: deadlock\_free; lockfree/TauThread.v: no\_tau\_divergence; lockfree/Fair.v: lock\_free}
 
 \section{Types and worlds}\label{app:types}
 
 \mapblockhead{Types}{ty-grammar}{}
-\label{app:ty-grammar}
 \mapfit{\mapblock{ty-grammar}}
 \mapdfvariant
 \mapfit{\mapblockdf{ty-grammar}}
 \mapsource{types/Types.v: ty}
 
 \mapblockhead{Session types}{ty-session}{}
-\label{app:ty-session}
 \mapfit{\mapblock{ty-session}}
 \mapsource{types/Types.v: sty, unfoldS}
 
 \mapblockhead{Duality}{ty-dual}{}
-\label{app:ty-dual}
 \mapfit{\mapblock{ty-dual}}
 \mapsource{types/Types.v: dual, sflip}
 
 \mapblockhead{Session equivalence}{ty-equiv}{}
-\label{app:ty-equiv}
 \mapfit{\mapblock{ty-equiv}}
 \mapdfvariant
 \mapfit{\mapblockdf{ty-equiv}}
 \mapsource{types/Types.v: sequiv; relation/Relation.v: seqv, sdual}
 
 \mapblockhead{Bounds and active points}{ty-heads}{}
-\label{app:ty-heads}
 \mapfit{\mapblock{ty-heads}}
 \mapsource{types/Types.v: heads, hbot, lb\_heads; types/Points.v: lbound}
 
 \mapblockhead{Payloads}{ty-payload}{}
-\label{app:ty-payload}
 \mapfit{\mapblock{ty-payload}}
 \mapsource{types/Types.v: payload\_at, pscoped}
 
 \mapblockhead{Annotations and tickets}{ty-ann}{lf}
-\label{app:ty-ann}
 \mapfit{\mapblock{ty-ann}}
 \mapsource{types/Costs.v: fuel, tsum\_ok, lgt; types/Types.v: TSess; types/Types.v: ty\_df}
 
 \mapblockhead{Kinds of types}{ty-kinds}{}
-\label{app:ty-kinds}
 \mapfit{\mapblock{ty-kinds}}
 \mapsource{types/Types.v: unlimited, tfree}
 
 \mapblockhead{Worlds}{w-world}{}
-\label{app:w-world}
 \mapfit{\mapblock{w-world}}
 \mapsource{types/Worlds.v: sworld, world, w\_rk, wstrict, wranked}
 
 \mapblockhead{The order of a world}{w-order}{}
-\label{app:w-order}
 \mapfit{\mapblock{w-order}}
 \mapsource{types/Worlds.v: swstep, sw\_lt, po, w\_lt, w\_le, w\_rk\_ord}
 
 \mapblockhead{Consistent worlds}{w-wf}{}
-\label{app:w-wf}
 \mapfit{\mapblock{w-wf}}
 \mapsource{types/Worlds.v: sworld\_wf, sacyc, swf, swf\_sacyc}
 
 \mapblockhead{Extension, growth, join, restriction}{w-ext}{}
-\label{app:w-ext}
 \mapfit{\mapblock{w-ext}}
 \mapsource{types/Worlds.v: swext, wext, wk\_ext, wmodels, wmodels\_lt, dmodels\_exists, wstrict\_of, wmodels\_exists, wgrow, swjoin, swrestrict, swshared, acyc\_join\_iff, wf\_join\_iff; compat/Redex.v: aw\_W; static/Typing.v: wok\_join\_iff}
 
 \section{Typing}\label{app:typing}
 
 \mapblockhead{The typing judgment}{t-judgment}{}
-\label{app:t-judgment}
 \mapfit{\mapblock{t-judgment}}
 \mapsource{static/Typing.v: typed, dftyped; static/Contexts.v: sf\_unionb}
 
 \mapblockhead{Contexts and the fact theory}{t-contexts}{}
-\label{app:t-contexts}
 \mapfit{\mapblock{t-contexts}}
 \mapsource{static/Contexts.v: tenv, lenv, lenv\_split, hctx, hyps, fl, slt, sfuture, frest}
 
 \mapblockhead{Side conditions on points}{t-side}{}
-\label{app:t-side}
 \mapfit{\mapblock{t-side}}
 \mapsource{static/Contexts.v: ub\_below\_u, ub\_below\_s, rest\_below, below\_ty, lbx\_below\_h, hold\_at}
 
 \mapblockhead{Counters, credits and tickets}{t-lf-counters}{lf}
-\label{app:t-lf-counters}
 \mapfittext{\maptable{t-lf-counters}}
 \mapsource{types/Types.v: TSess, TLolli; types/Costs.v: tsum\_ok, lgt; static/Contexts.v: tage, lage, thage; static/Typing.v: e\_abs, e\_send, e\_spawn, e\_link, e\_new, p\_term; static/Weakening.v: e\_spawn\_lam; soup/State.v: sp\_cap, sp\_tsum}
 
 \mapblockhead{Ranked worlds}{t-lf-wf}{lf}
-\label{app:t-lf-wf}
 \mapfittext{\maptable{t-lf-wf}}
 \mapsource{types/Worlds.v: wranked, swf, wchain\_lt\_wf, wmodels\_exists; static/Contexts.v: gen\_new; soup/LFAdequacy.v: lf\_adequacy}
 
 \mapblockhead{Aging}{t-agecap}{lf}
-\label{app:t-agecap}
 \mapfit{\mapblock{t-agecap}}
 \mapsource{static/Contexts.v: tage, lage, thage; types/Types.v: idle}
 
 \mapblockhead{Unit, variables and ends}{r-base}{}
-\label{app:r-base}
 \mapfit{\mapblock{r-base}}
 \mapsource{static/Typing.v: e\_unit, e\_var, e\_chan; static/Conservativity.v: d\_unit, d\_var, d\_chan}
 
 \mapblockhead{Functions}{r-fun}{}
-\label{app:r-fun}
 \mapfit{\mapblock{r-fun}}
 \mapsource{static/Typing.v: e\_abs, e\_app; static/Conservativity.v: d\_abs, d\_app; static/Contexts.v: abs\_fut, ub\_below\_u, lbx\_below\_h}
 
 \mapblockhead{Products, sums and let}{r-data}{}
-\label{app:r-data}
 \mapfit{\mapblock{r-data}}
 \mapsource{static/Typing.v: e\_pair, e\_letp, e\_letu, e\_inj, e\_case; static/Conservativity.v: d\_pair, d\_letp, d\_letu, d\_inj, d\_case}
 
 \mapblockhead{Boxes}{r-boxes}{}
-\label{app:r-boxes}
 \mapfit{\mapblock{r-boxes}}
 \mapsource{static/Typing.v: e\_box, e\_force; static/Conservativity.v: d\_box, d\_force; static/Contexts.v: rest\_of, ub\_below\_s; types/Points.v: ubound\_of}
 
 \mapblockhead{Existentials}{r-ex}{}
-\label{app:r-ex}
 \mapfit{\mapblock{r-ex}}
 \mapsource{static/Typing.v: e\_pack, e\_open; static/Conservativity.v: d\_pack, d\_open; static/Contexts.v: cons\_open, bridge\_at, in\_tree, conserv; static/PointSubst.v: cons\_open\_conservative, cons\_open\_iff}
 
 \mapblockhead{Types of constants}{t-consts}{}
-\label{app:t-consts}
 \mapfit{\mapblock{t-consts}}
 \mapsource{static/Constants.v: k\_send\_df, k\_recv\_df, k\_close\_df, k\_select\_df, k\_branch\_df, k\_link\_df, k\_spawn\_df, k\_force\_df, k\_send, k\_recv, k\_close, k\_select, k\_branch, k\_link, k\_spawn, k\_force}
 
 \mapblockhead{Actions and link}{r-act}{}
-\label{app:r-act}
 \mapfit{\mapblock{r-act}}
 \mapsource{static/Typing.v: e\_send, e\_recv, e\_close, e\_select, e\_branch, e\_link; static/Conservativity.v: d\_send, d\_recv, d\_close, d\_select, d\_branch, d\_link}
 
 \mapblockhead{Spawn}{r-threads}{}
-\label{app:r-threads}
 \mapfit{\mapblock{r-threads}}
 \mapsource{static/Typing.v: e\_spawn; static/Conservativity.v: d\_spawn}
 
 \mapblockhead{Creation}{r-new}{}
-\label{app:r-new}
 \mapfit{\mapblock{r-new}}
 \mapsource{static/Typing.v: e\_new, e\_new\_fld; static/Contexts.v: new\_ok, acyc\_new, cbridge, gen\_new, gen\_new\_rel, new\_step, ctx\_pt, gen\_new\_acyc; static/Conservativity.v: d\_new}
 
 \mapblockhead{Subtyping and structural rules}{t-subs}{}
-\label{app:t-subs}
 \mapfit{\mapblock{t-subs}}
 \mapdfvariant
 \mapfit{\mapblockdf{t-subs}}
 \mapsource{static/Contexts.v: tsub; static/Typing.v: e\_sub; static/Conservativity.v: d\_conv; static/Weakening.v: e\_weak, e\_contract, d\_weak, d\_contract, typed\_rename, typed\_weaken\_head, dftyped\_rename, dftyped\_weaken\_head}
 
 \mapblockhead{Two static lemmas}{t-lemmas}{}
-\label{app:t-lemmas}
 \mapfit{\mapblock{t-lemmas}}
 \mapsource{examples/SemBranch.v: cl2\_needs; examples/ForkJoin.v: fj\_wait\_needs; static/PointSubstTyped.v: typed\_pinst}
 
 \mapblockhead{Process typing}{p-typing}{}
-\label{app:p-typing}
 \mapfit{\mapblock{p-typing}}
 \mapsource{static/Typing.v: p\_term, p\_connect, ptyped, ptyped\_iann\_local, p\_connect\_iann; static/ConnectN.v: pcomps, p\_connect\_n; static/Hiding.v: typed\_ren, ptyped\_ren, ptyped\_apart}
 
 \section{Semantic typing}\label{app:semantic}
 
 \mapblockhead{Reading the relations}{sr-reading}{}
-\label{app:sr-reading}
 \mapfittext{\maptable{sr-reading}}
 \mapsource{relation/Relation.v: Vrel, Erel, Prel, at\_cost\_E}
 
 \mapblockhead{Ordinal indices}{sr-ord}{}
-\label{app:sr-ord}
 \mapfit{\mapblock{sr-ord}}
 \mapsource{relation/Ord.v: ord, ole, olt, olt\_wf, oadd, osfix, Ix; relation/ExProp.v: exist\_prop}
 
 \mapblockhead{Step costs}{ct-costs}{}
-\label{app:ct-costs}
 \mapfit{\mapblock{ct-costs}}
 \mapdfvariant
 \mapfit{\mapblockdf{ct-costs}}
 \mapsource{relation/CostTable.v: κ\_DF, κ\_L, ev\_cost, ctable}
 
 \mapblockhead{The value relation}{v-rel}{}
-\label{app:v-rel}
 \mapfit{\mapblock{v-rel}}
 \mapsource{relation/Relation.v: Vbody, Varr, Vrel\_box\_iff, Vrel\_ex\_iff, tsize, Vtop, RelA; relation/Relation.v: Vbody; relation/Relation.v: Vbody; relation/Ord.v: osfix}
 
 \mapblockhead{The term relation}{e-rel}{}
-\label{app:e-rel}
 \mapfit{\mapblock{e-rel}}
 \mapsource{relation/Relation.v: Ebody, Eind, Etop, at\_cost\_E, at\_cost\_V, at\_cost\_P}
 
 \mapblockhead{Obligations of term steps}{e-obl}{}
-\label{app:e-obl}
 \mapfit{\mapblock{e-obl}}
 \mapsource{relation/Relation.v: o\_beta, o\_new, o\_spawn, new\_env, o\_send, o\_recv, o\_close, o\_select, o\_branch, o\_link}
 
 \mapblockhead{The bind lemma}{e-bind}{}
-\label{app:e-bind}
 \mapfit{\mapblock{e-bind}}
 \mapsource{compat/Bind.v: Erel\_bind}
 
 \mapblockhead{Readiness}{rd}{}
-\label{app:rd}
 \mapfit{\mapblock{rd}}
 \mapsource{relation/Readiness.v: ready\_t, below\_rest, offered\_t, stable\_t, link\_t, ready\_p, above\_offered, stable\_p, link\_p, offered\_p}
 
 \mapblockhead{The process relation}{p-rel}{}
-\label{app:p-rel}
 \mapfit{\mapblock{p-rel}}
 \mapsource{relation/Relation.v: Pbody, Pclauses, Pind, Ptop; compat/Fusion.v: Prel\_gfuse}
 
 \mapblockhead{Obligations of process steps}{p-obls}{}
-\label{app:p-obls}
 \mapfit{\mapblock{p-obls}}
 \mapsource{relation/Relation.v: q\_tau, q\_send, q\_recv, q\_close, q\_select, q\_branch, q\_link, send\_split, recv\_ok, recv\_back, recv\_env}
 
 \mapblockhead{Relation and fuel side by side}{fu-vs}{lf}
-\label{app:fu-vs}
 \mapfittext{\maptable{fu-vs}}
 \mapsource{relation/Relation.v: Erel; fuel/Fuel.v: FuelE; soup/Soup.v: Soup}
 
 \mapblockhead{Fuel}{fu}{lf}
-\label{app:fu}
 \mapfit{\mapblock{fu}}
 \mapsource{fuel/Fuel.v: Fdef, FuelE, FLevA, fsem}
 
 \mapblockhead{Fuel obligations}{fu-obls}{lf}
-\label{app:fu-obls}
 \mapfit{\mapblock{fu-obls}}
 \mapsource{fuel/Fuel.v: Fobl, f\_act, fspare, idle\_at, refill, ftick, ctick, fhand, f\_beta, f\_force, f\_new, f\_spawn, f\_link, plink, lok, f\_send, f\_recv, f\_close, f\_select, f\_branch}
 
 \mapblockhead{Values with fuel}{fv}{lf}
-\label{app:fv}
 \mapfit{\mapblock{fv}}
 \mapsource{fuel/Fuel.v: Vty, Vres}
 
 \mapblockhead{The lock-free process relation}{soup}{lf}
-\label{app:soup}
 \mapfittext{\maptable{soup}}
 \mapsource{soup/State.v: hold, lfstate, soup\_gen, soup\_consistent, kres, ctrs; soup/Soup.v: soup\_inv, Soup}
 
 \mapblockhead{Semantic judgments}{sj-all}{}
-\label{app:sj-all}
 \mapfit{\mapblock{sj-all}}
 \mapdfvariant
 \mapfit{\mapblockdf{sj-all}}
@@ -338,32 +275,26 @@
 \section{Theorems}\label{app:theorems}
 
 \mapblockhead{Soundness}{th-sound}{}
-\label{app:th-sound}
 \mapfit{\mapblock{th-sound}}
 \mapsource{static/FundamentalProc.v: soundness; soup/LFTyped.v: lf\_soundness}
 
 \mapblockhead{Semantic composition rules}{th-compose}{}
-\label{app:th-compose}
 \mapfit{\mapblock{th-compose}}
 \mapsource{compat/PTerm.v: sem\_p\_term; compat/ConnectP.v: sem\_p\_connect; static/FundamentalProc.v: sem\_p\_connect\_sw; soup/LFCompose.v: lf\_p\_term, lf\_p\_connect}
 
 \mapblockhead{Fundamental theorem}{th-fund-proc}{}
-\label{app:th-fund-proc}
 \mapfit{\mapblock{th-fund-proc}}
 \mapsource{static/FundamentalProc.v: fundamental\_proc; soup/LFTyped.v: lf\_fundamental}
 
 \mapblockhead{Adequacy}{th-adeq}{}
-\label{app:th-adeq}
 \mapfit{\mapblock{th-adeq}}
 \mapsource{relation/Adequacy.v: adequacy, adequacy\_gen; static/FundamentalProc.v: adequacy\_sw; soup/LFAdequacy.v: lf\_adequacy; soup/LFCompose.v: lf\_sems\_adequacy}
 
 \mapblockhead{Conservativity}{th-conserv}{lf}
-\label{app:th-conserv}
 \mapfit{\mapblock{th-conserv}}
 \mapsource{static/Conservativity.v: conservative, typed\_dftyped, dftyped\_typed}
 
 \mapblockhead{Fundamental theorem for terms}{th-terms}{}
-\label{app:th-terms}
 \mapfit{\mapblock{th-terms}}
 \mapsource{static/Fundamental.v: typed\_sem, fundamental, live\_fundamental\_ranked; cost/CostFund.v: fsem\_of\_cost}
 
