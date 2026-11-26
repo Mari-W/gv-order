@@ -13,14 +13,19 @@ check the body figures against the changed blocks by hand. Paragraph slots are
 - `make -C paper` runs map2tex.py, rocqrefs.py and latexmk. No undefined
   references, no overfull boxes.
 - Skeleton today (figures, listings, definitions, theorems, headings, no prose).
-  32 pages. Body pages 1 to 10, of which about 9 pages are figures, listings,
-  definitions and theorems. References pages 10 and 11. Appendix pages 12 to 32.
-- Appendix parts. Map blocks A to F, pages 12 to 27, each block a numbered item
+  33 pages. Body pages 1 to 11 (intro 1, language 1 to 3, typing 3 to 6,
+  relation 6 to 9, lock freedom 9 to 11), of which about 10 pages are figures,
+  listings, definitions, a convention and theorems. References pages 11 and 12.
+  Appendix pages 13 to 33.
+- Appendix parts. Map blocks A to F, pages 13 to 28, each block a numbered item
   (A.1, A.2, ...) that the body references. All 30 example listings G, pages
-  27 to 32. The index of notation is gone, the symbol table below replaces it.
+  29 to 33. The index of notation is gone, the symbol table below replaces it.
+- Listings. A letter with a combining macron in the map code (the dual end
+  $\bar{c}$) is set as `\bar` by map2tex.py.
 - `\raggedbottom` in main.tex only for the skeleton. Remove it once the
   paragraphs fill the pages.
-- Previews of three pages in paper/preview/.
+- Previews of four pages in paper/preview/ (syntax and worlds, typing
+  rules, process typing and the value relation, lock freedom).
 
 ## Look
 
@@ -135,8 +140,9 @@ slot whose `figure/rule` field names the appendix label.
 | world_wf | absorbed | a world has its facts between its own points (fig:worlds) |
 | restriction and the join lemma | appendix C.12 | fig:worlds caption |
 | types, session types, bounds, ap, payload instantiation | body, fig:types | |
-| duality, equivalence, contractivity, unfold | appendix C.2 to C.4 | fig:types caption, "as usual" in the slot |
-| pscoped | appendix C.6 | convention, payloads mention only their own point variables (slot) |
+| duality, equivalence, contractivity, unfold | appendix C.2 to C.4 | fig:types caption ("standard"), contractivity in conv:implicit |
+| pscoped | appendix C.6 | conv:implicit, payloads mention only their own point variables |
+| freshness of bound point variables, allowed instances sinsts | appendix D.10, D.11 | conv:implicit |
 | kinds tfree, unlimited | appendix C.8 | in words in rules ("holds no end", "no box type"), unl in def:judgment |
 | annotations and tickets | body, fig:lf-counters | |
 | judgment, futures, side conditions | body, def:judgment | |
@@ -165,8 +171,9 @@ slot whose `figure/rule` field names the appendix label.
 | V at ends, closures, boxes, existentials | body, def:value-rel | |
 | V at unit, pairs, sums | appendix E.4 | def:value-rel |
 | E, readiness | body | |
-| obligations of beta, new, send, recv | body, def:obligations | |
-| obligations of spawn, close, select, branch, link | appendix E.6 | def:obligations |
+| obligations of beta, new, spawn, send, recv, close | body, def:obligations | |
+| obligations of select, branch, link | appendix E.6 | def:obligations, one sentence |
+| step costs kappa_DF and kappa_L | appendix E.3 | def:term-rel and def:lf-rel, in words |
 | bind lemma | body, lem:bind | evaluation contexts B.3 |
 | P | body, def:proc-rel | |
 | process obligations | appendix E.10 | def:proc-rel |
@@ -174,8 +181,8 @@ slot whose `figure/rule` field names the appendix label.
 | fuel | body, def:fuel | |
 | fuel obligations | appendix E.13 | def:fuel, in words |
 | values with fuel | appendix E.14 | def:fuel |
-| lock-free process relation | body, def:lf-rel | wa in words, E.15 |
-| semantic judgments, grounding G, den | body, def:sem-judgments | E.16 |
+| lock-free process relation | body, def:lf-rel | wa as "K fits q and Sigma", its conjuncts in one sentence, E.15 |
+| semantic judgments, grounding G, den | body, def:sem-judgments | grounding and denotation in words, E.16 |
 | theorems F.1 to F.6 | body, restated | |
 
 ## Symbols in reading order
@@ -191,19 +198,21 @@ slot whose `figure/rule` field names the appendix label.
 | b, rho, iota, x^+, x.kappa, dual point | fig:worlds | 2.2 |
 | where an end moves | fig:worlds | 2.2 |
 | W, prec_A, Point_A, prec_W, tc, cons, extension, growth, join | fig:worlds | 2.2 |
+| x preceq_W y | fig:worlds | 2.2 |
 | T, S, C, S_x, arrows with u and l, boxes, existentials | fig:types | 3.1 |
 | Skip, S.S, mu, Z, dual Z, unfold | fig:types, appendix C.2 | 3.1 |
 | dual S, equivalence, contractive | appendix C.2 to C.4, caption of fig:types | 3.1 |
 | l, u, v, bottom, top, ap | fig:types | 3.1 |
 | T[x.j] | fig:types | 3.1 |
-| judgment, Gamma, Delta, split | def:judgment | 3.2 |
-| Gamma |-_W x prec y | def:judgment, rules in D.2 | 3.2 |
-| F = X u up(v), u prec F, x prec H, l preceq H, F <| H, Gamma |- C[x], unl, subtyping | def:judgment | 3.2 |
+| implicit premises (contractive, payload scoping, fresh binders, instances) | conv:implicit | 3.1 |
+| judgment, Gamma, Delta, split, unl | def:judgment | 3.2 |
+| Gamma |-_W x prec y, Gamma |-_W x preceq y, Gamma |- C[x] | def:judgment, rules in D.2 | 3.2 |
+| F = X u up(v), u prec F, x prec H, l preceq H, F <| H, subtyping | def:judgment | 3.2 |
 | tree, prec^rho_C, acyc, conserv | def:creation, right after fig:typing-orders | 3.4 |
 | Sigma, Theta_B, process judgment, chans | fig:process-typing | 3.5 |
 | V, Theta, fends | def:value-rel | 4.1 |
 | stable, offered, ready | def:readiness | 4.2 |
-| E, kappa(l), Obl | def:term-rel, def:obligations | 4.2 |
+| E, kappa(l), E[kappa'], Obl | def:term-rel, def:obligations | 4.2 |
 | evaluation context | lem:bind, appendix B.3 | 4.2 |
 | P | def:proc-rel | 4.3 |
 | semantic judgments | def:sem-judgments | 4.3 |
@@ -213,8 +222,9 @@ slot whose `figure/rule` field names the appendix label.
 | T - c | fig:aging | 5.2 |
 | ranked, rho as rank function, rankable | def:ranked | 5.3 |
 | Phi, S^{f,m}, F^N_alpha, frame d | def:fuel | 5.4 |
-| (q, K, W_a), L, E[kappa_L], kappa_L | def:lf-rel | 5.4 |
+| (q, K, W_a), L, E[kappa_L], kappa_L, K fits q and Sigma | def:lf-rel | 5.4 |
 | lock-free judgment | def:lf-judgment | 5.4 |
+| erasure of annotations, |Delta| and |T|, the term judgment at kappa_L | thm:lf-fundamental | 5.4 |
 
 The shaded parts of the figures of section 3 use annotations that section 5
 defines. Option A accepts this forward reference, and the caption of fig:types
@@ -231,28 +241,118 @@ touch are recorded in .claude/notes/map-faithfulness.md where noted.
 | point constants | rho | a |
 | choice labels | select_i and branch side i with i in {0, 1}, fields x.i | booleans, kappa_false = 0, kappa_true = 1 |
 | sequencing of costs | epsilon_1 + epsilon_2 | epsilon_1 . epsilon_2 = c_1 + c_2 |
-| contractivity premises (E-Abs, E-Inj, E-Box, E-New, P-Term) | left out, convention that the types of a derivation are contractive, "as usual" | contr premises |
-| instances s of E-Box and E-Force | "for all s" ranges over the allowed instances | sinsts s |
-| pscoped premises of E-Send and E-Recv | left out, convention on payload types | pscoped |
-| freshness of point variables (E-Box, E-Open) | left out, standard convention | iota # Gamma, Delta, F |
+| contractivity premises (E-Abs, E-Inj, E-Box, E-New, P-Term) | left out of the figures, stated once in conv:implicit (every session type of a derivation is contractive, with the list of the Rocq rules that carry the premise) | contr premises |
+| instances s of E-Box and E-Force | "for every instance s" in E-Box, conv:implicit says which lists are instances (contractive, payloads scoped) | sinsts s |
+| pscoped premises of E-Send and E-Recv | left out of the figures, conv:implicit | pscoped |
+| freshness of point variables (E-Box, E-Open) | left out of the figures, conv:implicit | iota # Gamma, Delta, F, U |
 | world_wf | part of what a world is | world_wf W, a separate conjunct (map w-wf, Rocq sworld_wf) |
 | strict worlds | gone, the deadlock-free part reads consistent worlds | cons and strict at the lock-free view (map-faithfulness, block t-lf-wf) |
 | consistent and ranked | one sentence in def:ranked, at a finite N every cons of P-Term, P-Connect and the semantic judgments reads ranked | wok N W (map-faithfulness, block p-typing) |
 | E-New | two rules E-New and E-New-Field | one rule with a triple (map), two constructors e_new and e_new_fld (Rocq) |
 | new_ok_N | premises acyc and conserv plus the shaded premise N in Nat implies rankable, rankable includes the well-foundedness of the order of the new tree | acyc_new, new_ok_N = acyc_new and (N finite implies wf and rankable) |
-| P-Term, P-Connect bookkeeping | tfree, pfree, sth, disjointness stated in words, eta folded into Sigma^eta with the row of fig:lf-counters | tfree, pfree, dom, chans, disjoint, eta premise |
-| P-Term tickets | "credit equal to tickets in Theta_B" in words | Theta_B(c^+) = S_x^{m,m} |
+| P-Term, P-Connect bookkeeping | tfree, pfree, disjointness stated in words, eta folded into Sigma^eta and explained in the caption of fig:process-typing | tfree, pfree, dom, chans, disjoint, eta premise |
+| P-Term restricted ends | one premise "Theta_B types exactly the ends of C_0, each pair as c^+ : S_x^{m,m}, c^- : dual S_{dual x}^{m',m'}" and m + m' <= N | dom Theta_B = ends(C_0), chans Sigma cap C_0 = empty, P-Term.pairs |
+| E-Box instances | "for every instance s" after the premise | forall s. sinsts s => ... |
+| E-Case | one premise for both arms, (i = 1, 2) | two premises |
 | two-closes lemma | without world_wf | world_wf W premise |
 | E-Open | "T is no box type" in words | not unlimited T |
 | value relation | unit, pairs, sums by reference, index step beta < alpha | V-Unit, V-Prod, V-Sum rules, beta + kappa_beta <= alpha in the lock-free view |
-| obligations in the body | four in words with the key environment as math | eight rules with notation Theta(o) doteq H_x and "at" |
-| readiness, term and process relation | itemized definitions | map formulas with stable, offered, Theta restricted to offered |
-| semantic term judgment | groundings and futures in words | G relation and den_Y(F) |
+| obligations in the body | six in words (beta, new, spawn, send, recv, close) with the key environment as math, choice and link in one sentence | eight rules with notation Theta(o) doteq H_x and "at" |
+| readiness, term and process relation | itemized definitions, each clause one sentence saying what must hold | map formulas with stable, offered, Theta restricted to offered |
+| process obligations | internal steps and messages with the environment in one item of def:proc-rel | Q-Tau, Q-Send, Q-Recv with send_split, recv_ok, recv_back, recv_env |
+| step costs | in words in def:term-rel (kappa_DF) and def:lf-rel (kappa_L), E[kappa'] named in def:term-rel | the table of ct-costs |
+| semantic term judgment | groundings and denotations in words, with the three cases of den_Y (v = top, v = bot or bot in X) | G relation and den_Y(F) |
 | index arithmetic of the lock-free relation | E[kappa_L] is the term relation under the costs kappa_L | beta + kappa(l) <= alpha throughout, payload index beta in O-Send |
-| fuel | itemized definition in words, renaming closure left out | Fdef with renamings (map-faithfulness, block fu) |
-| lock-free process relation | named L, wa as "K fits q and Sigma", Theta_t and Phi_t | S^{N,W}, wa with eleven conjuncts (map-faithfulness, block soup) |
+| fuel | itemized definition in words (stop, step, action, force, send, new, link), renaming closure left out, FV in the stop item | Fdef with renamings (map-faithfulness, block fu), FV rules of fv |
+| lock-free process relation | named L, wa as "K fits q and Sigma" with its conjuncts in one sentence, Theta_t and Phi_t, "a session type and a protocol per held end" for Delta : K | S^{N,W}, wa with eleven conjuncts, Delta : K (map-faithfulness, block soup) |
+| lock-free judgment | "some annotated configuration a with erase(q) = p" | exists a. erase(q_a) = p and a in S |
 | aging of a context | the check a <= m of context aging only in the slot | lage asks a <= m |
-| theorems | restated, sth and conn as "the premises of P-Term and P-Connect" | sth, conn, pterm_N |
+| theorems | restated. thm:compose (1) "the premises of P-Term on the interface", (2) and thm:lf-compose (2) the disjointness in words; thm:lf-compose (1) "apart from ranked W"; thm:lf-fundamental (1) with the erasure |Delta|, |T| and the judgment at kappa_L | sth, conn, pterm_N (keeps world_wf W), Delta_df, T_df |
+| world_wf in theorems | absorbed (th-terms, th-compose lock-free P-Term, t-lemmas) | world_wf W premise |
+| ranked worlds | def:ranked says "the two notions differ only on infinite worlds" | w-wf why text |
+| rankable | exits witnessed by finite sets of context points descending along the tree order, in words | gen_new_rel (note new.rank) |
+
+## Quirks found
+
+Things the paper form exposes about the system. Nothing here was changed,
+each one is for the author.
+
+1. E-New-Field asks nothing of the point $x$. The rule has the premises
+   $\mathsf{unl}\,\Delta$ and the tickets only, so a thread may create a
+   channel at a field $x\cdot\kappa$ of a point it does not hold, of a base
+   that is not in its world, and several times at the same field (the map
+   example ex-point-reuse creates twice at the field of the constant 0 over
+   the empty world). Set next to E-New, which asks acyc and conserv, the
+   field rule reads as a loophole. The map explains that a field point is an
+   old point whose facts were fixed with its base, so no fact is added. The
+   author may want a sentence on why this is sound, or a premise that $x$
+   is a point of the context.
+2. A thread holding an unopened result of $\mathsf{new}$ cannot act. The
+   existential of E-New has the lower point $\bot$, $\mathsf{ap}$ of it is
+   $\{\bot\}$, so $F \triangleleft H$ with the pair in $H$ makes every
+   $x \prec F$ fail. A subterm that runs while the thread holds the unopened
+   pair of a fresh creation performs no action. Intended by the design (no
+   fact of the context mentions the new points), but a reader of
+   fig:typing-orders sees only the $\bot$. The listings write
+   `let <c, c'> = new in`, and the body never says where E-Open applies in
+   such a let (E-Open opens an entry of $\Delta$, E-LetP needs a product).
+3. At a finite bound the E-New premise $\mathsf{rankable}$ includes
+   $\mathsf{wf}(\prec^{\rho}_{C})$, which implies $\mathsf{acyc}_\rho(C)$.
+   So the rule carries a redundant premise at a finite $N$, and the shaded
+   part reads as an addition where it is a strengthening.
+4. E-Link in the lock-free instance with the interface annotation of the
+   relation. The lock-free process relation gives each interface end at
+   most $\lfloor N/2 \rfloor$ tickets (map-faithfulness, note sp.own), and
+   E-Link asks $a_1 + m_2 > N$. Two interface ends at $\lfloor N/2 \rfloor$
+   fail the premise at every even $N$, so no component links two of its
+   interface ends at the annotation the relation uses. The map's example
+   ex-link gets around it with $N$ and $0$. The typing rule P-Term lets
+   $\eta$ choose, the relation does not.
+5. E-Open never reads the lower point $l$ of the existential it opens. $l$
+   matters only while the value is held unopened, through
+   $\mathsf{ap}(\exists^{l}\ldots) = \{l\}$. The figure shows $l$ in the
+   premise and nothing uses it, which looks like a missing premise.
+6. Fuel and the relation disagree on what a link checks. E-Link and F-Link
+   check the tickets condition, O-Link checks only duality. The body states
+   both (def:obligations, def:fuel), and the asymmetry is visible.
+7. The cost of E-Case is $\varepsilon_0 + \max(\varepsilon_1, \varepsilon_2)$
+   while the contexts of the arms age by $\varepsilon_0$ only. A reader may
+   expect the held entries after the case to have aged by the arm as well.
+   They do, through the result type: both arms return the same $T$ at the
+   same credits, so the max is in the result. Worth one sentence in the
+   lock-free section.
+8. P-Term asks $\mathsf{cons}\,W$ although the derivation of $t$ reads $W$
+   only through Ord-World, and E-New never grows $W$. A world of typing is
+   thus a set of facts the thread assumes, not a record of its creations.
+   The body never says this in a definition, the slot "P-Term, one thread,
+   restricted channels, consistent world" should.
+
+## Faithfulness questions
+
+Simplifications I did not make because they would deviate from the Rocq
+beyond .claude/notes/map-faithfulness.md.
+
+1. def:ranked says "a ranked world is consistent, and the two notions differ
+   only on infinite worlds", the map's own words (w-wf, why). The Rocq has
+   `swf_sacyc` for the first half. The second half has no Rocq lemma that
+   the map cites. Keep it as a remark, or drop the second half.
+2. thm:lf-compose (1) states "the premises of P-Term apart from ranked W".
+   The Rocq predicate `pterm_N` keeps `world_wf W`, which the body absorbed
+   into the notion of a world (simplification "world_wf"). Faithful under
+   that simplification, listed here because the theorem row of the map
+   shows the conjunct.
+3. def:lf-rel states "K fits q and Sigma" in one sentence with eight of the
+   eleven conjuncts of `soup_consistent`. Left out: finiteness of each
+   counter (`sp_fin`, the map writes N for the counters anyway), the
+   protocol of an interface end equal to the session type of its entry, and
+   duality of protocols up to the annotated subtyping. Say if the sentence
+   should list all eleven or none.
+4. def:obligations now states O-Spawn and O-Close in the body. The thunk
+   type in O-Spawn is $\ast \multimap^{\top}_{\bot} \ast$ as in the map. The
+   map's E-Spawn (appendix D.14) types a written $\lambda$ at $u = \top$,
+   $l = \bot$, and the body never shows E-Spawn. A reader meets $\top$ and
+   $\bot$ on an arrow first in O-Spawn. Either E-Spawn joins
+   fig:typing-core (one line) or the slot before def:obligations says it.
 
 ## GAP list
 
@@ -279,3 +379,4 @@ touch are recorded in .claude/notes/map-faithfulness.md where noted.
 6. Combined form for replacements. The body avoids it (def:ranked says it once). The appendix keeps `cons / ranked` with the shaded part.
 7. Conclusion after related work, or related work as the very last section.
 8. Which related systems get a row in tab:subsume once examples are confirmed.
+9. E-Spawn in the body (quirk 8 of the list above, faithfulness question 4).
