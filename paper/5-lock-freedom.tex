@@ -46,8 +46,7 @@ Each held end $o$ has a counter $f(o)$ at run time, the number of actions its th
   $(\ty \arr{u}{l}[c]\, \tyB)^{a}$ & latent cost $c$ of the body, credit $a$ of the captured ends \\
   $\tm : \ty\ !\ \varepsilon$ & cost $\varepsilon$, an upper bound on the actions $\tm$ performs before it returns \\
   $\lenv - \varepsilon$ & aging, subtracts $\varepsilon$ from each credit in $\lenv$ (\cref{app:t-agecap}) \\
-  $N$ & bound, $\tk(o) + \tk(\dual{o}) \leq N$ for the two ends of a channel \\
-  $\eta(o) = (a, m)$ & credit and tickets of an interface end $o$
+  $N$ & bound, $\tk(o) + \tk(\dual{o}) \leq N$ for the two ends of a channel
 \end{tabular}
 \end{center}
 An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held ends by one. Every annotation is in $\mathbb{N} \cup \{\infty\}$, and $\infty - c = \infty$.
@@ -66,7 +65,7 @@ An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held 
 % PAR: link tickets, a1 + m2 > N | example: rx-relink | figure/rule: E-Link | map: r-act
 % PAR: creation splits the tickets, m1 + m2 <= N | example: ex-cycle | figure/rule: E-New | map: r-new
 % PAR: loops charged one force, loops that hold an end | example: ex-guard-neg, ex-guard-pos | figure/rule: E-Force | map: r-boxes, t-agecap
-% PAR: process typing at N and eta | example: - | figure/rule: fig:process-typing | map: p-typing
+% PAR: process typing at N, credits and tickets of interface ends in Sigma | example: - | figure/rule: fig:process-typing | map: p-typing
 % PAR: erasure gives DF typing, conservativity | example: - | figure/rule: thm:conserv | map: th-conserv
 
 \begin{theorem}[Conservativity \rocq{conservative}]
@@ -95,12 +94,17 @@ Let every credit, cost and ticket in $\lenv$ and $\ty$ be $\infty$. Then $\cGamm
 \begin{gather*}
   \ranked\,W \iff \exists \varrho : \Point \to \mathsf{Ord}.\ \forall x, y.\ x \ordW y \Rightarrow \varrho(x) < \varrho(y)
 \end{gather*}
-$\ranked\,W$ implies $\cons\,W$ (\cref{app:w-wf}). At a finite $N$, \ruleref{P-Term}, \ruleref{P-Connect} and the lock-free judgment read $\ranked$ where \cref{sec:typing,sec:relation} read $\cons$ (\cref{conv:lf}). $\rankable_{\cGamma}(\rho, C)$ of \cref{def:creation} bounds each exit of $C$, a fact from a point of $\tree(\rho)$ down to a context point, by a finite set of context points above the tree point, with these sets descending along $\prec^{\rho}_{C}$ (\cref{app:r-new}).
+$\ranked\,W$ implies $\cons\,W$ (\cref{app:w-wf}). At a finite $N$, \ruleref{P-Term}, \ruleref{P-Connect} and the lock-free judgment read $\ranked$ where \cref{sec:typing,sec:relation} read $\cons$ (\cref{conv:lf}), and \ruleref{E-New} asks $\rankable$ (\cref{def:creation}).
 \end{definition}
 % PAR: the scheduler's world is ranked, ranks read the field label first | example: ex-milner | figure/rule: fig:world-example | map: t-lf-wf
 % PAR: they differ only on infinite worlds | example: ex-forkjoin | figure/rule: def:ranked | map: w-wf
 % PAR: new_ok_N, the new tree rankable | example: ex-gennew | figure/rule: E-New | map: r-new
 % PAR: recursive fork-join, infinite descending chain, typable in DF, no LF typing | example: ex-forkjoin | figure/rule: ex:forkjoin | map: r-new, t-lemmas
+\begin{example}[Recursive fork-join with replies \rocq{fjr_deadlock_free}]
+\label{ex:forkjoin}
+\input{gen/examples/ex-forkjoin}
+% PAR: infinite descending chain, consistent, deadlock free, typable in the deadlock-free instance | example: ex-forkjoin | figure/rule: E-New | map: r-new, w-wf
+\end{example}
 % PAR: a waiting chain that grows forever | example: rx-chain | figure/rule: E-New | map: r-new
 
 % Listing in the appendix (app:rx-chain), cut from the body for space.
@@ -138,7 +142,7 @@ An end is idle when $\unfold(\sty) = \Skip$. Fuel reads no point and no world an
 % PAR: received closures own their ends, exactness | example: ex-forwarder | figure/rule: app:fv | map: fv
 
 % PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: ex-cycle | figure/rule: def:lf-rel | map: soup
-\begin{definition}[Lock-free process relation \rocq{Soup}]
+\begin{definition}[Lock-free process relation \rocq{SoupK}]
 \label{def:lf-rel}
 An annotated configuration is $a = (q, K, W_a)$ with
 \begin{center}
@@ -159,12 +163,12 @@ $a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\t
   \item $\cTheta_t$, $\cPhi_t$: the ends $K$ gives $t$, at their points and at their counters and tickets.
   \item $\tyB_t$: $\ty$ for the main thread and $\ast$ otherwise.
   \item $E[\kappa_L]$: the term relation of \cref{fig:term-rel} under the cost table $\kappa_L$, which charges $1$ for $\tforce$ and each session action and $0$ for $\beta$, $\tnew$, $\tspawn$ and $\tlink$ (\cref{app:ct-costs}).
-  \item $K$ fits $q$ and $\senv$: each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\senv$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\senv$ carries its entry of $\senv$ with at most $\lfloor N/2 \rfloor$ tickets.
+  \item $K$ fits $q$ and $\senv$: each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\senv$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\senv$ carries the point and protocol of its entry of $\senv$ and at most the tickets of that entry.
 \end{itemize}
 \end{definition}
 
 % PAR: lock-free judgment over ranked extensions | example: - | figure/rule: def:lf-judgment | map: sj-all
-\begin{definition}[Lock-free judgment \rocq{lf_sem}]
+\begin{definition}[Lock-free judgment \rocq{lf_sems}]
 \label{def:lf-judgment}
 \[
   \senv \semlf^{N}_{W} \proc : \ty \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \ix.\ \exists a = (q, K, W_a).\ \mathsf{erase}(q) = \proc \land a \in \LFrel{N,W'}{\ix}{\senv}{\ty}
@@ -177,7 +181,7 @@ $a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\t
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
   \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\senv \semlf^{N}_{W} (C_0, \{t\}) : \ty$.
-  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semlf^{N}_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semlf^{N}_{W_2} \proc_2 : \tyunit$, then $\senv_1 \cup \senv_2 \semlf^{N}_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
+  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semlf^{N}_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semlf^{N}_{W_2} \proc_2 : \tyunit$ and $\tk(o) + \tk(\dual{o}) \leq N$ for each $o \in \mathrm{dom}\,\senv_C$, then $\senv_1 \cup \senv_2 \semlf^{N}_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
 
@@ -187,7 +191,7 @@ Let $N \in \mathbb{N}$.
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
   \item If $\varnothing ; \lenv \vdash^{F}_{W,N} t : \ty\ !\ \varepsilon$, then $|\lenv| \semt[\kappa_L]^{F}_{W'} t : |\ty|$ for each consistent $W' \sqsupseteq W$, where $|{\cdot}|$ erases the annotations and $\semt[\kappa_L]$ is the term judgment of \cref{def:sem-judgments} over $E[\kappa_L]$.
-  \item If $\senv \vdash^{N,\eta}_{W} \proc : \ty$, then $\senv \semlf^{N}_{W} \proc : \ty$.
+  \item If $\senv \vdash^{N}_{W} \proc : \ty$, then $\senv \semlf^{N}_{W} \proc : \ty$.
   \item If $\ranked\,W$ and $\varnothing \semlf^{N}_{W} \proc : \ty$, then $\proc$ is lock free.
 \end{enumerate}
 \end{theorem}
@@ -199,7 +203,7 @@ Let $N \in \mathbb{N}$.
 % PAR: the main theorem, mirror of thm:df, corollary of thm:lf-fundamental (2) and (3) | example: ex-cycle | figure/rule: thm:lf, thm:df | map: th-sound
 \begin{theorem}[Lock freedom \rocq{lf_soundness}]
 \label{thm:lf}
-Every closed process that is well typed at a finite bound is lock free. Assume excluded middle and functional choice. If $N \in \mathbb{N}$ and $\varnothing \vdash^{N,\eta}_{W} \proc : \ty$, then $\proc$ is lock free (\cref{def:lf}).
+Every closed process that is well typed at a finite bound is lock free. Assume excluded middle and functional choice. If $N \in \mathbb{N}$ and $\varnothing \vdash^{N}_{W} \proc : \ty$, then $\proc$ is lock free (\cref{def:lf}).
 \end{theorem}
 % PAR: footnote slot, excluded middle and functional choice enter only here and in thm:lf-fundamental, deadlock freedom needs neither | example: - | figure/rule: thm:lf, thm:df | map: sr-ord, th-sound
 % PAR: the cycle is lock free at N = 4 | example: ex-cycle | figure/rule: ex:cycle, thm:lf | map: th-sound

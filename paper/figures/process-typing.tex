@@ -1,26 +1,27 @@
 % Process typing. From map block p-typing. P-Connect^n is in the appendix.
-% Bookkeeping premises are stated in words (PLAN.md, presentation).
+% The conditions tfree, pfree, pairs are glossed in def:proc-judgment. The
+% interface annotations eta of the Rocq sit in Sigma (PLAN.md, revision 4).
 \begin{figure}[tb]
   \small
-  \judghead{Typing processes}{\senv \vdash_{W}^{\lf{N,\eta}} \proc : \ty}
+  \judghead{Typing processes}{\senv \vdash_{W}^{\lf{N}} \proc : \ty}
   \begin{rules}
     \infer*[lab=P-Term]
       {\tfree\,\ty \\ \pfree\,\senv \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\cTheta_B, C_0) \\\\
-       \lf{\forall o \in \mathrm{dom}\,\senv.\ \tk_\eta(o) \leq N} \\
-       \tyj{\varnothing}{\senv\lf{^{\eta}}, \cTheta_B}{\varnothing}{t}{\ty}\eff{\varepsilon}}
-      {\senv \vdash_{W}^{\lf{N,\eta}} (C_0, \{t\}) : \ty}
+       \lf{\forall o \in \mathrm{dom}\,\senv.\ \tk(o) \leq N} \\
+       \tyj{\varnothing}{\senv, \cTheta_B}{\varnothing}{t}{\ty}\eff{\varepsilon}}
+      {\senv \vdash_{W}^{\lf{N}} (C_0, \{t\}) : \ty}
     \label{rule:P-Term}
     \and
     \infer*[lab=P-Connect]
-      {\senv_1 \cup \senv_C \vdash_{W_1}^{\lf{N,\eta}} \proc_1 : \ty \\
-       \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N,\eta}} \proc_2 : \tyunit \\\\
-       \lf{\forall o \in \mathrm{dom}\,\senv_C.\ \tk_{\eta}(o) + \tk_{\eta}(\dual{o}) \leq N} \\
+      {\senv_1 \cup \senv_C \vdash_{W_1}^{\lf{N}} \proc_1 : \ty \\
+       \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N}} \proc_2 : \tyunit \\\\
+       \lf{\forall o \in \mathrm{dom}\,\senv_C.\ \tk(o) + \tk(\dual{o}) \leq N} \\
        \lfalt{\cons}{\ranked}(W_1 \wjoin W_2)}
-      {\senv_1 \cup \senv_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} \proc_1 \cpar{\senv_C} \proc_2 : \ty}
+      {\senv_1 \cup \senv_2 \vdash_{W_1 \wjoin W_2}^{\lf{N}} \proc_1 \cpar{\senv_C} \proc_2 : \ty}
     \label{rule:P-Connect}
   \end{rules}
   \figrule
   \Description{Inference rules P-Term and P-Connect.}
-  \caption{Process typing, under \cref{conv:lf,conv:implicit}. $\tfree$ is defined in \cref{def:side}, $\pfree$, $\pairs$, $\dual{\Sigma_C}$ and $\cpar{\Sigma_C}$ in \cref{def:proc-judgment}, and the $n$-ary rule P-Connect$^n$ is in \cref{app:p-typing}.}
+  \caption{Process typing, under \cref{conv:lf,conv:implicit}, with the conditions of \cref{def:proc-judgment}. The $n$-ary rule P-Connect$^n$ is in \cref{app:p-typing}.}
   \label{fig:process-typing}
 \end{figure}
