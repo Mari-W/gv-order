@@ -1,11 +1,13 @@
 % Generated from map example ex-between (A channel between two box arguments). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
 between : □(∀ι κ. C. ∗ ⊸ Close_ι ⊗ Close_κ ⊸^κ ∗)
-between = !(f = λp. let ⟨c, e⟩ = p in
-                    let ⟨d, d′⟩ = new in        -- d at ι·0
-                    let ∗ = spawn (λu. let ∗ = u in close d′) in
-                    let ∗ = close c in let ∗ = close d in close e)
--- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0
-main: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)
+between = !(f = λp. \lstkw{let} ⟨c, e⟩ = p \lstkw{in}
+                    \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in}        \lstcmt{-- d at ι·0}
+                    \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{let} ∗ = u \lstkw{in} \lstkw{close} d′) \lstkw{in}
+                    \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{let} ∗ = \lstkw{close} d \lstkw{in} \lstkw{close} e)
+\lstcmt{-- C = \textbraceleft{}ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾\textbraceright{},  δ = ι·0}
+main: c by \lstkw{new} at ρ, e by \lstkw{new} at ρ·1, \lstkw{force} between at (ρ, ρ·1)
 \end{maplisting}
+\end{minipage}

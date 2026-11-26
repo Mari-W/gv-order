@@ -1,14 +1,16 @@
 % Generated from map example ex-ring (The growing ring). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
 Sch  = µα. ?(κ. α_κ).Close
-ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ ch_ι₂ ⊸^{ι₁+1} ∗))
-ring = !(f = λp. let ⟨x, y⟩ = p in
-           let ⟨a, a′⟩ = new in                -- a at ι₂·0
-           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in
-           let ⟨b, b′⟩ = new in                -- b at ι₁·1
-           let ⟨z, x⟩ = recv x in let ∗ = close x in
-           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in
-           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))
-main = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩
+ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ ch_ι₂ ⊸^\textbraceleft{}ι₁+1\textbraceright{} ∗))
+ring = !(f = λp. \lstkw{let} ⟨x, y⟩ = p \lstkw{in}
+           \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in}                \lstcmt{-- a at ι₂·0}
+           \lstkw{let} ∗ = \lstkw{spawn} (λw. \lstkw{let} ∗ = w \lstkw{in} \lstkw{close} (\lstkw{send} ⟨a, y⟩)) \lstkw{in}
+           \lstkw{let} ⟨b, b′⟩ = \lstkw{new} \lstkw{in}                \lstcmt{-- b at ι₁·1}
+           \lstkw{let} ⟨z, x⟩ = \lstkw{recv} x \lstkw{in} \lstkw{let} ∗ = \lstkw{close} x \lstkw{in}
+           \lstkw{let} ∗ = \lstkw{spawn} (λw. \lstkw{let} ∗ = w \lstkw{in} (\lstkw{force} f) ⟨z, b′⟩) \lstkw{in}
+           \lstkw{spawn} (λw. \lstkw{let} ∗ = w \lstkw{in} (\lstkw{force} f) ⟨b, a′⟩))
+main = \lstkw{let} ⟨e, e′⟩ = \lstkw{new} \lstkw{in} (\lstkw{force} ring) ⟨e, e′⟩
 \end{maplisting}
+\end{minipage}

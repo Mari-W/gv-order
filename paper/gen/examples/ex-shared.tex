@@ -1,8 +1,10 @@
 % Generated from map example ex-shared (Private constants and renaming). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
--- c and e at the constant 0, d and f at its field 0·0
-P(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)
-P′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)
-main     = P(c, d) ∥ P′(e, f)          -- over the empty cut
+\lstcmt{-- c and e at the constant 0, d and f at its field 0·0}
+P(c, d)  = (\lstkw{let} ∗ = \lstkw{close} c⁺ \lstkw{in} \lstkw{close} d⁺) ∥ (\lstkw{let} ∗ = \lstkw{close} c⁻ \lstkw{in} \lstkw{close} d⁻)
+P′(e, f) = (\lstkw{let} ∗ = \lstkw{close} f⁺ \lstkw{in} \lstkw{close} e⁺) ∥ (\lstkw{let} ∗ = \lstkw{close} f⁻ \lstkw{in} \lstkw{close} e⁻)
+main     = P(c, d) ∥ P′(e, f)          \lstcmt{-- over the empty cut}
 \end{maplisting}
+\end{minipage}

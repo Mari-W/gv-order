@@ -1,11 +1,13 @@
 % Generated from map example ex-milner (Milner's cyclic scheduler). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-sendclose r = close (send ⟨∗, r⟩)
-recvclose r = let ⟨u, r⟩ = recv r in let ∗ = u in close r
-A₀ = let ∗ = sendclose c₀ in let ∗ = recvclose d₀ in sendclose a₀   -- main
-Aᵢ = let ∗ = recvclose dᵢ in let ∗ = sendclose aᵢ in sendclose cᵢ   -- i = 1, 2, spawned
-Pᵢ = recvclose bᵢ                                                 -- i = 0, 1, 2, spawned
--- c₀, d₁ at ρ   a₁, b₁ at ρ·1   c₁, d₂ at ρ·2
--- a₂, b₂ at ρ·3   c₂, d₀ at ρ·4   a₀, b₀ at ρ·5
+sendclose r = \lstkw{close} (\lstkw{send} ⟨∗, r⟩)
+recvclose r = \lstkw{let} ⟨u, r⟩ = \lstkw{recv} r \lstkw{in} \lstkw{let} ∗ = u \lstkw{in} \lstkw{close} r
+A₀ = \lstkw{let} ∗ = sendclose c₀ \lstkw{in} \lstkw{let} ∗ = recvclose d₀ \lstkw{in} sendclose a₀   \lstcmt{-- main}
+Aᵢ = \lstkw{let} ∗ = recvclose dᵢ \lstkw{in} \lstkw{let} ∗ = sendclose aᵢ \lstkw{in} sendclose cᵢ   \lstcmt{-- i = 1, 2, spawned}
+Pᵢ = recvclose bᵢ                                                 \lstcmt{-- i = 0, 1, 2, spawned}
+\lstcmt{-- c₀, d₁ at ρ   a₁, b₁ at ρ·1   c₁, d₂ at ρ·2}
+\lstcmt{-- a₂, b₂ at ρ·3   c₂, d₀ at ρ·4   a₀, b₀ at ρ·5}
 \end{maplisting}
+\end{minipage}

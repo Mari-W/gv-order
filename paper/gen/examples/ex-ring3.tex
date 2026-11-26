@@ -1,8 +1,10 @@
 % Generated from map example ex-ring3 (Three-thread ring). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-A  = let ∗ = close c⁻ in close a⁺        -- a at 0, b at 1, c at 2
-B  = let ∗ = close a⁻ in close b⁺
-C  = let ∗ = close b⁻ in close c⁺        -- A ∥ B ∥ C deadlocks
-C′ = let ∗ = close c⁺ in close b⁻        -- A ∥ B ∥ C′ is deadlock free
+A  = \lstkw{let} ∗ = \lstkw{close} c⁻ \lstkw{in} \lstkw{close} a⁺        \lstcmt{-- a at 0, b at 1, c at 2}
+B  = \lstkw{let} ∗ = \lstkw{close} a⁻ \lstkw{in} \lstkw{close} b⁺
+C  = \lstkw{let} ∗ = \lstkw{close} b⁻ \lstkw{in} \lstkw{close} c⁺        \lstcmt{-- A ∥ B ∥ C deadlocks}
+C′ = \lstkw{let} ∗ = \lstkw{close} c⁺ \lstkw{in} \lstkw{close} b⁻        \lstcmt{-- A ∥ B ∥ C′ is deadlock free}
 \end{maplisting}
+\end{minipage}

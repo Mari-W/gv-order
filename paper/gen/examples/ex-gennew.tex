@@ -1,13 +1,15 @@
 % Generated from map example ex-gennew (Creations with exits). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
--- a at ρ with the facts ρ·0 ≺ ρ·2 ≺ , ρ·1 ≺ ρ·3 ≺  and ρ·0 ≺ (ρ·1)‾
-te = let ⟨a, a′⟩ = new in
-     let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0
-     let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1
-     let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in
-     let ∗ = spawn (λu. close a′) in
-     let ⟨d, d′⟩ = new in     -- d at π, C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ }
-     let ∗ = spawn (λu. let ∗ = close e₁ in let ∗ = close e₂ in close d′) in
-     let ∗ = close d in close a
+\lstcmt{-- a at ρ with the facts ρ·0 ≺ ρ·2 ≺ , ρ·1 ≺ ρ·3 ≺  and ρ·0 ≺ (ρ·1)‾}
+te = \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in}
+     \lstkw{let} ⟨e₁, e₁′⟩ = \lstkw{new} \lstkw{in}   \lstcmt{-- at the field ρ·0}
+     \lstkw{let} ⟨e₂, e₂′⟩ = \lstkw{new} \lstkw{in}   \lstcmt{-- at the field ρ·1}
+     \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{close} e₁′) \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{close} e₂′) \lstkw{in}
+     \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{close} a′) \lstkw{in}
+     \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in}     \lstcmt{-- d at π, C = \textbraceleft{}ρ·0 ≺ π, ρ·1 ≺ π, π ≺ \textbraceright{}}
+     \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{let} ∗ = \lstkw{close} e₁ \lstkw{in} \lstkw{let} ∗ = \lstkw{close} e₂ \lstkw{in} \lstkw{close} d′) \lstkw{in}
+     \lstkw{let} ∗ = \lstkw{close} d \lstkw{in} \lstkw{close} a
 \end{maplisting}
+\end{minipage}

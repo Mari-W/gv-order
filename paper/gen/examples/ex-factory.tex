@@ -1,13 +1,15 @@
 % Generated from map example ex-factory (The factory). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in
-                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)
-mk₁  = !(f = λp. let ⟨c, c′⟩ = new in
-                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
-main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
-       let ∗ = recvclose p in recvclose q
--- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}
--- mk₁ places c at ι·0 for p at ι
--- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)
+mk₀  = !(f = λu. \lstkw{let} ∗ = u \lstkw{in} \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}
+                \lstkw{let} ∗ = \lstkw{spawn} (λv. \lstkw{let} ∗ = v \lstkw{in} \lstkw{close} (\lstkw{send} ⟨∗, c⟩)) \lstkw{in} c′)
+mk₁  = !(f = λp. \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}
+                \lstkw{let} ∗ = \lstkw{spawn} (λv. \lstkw{let} ∗ = v \lstkw{in} \lstkw{close} (\lstkw{send} ⟨∗, c⟩)) \lstkw{in} ⟨p, c′⟩)
+main = \lstkw{let} p = (\lstkw{force} mk₀) ∗ \lstkw{in} \lstkw{let} ⟨p, q⟩ = (\lstkw{force} mk₁) p \lstkw{in}
+       \lstkw{let} ∗ = recvclose p \lstkw{in} recvclose q
+\lstcmt{-- mk₀ places c at a fresh ρ with C(ρ) = \textbraceleft{}ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0\textbraceright{}}
+\lstcmt{-- mk₁ places c at ι·0 for p at ι}
+\lstcmt{-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)}
 \end{maplisting}
+\end{minipage}

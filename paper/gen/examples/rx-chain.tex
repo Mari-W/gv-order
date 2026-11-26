@@ -1,11 +1,13 @@
 % Generated from map example rx-chain (A waiting chain that grows forever). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w
-                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in
-                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action
-                 let ∗ = spawn (λ_. (force f) c′) in
-                 let ∗ = close c in close w)                 -- waits on its child
-main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
--- every thread waits on the one it spawned, close w′ never proceeds
+grow = !(f = λw. \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}                 \lstcmt{-- c below the point of w}
+                 \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λ_. recvclose d′) \lstkw{in}
+                 \lstkw{let} ∗ = \lstkw{close} (\lstkw{send} ⟨∗, d⟩) \lstkw{in}              \lstcmt{-- one session action}
+                 \lstkw{let} ∗ = \lstkw{spawn} (λ_. (\lstkw{force} f) c′) \lstkw{in}
+                 \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} w)                 \lstcmt{-- waits on its child}
+main = \lstkw{let} ⟨w, w′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{close} w′) \lstkw{in} (\lstkw{force} grow) w
+\lstcmt{-- every thread waits on the one it spawned, close w′ never proceeds}
 \end{maplisting}
+\end{minipage}

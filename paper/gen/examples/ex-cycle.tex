@@ -1,8 +1,10 @@
 % Generated from map example ex-cycle (Cycle). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-cycle = let ⟨c, c′⟩ = new in          -- c at ρ
-        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}
-        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in
-        let ∗ = close c in close d
+cycle = \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}          \lstcmt{-- c at ρ}
+        \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in}          \lstcmt{-- d at ρ·0, C = \textbraceleft{}ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0\textbraceright{}}
+        \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{let} ∗ = u \lstkw{in} \lstkw{let} ∗ = \lstkw{close} c′ \lstkw{in} \lstkw{close} d′) \lstkw{in}
+        \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} d
 \end{maplisting}
+\end{minipage}

@@ -1,10 +1,12 @@
 % Generated from map example ex-flag (Self-computed flag). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w
-thread  = case not (inj₂ ∗) of
-            inl w ⇒ let ∗ = w in let ∗ = close c in close d      -- runs
-          | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs
-other   = let ∗ = close  in close 
--- the process ({c, d}, {thread, other}), c at x, d at y
+not     = λz. \lstkw{case} z \lstkw{of} \lstkw{inl} w ⇒ inj₂ w | \lstkw{inr} w ⇒ inj₁ w
+thread  = \lstkw{case} not (inj₂ ∗) \lstkw{of}
+            \lstkw{inl} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} d      \lstcmt{-- runs}
+          | \lstkw{inr} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} d \lstkw{in} \lstkw{close} c      \lstcmt{-- never runs}
+other   = \lstkw{let} ∗ = \lstkw{close}  \lstkw{in} \lstkw{close} 
+\lstcmt{-- the process (\textbraceleft{}c, d\textbraceright{}, \textbraceleft{}thread, other\textbraceright{}), c at x, d at y}
 \end{maplisting}
+\end{minipage}

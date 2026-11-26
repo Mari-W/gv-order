@@ -1,8 +1,10 @@
 % Generated from map example ex-branch-ext (One world per arm). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-thread = case branch e of
-           inl w ⇒ let ∗ = close w in let ∗ = close c in close d
-         | inr w ⇒ let ∗ = close w in let ∗ = close d in close c
--- e at z, c at x, d at y
+thread = \lstkw{case} \lstkw{branch} e \lstkw{of}
+           \lstkw{inl} w ⇒ \lstkw{let} ∗ = \lstkw{close} w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} d
+         | \lstkw{inr} w ⇒ \lstkw{let} ∗ = \lstkw{close} w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} d \lstkw{in} \lstkw{close} c
+\lstcmt{-- e at z, c at x, d at y}
 \end{maplisting}
+\end{minipage}

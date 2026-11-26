@@ -1,10 +1,12 @@
 % Generated from map example rx-postpone (Postponement, a holding thread that never serves). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)
-loop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)
-main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in
-       let ∗ = spawn (λ_. (force chat) a′) in
-       let ∗ = spawn (λ_. close b′) in
-       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever
+chat = !(f = λa. \lstkw{let} a = \lstkw{send} ⟨∗, a⟩ \lstkw{in} (\lstkw{force} f) a)
+loop = !(f = λ⟨a, b⟩. \lstkw{let} ⟨u, a⟩ = \lstkw{recv} a \lstkw{in} \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} f) ⟨a, b⟩)
+main = \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨b, b′⟩ = \lstkw{new} \lstkw{in}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. (\lstkw{force} chat) a′) \lstkw{in}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{close} b′) \lstkw{in}
+       (\lstkw{force} loop) ⟨a, b⟩            \lstcmt{-- holds b forever, close b′ waits forever}
 \end{maplisting}
+\end{minipage}

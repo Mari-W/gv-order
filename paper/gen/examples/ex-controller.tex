@@ -1,12 +1,14 @@
 % Generated from map example ex-controller (The controller). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0
-       let ⟨c, c′⟩ = new in                              -- c at ρ·2
-       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in
-       (force cli) ⟨⟨a, b⟩, c⟩
-cli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in
-                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in
-                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)
--- c sits at Skip on each side, an idle end
+main = \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨b, b′⟩ = \lstkw{new} \lstkw{in}   \lstcmt{-- a at ρ, b at ρ·0}
+       \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}                              \lstcmt{-- c at ρ·2}
+       \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} srv) ⟨⟨a′, b′⟩, c′⟩) \lstkw{in}
+       (\lstkw{force} cli) ⟨⟨a, b⟩, c⟩
+cli  = !(f = λp. \lstkw{let} ⟨q, k⟩ = p \lstkw{in} \lstkw{let} ⟨a, b⟩ = q \lstkw{in}
+                \lstkw{let} a = \lstkw{send} ⟨∗, a⟩ \lstkw{in} \lstkw{let} ⟨u, b⟩ = \lstkw{recv} b \lstkw{in}
+                \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} f) ⟨⟨a, b⟩, k⟩)
+\lstcmt{-- c sits at Skip on each side, an idle end}
 \end{maplisting}
+\end{minipage}

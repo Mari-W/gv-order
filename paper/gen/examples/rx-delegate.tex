@@ -1,12 +1,14 @@
 % Generated from map example rx-delegate (Endless delegation, an end that travels forever). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in
-               (force f) ⟨e, x, y⟩)
-back = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in
-               (force f) ⟨x, y⟩)
-main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in
-       let ∗ = spawn (λ_. close e′) in       -- waits for e forever
-       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in
-       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever
+pass = !(f = λ⟨e, x, y⟩. \lstkw{let} x = \lstkw{send} ⟨e, x⟩ \lstkw{in} \lstkw{let} ⟨e, y⟩ = \lstkw{recv} y \lstkw{in}
+               (\lstkw{force} f) ⟨e, x, y⟩)
+back = !(f = λ⟨x, y⟩. \lstkw{let} ⟨e, x⟩ = \lstkw{recv} x \lstkw{in} \lstkw{let} y = \lstkw{send} ⟨e, y⟩ \lstkw{in}
+               (\lstkw{force} f) ⟨x, y⟩)
+main = \lstkw{let} ⟨e, e′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨x, x′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨y, y′⟩ = \lstkw{new} \lstkw{in}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{close} e′) \lstkw{in}       \lstcmt{-- waits for e forever}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. (\lstkw{force} back) ⟨x′, y′⟩) \lstkw{in}
+       (\lstkw{force} pass) ⟨e, x, y⟩                \lstcmt{-- e goes back and forth forever}
 \end{maplisting}
+\end{minipage}

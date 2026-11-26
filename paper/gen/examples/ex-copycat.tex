@@ -1,11 +1,13 @@
 % Generated from map example ex-copycat (Copycat, a forwarder at independent points). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
--- o₁ : S_x, o₂ : _y, S = ?∗.!∗.Close
-fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in
-            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in
-            let ∗ = close o₁ in close o₂
-ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels
-P ∥ Q              -- cut on a, Q holds a⁺ at x
-P ∥ fwd(a⁺, b⁻) ∥ Q′ -- Q′ = Q with b for a and the constant of y for that of x
+\lstcmt{-- o₁ : S_x, o₂ : _y, S = ?∗.!∗.Close}
+fwd o₁ o₂ = \lstkw{let} ⟨v, o₁⟩ = \lstkw{recv} o₁ \lstkw{in} \lstkw{let} o₂ = \lstkw{send} ⟨v, o₂⟩ \lstkw{in}
+            \lstkw{let} ⟨w, o₂⟩ = \lstkw{recv} o₂ \lstkw{in} \lstkw{let} o₁ = \lstkw{send} ⟨w, o₁⟩ \lstkw{in}
+            \lstkw{let} ∗ = \lstkw{close} o₁ \lstkw{in} \lstkw{close} o₂
+ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        \lstcmt{-- cut on both channels}
+P ∥ Q              \lstcmt{-- cut on a, Q holds a⁺ at x}
+P ∥ fwd(a⁺, b⁻) ∥ Q′ \lstcmt{-- Q′ = Q with b for a and the constant of y for that of x}
 \end{maplisting}
+\end{minipage}

@@ -1,7 +1,9 @@
 % Generated from map example ex-forwarder (The spawn forwarder). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w
+fw o = \lstkw{let} ⟨w, c⟩ = \lstkw{recv} o \lstkw{in} \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{spawn} w
 o : ?((∗ ⊸ ∗)^2).Close
-dead_thunk q = λ_. let ∗ = Ω in close q
+dead_thunk q = λ_. \lstkw{let} ∗ = Ω \lstkw{in} \lstkw{close} q
 \end{maplisting}
+\end{minipage}

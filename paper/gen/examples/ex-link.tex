@@ -1,9 +1,11 @@
 % Generated from map example ex-link (A link at full tickets, closed over its interface). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0
-⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0
-link ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at , both at credit N
+⟨c⁺, c⁻⟩ = \lstkw{new}         \lstcmt{-- c⁺ with N tickets, c⁻ with 0}
+⟨d⁺, d⁻⟩ = \lstkw{new}         \lstcmt{-- d⁻ with N tickets, d⁺ with 0}
+\lstkw{link} ⟨c⁺, d⁻⟩          \lstcmt{-- c⁺ at x, d⁻ at , both at credit N}
 
-link ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺   -- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)
+\lstkw{link} ⟨c⁺, d⁻⟩ ∥ \lstkw{close} c⁻ ∥ \lstkw{close} d⁺   \lstcmt{-- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)}
 \end{maplisting}
+\end{minipage}

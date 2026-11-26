@@ -1,13 +1,15 @@
 % Generated from map example rx-relink (Link refresh, a waiting thread that always faces a fresh end). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in
-                     let ∗ = link ⟨w, c⟩ in          -- the waiting end now faces c′
-                     let k = send ⟨∗, k⟩ in           -- one step on another channel
-                     (force f) ⟨c′, k⟩)
-sink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)
-main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
-       let ∗ = spawn (λ_. close w′) in              -- waits forever
-       let ∗ = spawn (λ_. (force sink) k′) in
-       (force refresh) ⟨w, k⟩
+refresh = !(f = λ⟨w, k⟩. \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}
+                     \lstkw{let} ∗ = \lstkw{link} ⟨w, c⟩ \lstkw{in}          \lstcmt{-- the waiting end now faces c′}
+                     \lstkw{let} k = \lstkw{send} ⟨∗, k⟩ \lstkw{in}           \lstcmt{-- one step on another channel}
+                     (\lstkw{force} f) ⟨c′, k⟩)
+sink    = !(f = λk. \lstkw{let} ⟨u, k⟩ = \lstkw{recv} k \lstkw{in} \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} f) k)
+main = \lstkw{let} ⟨w, w′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨k, k′⟩ = \lstkw{new} \lstkw{in}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{close} w′) \lstkw{in}              \lstcmt{-- waits forever}
+       \lstkw{let} ∗ = \lstkw{spawn} (λ_. (\lstkw{force} sink) k′) \lstkw{in}
+       (\lstkw{force} refresh) ⟨w, k⟩
 \end{maplisting}
+\end{minipage}

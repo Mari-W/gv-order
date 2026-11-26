@@ -1,7 +1,9 @@
 % Generated from map example ex-guard-pos (A loop that holds an end). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever
-main        = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in
-              (force spawn_loop) a
+spawn_loop  = !(f = λc. \lstkw{spawn} (λ_. (\lstkw{force} f) c))      \lstcmt{-- passes c on forever}
+main        = \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{close} a′) \lstkw{in}
+              (\lstkw{force} spawn_loop) a
 \end{maplisting}
+\end{minipage}

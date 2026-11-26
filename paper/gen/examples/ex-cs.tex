@@ -1,14 +1,16 @@
 % Generated from map example ex-cs (Client and server cycle). Do not edit.
-\leavevmode\par\nobreak
+\leavevmode\par\nobreak\noindent
+\begin{minipage}{\linewidth}
 \begin{maplisting}
-main = let ⟨a, a′⟩ = new in                    -- a at ρ
-       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)
-       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in
-       (force cli) ⟨a, b⟩
-cli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in
-                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)
-srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in
-                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
--- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S_ι ⊗ S′_κ ⊸^ζ ∗)
--- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}
+main = \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in}                    \lstcmt{-- a at ρ}
+       \lstkw{let} ⟨b, b′⟩ = \lstkw{new} \lstkw{in}                    \lstcmt{-- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)}
+       \lstkw{let} ∗ = \lstkw{spawn} (λu. \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} srv) ⟨a′, b′⟩) \lstkw{in}
+       (\lstkw{force} cli) ⟨a, b⟩
+cli  = !(f = λp. \lstkw{let} ⟨a, b⟩ = p \lstkw{in} \lstkw{let} a = \lstkw{send} ⟨∗, a⟩ \lstkw{in}
+                \lstkw{let} ⟨u, b⟩ = \lstkw{recv} b \lstkw{in} \lstkw{let} ∗ = u \lstkw{in} (\lstkw{force} f) ⟨a, b⟩)
+srv  = !(g = λp. \lstkw{let} ⟨a, b⟩ = p \lstkw{in} \lstkw{let} ⟨u, a⟩ = \lstkw{recv} a \lstkw{in} \lstkw{let} ∗ = u \lstkw{in}
+                \lstkw{let} b = \lstkw{send} ⟨∗, b⟩ \lstkw{in} (\lstkw{force} g) ⟨a, b⟩)
+\lstcmt{-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S_ι ⊗ S′_κ ⊸^ζ ∗)}
+\lstcmt{-- C = \textbraceleft{}ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k\textbraceright{}}
 \end{maplisting}
+\end{minipage}
