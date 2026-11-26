@@ -39,7 +39,7 @@ Recommendation A.
 
 Optional. fig:composition-example (TikZ, two components, joined world, dead-arm
 fact as the cycle) costs about 0.35 page. Cut first if the body runs long.
-Further cuts in order: ct-costs to the appendix (0.3), fig:aging into a line of
+Further cuts, in this order. ct-costs to the appendix (0.3), fig:aging into a line of
 fig:lf-counters (0.25), ex-milner listing to the appendix with a back reference
 from §8 (0.3).
 
