@@ -1,0 +1,28 @@
+% Three ways a thread of a deadlock-free program waits forever, and the rule
+% on counters that excludes each. From map examples rx-postpone
+% (rx_postpone_rejected), rx-delegate (rx_delegate_rejected) and rx-relink
+% (rx_relink_rejected, listing in the supplement), blocks t-lf-counters,
+% t-agecap, r-act. The run-time column is def:counters, the typing column
+% the premises of fig:typing-core and app:t-agecap.
+\begin{figure}[tb]
+  \small
+  \centering
+  \begin{tabular}{@{}p{0.25\linewidth}@{\quad}p{0.32\linewidth}@{\quad}p{0.33\linewidth}@{}}
+    \toprule
+    the thread holding $\dual{o}$ & at run time & in typing \\
+    \midrule
+    acts on other ends forever (\cref{ex:postpone}) &
+    each action elsewhere lowers $f(\dual{o})$ by one &
+    a term of cost $\varepsilon$ asks $\varepsilon \leq a$ of the credit $a$ of $\dual{o}$ and lowers it to $a - \varepsilon$, and a force costs $1$ \\[2pt]
+    sends $\dual{o}$ on forever (\cref{ex:delegate}) &
+    a send lowers the counter of each sent end by one &
+    \ruleref{E-Send} asks $\ty' - 1 \leq \payload{\ty}{x}$ of the payload \\[2pt]
+    links $\dual{o}$ forever, so $o$ meets a new dual end each time &
+    the new dual end has a lower counter than the old one, so $o$ meets at most $N$ links &
+    \ruleref{E-Link} asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ \\
+    \bottomrule
+  \end{tabular}
+  \Description{A table with three rows, one per way in which a thread waits forever on an end o, with the run-time counter that excludes it and the typing premise.}
+  \caption{Three ways a thread waiting on $o$ waits forever in a deadlock-free program, and the counters that exclude each. The third row is the program of rejected relinking in the supplement.}
+  \label{fig:lf-failures}
+\end{figure}

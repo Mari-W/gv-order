@@ -3,7 +3,7 @@
 
 % PAR: section overview, the shaded parts of the earlier figures (conv:lf), no new rules, thm:lf mirrors thm:df | example: - | figure/rule: conv:lf, thm:lf | map: ty-ann
 
-\subsection{Orders Say on Whom, Counters Say How Long}
+\subsection{Three Ways to Wait Forever}
 \label{sec:lf-why}
 
 % PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: def:lf | map: sem-props
@@ -14,42 +14,59 @@
   \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
 \]
 \begin{itemize}
-  \item $(r, l)$: a run of $\proc$, configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = \proc$ and events $l_i$ from $r_i$ to $r_{i+1}$, none when $r_{i+1} = r_i$.
+  \item $(r, l)$: a run of $\proc$, configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = \proc$ (\cref{app:syn-procs}) and events $l_i$ from $r_i$ to $r_{i+1}$ (\cref{app:sem-events}), none when $r_{i+1} = r_i$.
   \item $\mathsf{parts}(l_i)$: the threads that take part in $l_i$.
   \item $\mathsf{maximal}\,r\,l$: $r_{i+1} = r_i$ only where $r_i$ has no internal step.
   \item $\mathsf{wfair}\,r\,l$: for each $i$ and thread $t$ some $j \geq i$ has $t \in \mathsf{parts}(l_j)$ or $t$ unable to step at $r_j$.
   \item $\mathsf{pend}(r_i, t)$: the next step of $t$ at $r_i$ is a session action (\cref{app:sem-props}).
 \end{itemize}
 \end{definition}
-% PAR: order alone gives only deadlock freedom, a server postpones one end forever | example: rx-postpone | figure/rule: ex:postpone | map: sem-props, t-agecap
-% PAR: counters alone do not exclude cyclic waits | example: ex-milner | figure/rule: - | map: t-lf-counters
-% GAP: no map example for "counters alone admit a cyclic wait"
-% PAR: neither alone suffices, both in one judgment | example: - | figure/rule: def:lf-ann | map: t-lf-counters, fu-vs
+% PAR: order alone gives only deadlock freedom, a thread waits forever in three ways, each excluded by one rule on counters (fig:lf-failures) | example: rx-postpone, rx-delegate, rx-relink | figure/rule: fig:lf-failures | map: sem-props, t-lf-counters
+% PAR: endless postponement, a thread holds an end across a loop that never acts on it, every action lowers the counter of the held end, a cost lowers its credit | example: rx-postpone | figure/rule: ex:postpone, fig:lf-failures, app:t-agecap | map: t-agecap
 
 \begin{example}[Postponement \rocq{rx_postpone_rejected}]
 \label{ex:postpone}
 \input{gen/examples/rx-postpone}
-% PAR: deadlock free, not lock free, aging rejects | example: rx-postpone | figure/rule: app:t-agecap | map: t-agecap
+% PAR: deadlock free, not lock free, the credit of b drops by the cost of each round | example: rx-postpone | figure/rule: app:t-agecap | map: t-agecap
 \end{example}
 
-\subsection{Credits, Tickets and Costs}
+% PAR: endless passing, an end sent back and forth, a send lowers the counter of each sent end by one | example: rx-delegate | figure/rule: ex:delegate, E-Send | map: r-act
+\begin{example}[Endless delegation \rocq{rx_delegate_rejected}]
+\label{ex:delegate}
+\input{gen/examples/rx-delegate}
+% PAR: payload premise of E-Send rejects | example: rx-delegate | figure/rule: E-Send | map: r-act
+\end{example}
+
+% Listing in the supplement (rx-relink).
+% PAR: endless links, each link hands the waiting end a new dual end, the new dual end has a lower counter, so a wait meets at most N links | example: rx-relink | figure/rule: fig:lf-failures, E-Link | map: r-act
+\input{figures/lf-failures}
+
+% PAR: counters alone do not exclude cyclic waits, orders and counters in one judgment | example: ex-milner | figure/rule: def:lf-ann | map: t-lf-counters, fu-vs
+% GAP: no map example for "counters alone admit a cyclic wait"
+
+\subsection{Counters and Costs}
 \label{sec:lf-annotations}
 
-% PAR: LF typing = DF typing + annotations, the shaded parts of every figure | example: - | figure/rule: conv:lf, def:lf-ann | map: ty-grammar, t-judgment, ty-ann
-\begin{definition}[Lock-free annotations \rocq{tsum_ok} \rocq{tage}]
+% PAR: LF typing = DF typing + annotations, the shaded parts of every figure, two kinds of counting | example: - | figure/rule: conv:lf, def:lf-ann | map: ty-grammar, t-judgment, ty-ann
+\begin{definition}[Counters and costs \rocq{tsum_ok} \rocq{tage}]
 \label{def:lf-ann}
-Each held end $o$ has a counter $f(o)$ at run time, the number of actions its thread may still perform on other ends before it acts on $o$. The annotations bound it.
+Lock-free typing counts in two ways.
+\begin{itemize}
+  \item Counters. At run time each held end $o$ has a counter $f(o)$, the number of actions its thread may still take on other ends before it acts on $o$. An action on $o$ resets $f(o)$ to the reset value of $o$. Every action of the thread lowers the counters of its other held ends by one, and a send lowers the counter of each end it sends by one.
+  \item Cost. The cost of a term bounds the number of actions it takes before it returns.
+\end{itemize}
+The types record both.
 \begin{center}
 \small
-\begin{tabular}{@{}l@{\quad}l@{}}
-  $o : \sty_x^{a,m}$ & point $x$, credit $a \leq f(o)$, tickets $\tk(o) = m \geq f(o)$ \\
-  $(\ty \arr{u}{l}[c]\, \tyB)^{a}$ & latent cost $c$ of the body, credit $a$ of the captured ends \\
-  $\tm : \ty\ !\ \varepsilon$ & cost $\varepsilon$, an upper bound on the actions $\tm$ performs before it returns \\
-  $\lenv - \varepsilon$ & aging, subtracts $\varepsilon$ from each credit in $\lenv$ (\cref{app:t-agecap}) \\
-  $N$ & bound, $\tk(o) + \tk(\dual{o}) \leq N$ for the two ends of a channel
+\begin{tabular}{@{}l@{\quad}p{0.68\linewidth}@{}}
+  $o : \sty_x^{a,m}$ & credit $a$, a static lower bound $a \leq f(o)$, and tickets $\tk(o) = m$, the reset value, so $f(o) \leq m$ \\
+  $N$ & bound on the tickets of the two ends of a channel, $\tk(o) + \tk(\dual{o}) \leq N$ \\
+  $(\ty \arr{u}{l}[c]\, \tyB)^{a}$ & credit $a \leq f(o)$ for each captured end $o$ that is not idle, latent cost $c$ of the body \\
+  $\tm : \ty\ !\ \varepsilon$ & cost $\varepsilon$ of $\tm$ \\
+  $\lenv - \varepsilon$ & $\lenv$ with each credit lowered by $\varepsilon$, defined when $\varepsilon$ is at most each credit of a closure and of an end that is not idle (\cref{app:t-agecap})
 \end{tabular}
 \end{center}
-An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held ends by one. Every annotation is in $\mathbb{N} \cup \{\infty\}$, and $\infty - c = \infty$.
+An end is idle when its session type unfolds to $\Skip$. Every annotation is in $\mathbb{N} \cup \{\infty\}$, and $\infty - c = \infty$.
 \end{definition}
 
 % PAR: worked example, the cycle at N = 4, two tickets per end, closing c costs one, the credit of d falls from 2 to 1 and so does its counter | example: ex-cycle | figure/rule: fig:lf-example | map: t-lf-counters, t-agecap
@@ -59,7 +76,7 @@ An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held 
 \end{example}
 \input{figures/lf-example}
 
-% PAR: shaded parts of E-App, E-Pair, E-Case, sequencing of costs | example: - | figure/rule: fig:typing-core | map: r-fun, r-data
+% PAR: shaded parts of E-App, E-Pair, E-Case, sequencing of costs, the held closure asks the cost of the argument below its credit | example: - | figure/rule: fig:typing-core | map: r-fun, r-data
 % PAR: actions reset to m, cost one | example: ex-cycle | figure/rule: E-Send, E-Close | map: r-act
 % PAR: payload credit, a sent end loses one | example: rx-delegate | figure/rule: E-Send | map: r-act
 % PAR: link tickets, a1 + m2 > N | example: rx-relink | figure/rule: E-Link | map: r-act
@@ -73,17 +90,8 @@ An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held 
 Let every credit, cost and ticket in $\lenv$ and $\ty$ be $\infty$. Then $\cGamma ; \lenv \vdash^{F}_{W,\infty} \tm : \ty\ !\ \varepsilon$ for some $\varepsilon$ if and only if $\cGamma ; \lenv \vdash^{F}_{W} \tm : \ty$.
 \end{theorem}
 
-\begin{example}[Endless delegation \rocq{rx_delegate_rejected}]
-\label{ex:delegate}
-\input{gen/examples/rx-delegate}
-% PAR: payload premise of E-Send rejects | example: rx-delegate | figure/rule: E-Send | map: r-act
-\end{example}
-
-% Listing in the appendix (app:rx-relink), cut from the body for space.
-% PAR: tickets premise of E-Link rejects | example: rx-relink | figure/rule: app:rx-relink, E-Link | map: r-act
-
-% Listing in the appendix (app:ex-controller), cut from the body for space.
-% PAR: idle end held across an unbounded loop, credit truncated by aging | example: ex-controller | figure/rule: app:ex-controller, app:t-agecap | map: t-agecap
+% Listing in the supplement (ex-controller).
+% PAR: idle end held across an unbounded loop, its credit truncated at 0 by the cost | example: ex-controller | figure/rule: app:t-agecap | map: t-agecap
 
 \subsection{Ranked Worlds}
 \label{sec:lf-ranked}
@@ -107,41 +115,40 @@ $\ranked\,W$ implies $\cons\,W$ (\cref{app:w-wf}). At a finite $N$, \ruleref{P-T
 \end{example}
 % PAR: a waiting chain that grows forever | example: rx-chain | figure/rule: E-New | map: r-new
 
-% Listing in the appendix (app:rx-chain), cut from the body for space.
-% PAR: ranks admit no infinite descent, rejected at a finite bound | example: rx-chain | figure/rule: app:rx-chain, def:ranked | map: t-lf-wf
+% Listing in the supplement (rx-chain).
+% PAR: ranks admit no infinite descent, rejected at a finite bound | example: rx-chain | figure/rule: def:ranked | map: t-lf-wf
 
 \subsection{The Lock-Free Relation}
 \label{sec:lf-relation}
 
 % PAR: cost table kappa_L, the same E | example: - | figure/rule: fig:term-rel | map: ct-costs, e-rel
-% PAR: fuel the only new relation, counters, tickets, no world, no readiness | example: ex-cycle | figure/rule: def:fuel | map: fu, fu-vs
-% PAR: mechanization insight, relation and fuel kept as two fixed points, not merged | example: - | figure/rule: def:fuel | map: fu-vs
-\begin{definition}[Fuel \rocq{FuelE}]
-\label{def:fuel}
-Fuel has the form $\tm \in \Fuel{N}{\ix}{\cPhi}{\sigma\ !\ d}$ with the components
+% PAR: the relation reads the counters of def:lf-ann at run time, E extended with counters, the cost bound is the cost, no world, no readiness | example: ex-cycle | figure/rule: def:counters | map: fu, fu-vs
+% PAR: mechanization insight, E and the counters kept as two fixed points, not merged | example: - | figure/rule: def:counters | map: fu-vs
+\begin{definition}[Counters of a term \rocq{FuelE}]
+\label{def:counters}
+A term keeps its counters, $\tm \in \Fuel{N}{\ix}{\cPhi}{\sigma\ !\ d}$, with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $N$, $\ix$ & bound and ordinal index \\
   $\cPhi$ & held ends, each with its protocol $\sty$, counter $f$ and tickets $m$, written $\sty^{f,m}$ \\
-  $\sigma$ & shape of the result \\
-  $d$ & frame, the number of actions left before $\tm$ returns
+  $\sigma$ & type of the result, or $\mathsf{thread}$ for a thread, which returns holding no end \\
+  $d$ & cost bound, the number of actions $\tm$ may take before it returns
 \end{tabular}
 \end{center}
-An end is idle when $\unfold(\sty) = \Skip$. Fuel reads no point and no world and has no readiness clause.
+It reads no point and no world and has no readiness clause. It holds at $\ix$ when the following hold (\cref{app:fu,app:fu-obls,app:fv}).
 \begin{itemize}
-  \item (stop) A value $\tm$ has fuel at its counters. An end has a counter at least its credit, a closure keeps the counters of its captured ends that are not idle at least at its credit, and a box holds no end (\cref{app:fv}).
-  \item (step) Each step $\tm \xrightarrow{\ell} \tm'$ changes the held ends as its obligation in \cref{fig:term-rel} does, and the successor has fuel at each $\ixs < \ix$ with the counters, tickets and frame below.
-  \item An action on $o$ asks $d \geq 1$ and a positive counter on each other held end that is not idle. The successor sees the frame $d - 1$, those counters lowered by one and the counter of $o$ reset to its tickets.
-  \item A force asks the same positive counters and $d \geq 1$, and lowers every counter and the frame by one.
-  \item A send hands the ends of its payload on with their counters lowered by one. A creation starts its two ends at tickets $m_1$ and $m_2$ with $m_1 + m_2 \leq N$, each counter at its tickets. A link of two ends with counters $f_1, f_2$ and tickets $m_1, m_2$ asks $f_1 + m_2 > N$ and $f_2 + m_1 > N$. A $\beta$ step, a spawn and a link change no counter (\cref{app:fu-obls}).
+  \item (stop) A value has its counters at least its credits. A closure has the counter of each captured end that is not idle at least its credit, and a box holds no end.
+  \item (step) Each step $\tm \xrightarrow{\ell} \tm'$ changes the held ends as its obligation in \cref{fig:term-rel} does, and $\tm'$ keeps its counters at each $\ixs < \ix$ as follows.
+  \item An action on $o$ asks $d \geq 1$ and a counter of at least $1$ on each other held end that is not idle. It lowers $d$ and those counters by one and resets the counter of $o$ to its tickets, or drops $o$ at a close.
+  \item A force asks $d \geq 1$ and a counter of at least $1$ on each held end that is not idle, and lowers $d$ and every counter by one.
+  \item A send passes on the ends of its payload, each with a counter of at least $1$, and lowers their counters by one. A creation starts its two ends at tickets $m_1$ and $m_2$ with $m_1 + m_2 \leq N$, each counter at its tickets. A link of two ends with counters $f_1, f_2$ and tickets $m_1, m_2$ asks $f_1 + m_2 > N$ and $f_2 + m_1 > N$. A $\beta$ step, a spawn and a link lower no counter.
 \end{itemize}
 \end{definition}
-% PAR: fuel obligations, force lowers every counter, act needs positive counters | example: ex-guard-neg | figure/rule: def:fuel | map: fu-obls
-% PAR: link in fuel, counters fall | example: ex-link | figure/rule: app:fu-obls | map: fu-obls
+% PAR: counter obligations, force lowers every counter, an action needs counters of at least one | example: ex-guard-neg | figure/rule: def:counters | map: fu-obls
+% PAR: link, the counters of the new dual ends fall | example: ex-link | figure/rule: app:fu-obls | map: fu-obls
 % PAR: received closures own their ends, exactness | example: ex-forwarder | figure/rule: app:fv | map: fv
 
-% PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: ex-cycle | figure/rule: def:lf-rel | map: soup
+% PAR: LF process relation = E at kappa_L plus the counters under one ownership map, the term relation extended with counters at cost bound infinity | example: ex-cycle | figure/rule: def:lf-rel | map: soup
 \begin{definition}[Lock-free process relation \rocq{SoupK}]
 \label{def:lf-rel}
 An annotated configuration is $a = (q, K, W_a)$ with
