@@ -142,9 +142,9 @@ $\mathsf{recv\_back}$ & $\displaystyle \mathsf{recv\_back} : \mathsf{Env} \to {\
 $\mathsf{recv\_env}$ & $\displaystyle \mathsf{recv\_env} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}}$ \\
 $\mathsf{recv\_ok}$ & $\displaystyle \mathsf{recv\_ok} : \mathsf{Env} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
 Q-Send & $\displaystyle \mathsf{q\_send} : \mathsf{End} \to {\mathsf{Val}} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
-${\senv}_{\color{cTm}e}$ joins the interface & $\displaystyle {\senv}_{\color{cTm}e} \in \mathsf{Env}$ \\
+${\senv}_e$ joins the interface & $\displaystyle {\senv}_e \in \mathsf{Env}$ \\
 $\mathsf{send\_split}$ & $\displaystyle \mathsf{send\_split} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
-Extruded ends ${\cTheta}_{\color{cTm}e}$ & $\displaystyle \mathrm{dom}\,{\cTheta}_{\color{cTm}e} = \{o' \in \mathsf{fends}({\color{cTm}w}) \mid \mathsf{ech}(o') \in C\}$ \\
+Extruded ends ${\cTheta}_e$ & $\displaystyle \mathrm{dom}\,{\cTheta}_e = \{o' \in \mathsf{fends}({\color{cTm}w}) \mid \mathsf{ech}(o') \in C\}$ \\
 Q-Tau & $\displaystyle \mathsf{q\_tau} : \mathsf{Event} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 T-Act-App & $\displaystyle \cdot \xrightarrow{\cdot} \cdot \subseteq \mathsf{Expr} \times \mathsf{TLabel} \times \mathsf{Expr}$ \\
 T-Act-Branch & $\displaystyle \cdot \xrightarrow{\cdot} \cdot \subseteq \mathsf{Expr} \times \mathsf{TLabel} \times \mathsf{Expr}$ \\
@@ -487,7 +487,7 @@ $\mathsf{unlimited}$ & $\displaystyle \mathsf{unlimited} : \mathsf{Ty} \to \math
 The points above ${\color{cTm}v}$, ${\vartriangle}{\color{cTm}v}$ & $\displaystyle u \prec {\vartriangle}{\color{cTm}v} \iff {\cGamma} \vdash_W u \preccurlyeq {\color{cTm}v}$ \\
 Order or equal $\preccurlyeq$ & $\displaystyle \cdot \preccurlyeq \cdot \subseteq \mathsf{Point} \times \mathsf{Point}$ \\
 $\mathsf{sty\_df}$ & $\displaystyle \mathsf{sty\_df} : \mathsf{STy} \to {\mathsf{STy}}$ \\
-Consistent joins & $\displaystyle \mathsf{cons}(W_1 \sqcup W_2) \iff \mathsf{cons}\,W_1 \land \mathsf{cons}\,W_2 \land \mathsf{cons}(W_1|_{\color{cTy}S} \sqcup W_2|_{\color{cTy}S})$ \\
+Consistent joins & $\displaystyle \mathsf{cons}(W_1 \sqcup W_2) \iff \mathsf{cons}\,W_1 \land \mathsf{cons}\,W_2 \land \mathsf{cons}(W_1|_S \sqcup W_2|_S)$ \\
 Consistent world $\mathsf{cons}$ & $\displaystyle \mathsf{cons} : \mathsf{World} \to \mathsf{Prop}$ \\
 Bases $A$ & $\displaystyle A \in \mathcal{P}_{\mathrm{fin}}(\mathsf{Base})$ \\
 Extension $\sqsubseteq$ & $\displaystyle \cdot \sqsubseteq \cdot \subseteq \mathsf{World}^{2}$ \\
@@ -500,7 +500,7 @@ $\prec_W$ & $\displaystyle W \vdash \cdot \prec \cdot \subseteq \mathsf{Point} \
 A consistent extension & $\displaystyle \mathsf{world\_wf}\,W \land \mathsf{cons}\,W \Rightarrow \exists W' \sqsupseteq W.\ \mathsf{cons}\,W'$ \\
 Program order $\mathsf{po}$ & $\displaystyle \mathsf{po} \subseteq \mathsf{Point} \times \mathsf{Point}$ \\
 Rank function $\varrho$ & $\displaystyle \varrho : \mathsf{Point} \to {\mathsf{Ord}}$ \\
-Restriction $W|_{\color{cTy}S}$ & $\displaystyle \cdot|_{\cdot} : \mathsf{World} \to \mathcal{P}(\mathbb{N}) \to {\mathsf{World}}$ \\
+Restriction $W|_S$ & $\displaystyle \cdot|_{\cdot} : \mathsf{World} \to \mathcal{P}(\mathbb{N}) \to {\mathsf{World}}$ \\
 Order judgment $W \vdash x \prec y$ & $\displaystyle W \vdash \cdot \prec \cdot \subseteq \mathsf{Point} \times \mathsf{Point}$ \\
 Strict world & $\displaystyle \mathsf{strict} : \mathsf{World} \to \mathsf{Prop}$ \\
 Tree $\mathsf{tree}(a)$ & $\displaystyle \mathsf{tree} : \mathsf{Base} \to \mathcal{P}(\mathsf{Point})$ \\

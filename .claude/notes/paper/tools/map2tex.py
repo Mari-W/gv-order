@@ -188,8 +188,8 @@ TERM_KW = {'let', 'in', 'new', 'spawn', 'send', 'recv', 'close', 'select', 'bran
 TYPE_KW = {'Close', 'Skip'}
 VERBATIM = re.compile(r'\\(text|textsf|textit|texttt|mathrm|mathit|mathcal|mathbb|operatorname|label|ref|begin|end)\s*\{')
 MATHSF = re.compile(r'\\mathsf\s*\{')
-TM_LETTER = re.compile(r'(?<![\\A-Za-z])([evw])(?![A-Za-z])')
-TY_LETTER = re.compile(r'(?<![\\A-Za-z])([TUS])(?![A-Za-z])(?!\^\{N)')
+TM_LETTER = re.compile(r"(?<![\\A-Za-z_^])(?<!_\{)(?<!\^\{)([evw])(?![A-Za-z])")
+TY_LETTER = re.compile(r"(?<![\\A-Za-z_^])(?<!_\{)(?<!\^\{)([TUS])(?![A-Za-z])(?!\^\{N)")
 SUBS = [
     (re.compile(r'\\Box\s*\(\s*\\forall'), r'\\tyBox(\\tyforall '),
     (re.compile(r'\\Box\s*\('), r'\\tyBox('),
