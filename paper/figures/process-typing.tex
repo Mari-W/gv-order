@@ -7,7 +7,7 @@
   \begin{rules}
     \infer*[lab=P-Term]
       {\tfree\,\ty \\ \pfree\,\senv \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\cTheta_B, C_0) \\\\
-       \lf{\forall o \in \mathrm{dom}\,\senv.\ \tk(o) \leq N} \\
+       \lf{\forall \eo{} \in \mathrm{dom}\,\senv.\ \tk(\eo{}) \leq N} \\
        \tyj{\varnothing}{\senv, \cTheta_B}{\varnothing}{t}{\ty}\eff{\varepsilon}}
       {\senv \vdash_{W}^{\lf{N}} (C_0, \{t\}) : \ty}
     \label{rule:P-Term}
@@ -15,7 +15,7 @@
     \infer*[lab=P-Connect]
       {\senv_1 \cup \senv_C \vdash_{W_1}^{\lf{N}} \proc_1 : \ty \\
        \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N}} \proc_2 : \tyunit \\\\
-       \lf{\forall o \in \mathrm{dom}\,\senv_C.\ \tk(o) + \tk(\dual{o}) \leq N} \\
+       \lf{\forall \eo{} \in \mathrm{dom}\,\senv_C.\ \tk(\eo{}) + \tk(\dual{\eo{}}) \leq N} \\
        \lfalt{\cons}{\ranked}(W_1 \wjoin W_2)}
       {\senv_1 \cup \senv_2 \vdash_{W_1 \wjoin W_2}^{\lf{N}} \proc_1 \cpar{\senv_C} \proc_2 : \ty}
     \label{rule:P-Connect}

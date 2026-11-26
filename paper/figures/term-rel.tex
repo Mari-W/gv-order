@@ -26,7 +26,7 @@
     \infer*[lab=O-Beta]{\tm'\ \mathsf{at}\ \cTheta}{\Obl^{W}_{\beta}(\tm')}
     \label{rule:O-Beta}
     \and
-    \infer*[lab=O-Close]{\cTheta(o) \doteq \Close_x \\ \tm'\ \mathsf{at}\ \cTheta \setminus o}{\Obl^{W}_{\tclose\,o}(\tm')}
+    \infer*[lab=O-Close]{\cTheta(\eo{}) \doteq \Close_x \\ \tm'\ \mathsf{at}\ \cTheta \setminus \eo{}}{\Obl^{W}_{\tclose\,\eo{}}(\tm')}
     \label{rule:O-Close}
     \and
     \infer*[lab=O-Spawn]
@@ -35,23 +35,23 @@
     \label{rule:O-Spawn}
     \and
     \infer*[lab=O-New]
-      {c^{\pm} \notin \mathrm{dom}\,\cTheta \\ \exists \sty, \pi, W' \sqsupseteq W.\ \ \tm'\ \mathsf{at}_{W'}\ \cTheta[c^{+} \mapsto \sty_{\pi},\ c^{-} \mapsto \dual{\sty}_{\dual{\pi}}]}
-      {\Obl^{W}_{\tnew\,c}(\tm')}
+      {\ch{}^{\pm} \notin \mathrm{dom}\,\cTheta \\ \exists \sty, \pi, W' \sqsupseteq W.\ \ \tm'\ \mathsf{at}_{W'}\ \cTheta[\ch{}^{+} \mapsto \sty_{\pi},\ \ch{}^{-} \mapsto \dual{\sty}_{\dual{\pi}}]}
+      {\Obl^{W}_{\tnew\,\ch}(\tm')}
     \label{rule:O-New}
     \and
     \infer*[lab=O-Send]
-      {\cTheta(o) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\ \cTheta \setminus o = \cTheta_M \uplus \cTheta_r \\\\
-       \valB \in \Vrel{W}{\ix}{\cTheta_M}{\payload{\tyB}{x}} \\ \tm'\ \mathsf{at}\ \cTheta_r[o \mapsto \sty_{\pplus{x}}]}
-      {\Obl^{W}_{\tsend\,o\,\valB}(\tm')}
+      {\cTheta(\eo{}) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\ \cTheta \setminus \eo{} = \cTheta_M \uplus \cTheta_r \\\\
+       \valB \in \Vrel{W}{\ix}{\cTheta_M}{\payload{\tyB}{x}} \\ \tm'\ \mathsf{at}\ \cTheta_r[\eo{} \mapsto \sty_{\pplus{x}}]}
+      {\Obl^{W}_{\tsend\,\eo{}\,\valB}(\tm')}
     \label{rule:O-Send}
     \and
     \infer*[lab=O-Recv]
-      {\cTheta(o) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
-       \cTheta' = \cTheta[o \mapsto \sty_{\pplus{x}}] \\\\
+      {\cTheta(\eo{}) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
+       \cTheta' = \cTheta[\eo{} \mapsto \sty_{\pplus{x}}] \\\\
        \forall \ixs < \ix.\ \forall \valB, \cTheta_{in}.\\\\
        \valB \in \Vrel{W}{\ixs}{\cTheta_{in}}{\payload{\tyB}{x}}
        \ \Rightarrow\ \tm' \in \Erel{W}{\ixs}{\cTheta' \cup \cTheta_{in}}{\ty}{F}}
-      {\Obl^{W}_{\trecv\,o\,\valB}(\tm')}
+      {\Obl^{W}_{\trecv\,\eo{}\,\valB}(\tm')}
     \label{rule:O-Recv}
   \end{rules}
   \judghead{Processes}{\proc \in \Prel{W}{\ix}{\senv}{\ty}}

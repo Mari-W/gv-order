@@ -6,16 +6,16 @@
   \judghead{Ends, constants, terms and values}{\tm}
   \[
   \begin{array}{@{}r@{\ \ }c@{\ \ }l@{\qquad}r@{}}
-    o & ::= & c^{+} \mid c^{-} & \text{ends, } \dual{c^{\pm}} = c^{\mp}\\[2pt]
-    k & ::= & \tsend \mid \trecv \mid \tclose \mid \tselect_i \mid \tbranch \mid \tlink \mid \tspawn \mid \tforce & \text{constants}\\[2pt]
-    \tm & ::= & a \mid \tunit \mid o \mid \tlam{a}{\tm} \mid \tm_1\,\tm_2 \mid \tpair{\tm_1}{\tm_2}
-              \mid \tletu{\tm_1}{\tm_2} \mid \tletp{a}{b}{\tm_1}{\tm_2} & \text{terms}\\
-      & \mid & \tinj_i\,\tm \mid \tcasee{\tm}{a}{\tm_1}{a}{\tm_2} \mid \tbox{f}{\tm} \mid \tnew \mid k\,\tm & \\[2pt]
-    \val & ::= & \tunit \mid o \mid \tlam{a}{\tm} \mid \tbox{f}{\tm} \mid \tpair{\val_1}{\val_2} \mid \tinj_i\,\val & \text{values}\\[2pt]
+    \eo{} & ::= & \ch{}^{+} \mid \ch{}^{-} & \text{ends, } \dual{\ch{}^{\pm}} = \ch{}^{\mp}\\[2pt]
+    \cst{} & ::= & \tsend \mid \trecv \mid \tclose \mid \tselect_i \mid \tbranch \mid \tlink \mid \tspawn \mid \tforce & \text{constants}\\[2pt]
+    \tm & ::= & \vr{} \mid \tunit \mid \eo{} \mid \tlam{\vr{}}{\tm} \mid \tm_1\,\tm_2 \mid \tpair{\tm_1}{\tm_2}
+              \mid \tletu{\tm_1}{\tm_2} \mid \tletp{\vr{}}{\vrB{}}{\tm_1}{\tm_2} & \text{terms}\\
+      & \mid & \tinj_i\,\tm \mid \tcasee{\tm}{\vr{}}{\tm_1}{\vr{}}{\tm_2} \mid \tbox{\tmB{}}{\tm} \mid \tnew \mid \cst{}\,\tm & \\[2pt]
+    \val & ::= & \tunit \mid \eo{} \mid \tlam{\vr{}}{\tm} \mid \tbox{\tmB{}}{\tm} \mid \tpair{\val_1}{\val_2} \mid \tinj_i\,\val & \text{values}\\[2pt]
     \proc & ::= & (C, E) & \text{processes}
   \end{array}
   \]
-  \[ \tletv{a}{\tm_1}{\tm_2} \;\triangleq\; \tletp{a}{u}{\tpair{\tm_1}{\tunit}}{\tletu{u}{\tm_2}} \qquad (u \text{ fresh}) \]
+  \[ \tletv{\vr{}}{\tm_1}{\tm_2} \;\triangleq\; \tletp{\vr{}}{\valB{}}{\tpair{\tm_1}{\tunit}}{\tletu{\valB{}}{\tm_2}} \qquad (\valB{} \text{ fresh}) \]
   \figrule
   \Description{Grammar of ends, constants, terms, values and processes.}
   \caption{Syntax of \OurLang. A process is a set $C$ of restricted channels and a multiset $E$ of threads. Term steps $e \xrightarrow{\ell} e'$ and process steps $p \to p'$ are standard (\cref{app:sem-head,app:sem-proc}).}

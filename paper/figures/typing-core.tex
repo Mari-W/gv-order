@@ -13,8 +13,8 @@
     \and
     \infer*[lab=E-Case]
       {\tyj{\cGamma}{\lenv_1}{F \held \lenv_2}{\tm}{\ty_1 \tyoplus \ty_2}\eff{\varepsilon_0} \\
-       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_0}, a : \ty_i}{F}{\tm_i}{\ty}\eff{\varepsilon_i}\ \ (i \in \{1, 2\})}
-      {\tyj{\cGamma}{\lenv_1, \lenv_2}{F}{\tcasee{\tm}{a}{\tm_1}{a}{\tm_2}}{\ty}\eff{\varepsilon_0 + \max(\varepsilon_1, \varepsilon_2)}}
+       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_0}, \vr{} : \ty_i}{F}{\tm_i}{\ty}\eff{\varepsilon_i}\ \ (i \in \{1, 2\})}
+      {\tyj{\cGamma}{\lenv_1, \lenv_2}{F}{\tcasee{\tm}{\vr{}}{\tm_1}{\vr{}}{\tm_2}}{\ty}\eff{\varepsilon_0 + \max(\varepsilon_1, \varepsilon_2)}}
     \label{rule:E-Case}
   \end{rules}
   \begin{rules}
