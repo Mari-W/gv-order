@@ -1,0 +1,10 @@
+% Generated from map example ex-flag (Self-computed flag). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w
+thread  = case not (inj₂ ∗) of
+            inl w ⇒ let ∗ = w in let ∗ = close c in close d      -- runs
+          | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs
+other   = let ∗ = close  in close 
+-- the process ({c, d}, {thread, other}), c at x, d at y
+\end{maplisting}

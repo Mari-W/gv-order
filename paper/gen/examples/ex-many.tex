@@ -1,0 +1,12 @@
+% Generated from map example ex-many (A channel that acts several times). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+many = !(f = λp. let ⟨c, e⟩ = p in
+                 let ⟨d, d′⟩ = new in         -- d at δ
+                 let ∗ = spawn (λu. let ∗ = u in
+                      let ⟨v, d′⟩ = recv d′ in let ∗ = v in
+                      let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in
+                 let ∗ = close c in
+                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)
+-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0
+\end{maplisting}

@@ -1,0 +1,7 @@
+% Generated from map example ex-forwarder (The spawn forwarder). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w
+o : ?((∗ ⊸ ∗)^2).Close
+dead_thunk q = λ_. let ∗ = Ω in close q
+\end{maplisting}

@@ -1,0 +1,11 @@
+% Generated from map example ex-copycat (Copycat, a forwarder at independent points). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+-- o₁ : S_x, o₂ : _y, S = ?∗.!∗.Close
+fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in
+            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in
+            let ∗ = close o₁ in close o₂
+ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels
+P ∥ Q              -- cut on a, Q holds a⁺ at x
+P ∥ fwd(a⁺, b⁻) ∥ Q′ -- Q′ = Q with b for a and the constant of y for that of x
+\end{maplisting}

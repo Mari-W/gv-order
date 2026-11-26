@@ -1,0 +1,7 @@
+% Generated from map example ex-guard-neg (Loops that hold no end). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+div_box     = !(f = force f)                         -- loops on forces
+pn_fix      = !(f = λx. (force f) x)                  -- fix λx.x
+cx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning
+\end{maplisting}

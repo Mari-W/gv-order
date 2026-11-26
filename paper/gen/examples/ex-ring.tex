@@ -1,0 +1,14 @@
+% Generated from map example ex-ring (The growing ring). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+Sch  = µα. ?(κ. α_κ).Close
+ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ ch_ι₂ ⊸^{ι₁+1} ∗))
+ring = !(f = λp. let ⟨x, y⟩ = p in
+           let ⟨a, a′⟩ = new in                -- a at ι₂·0
+           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in
+           let ⟨b, b′⟩ = new in                -- b at ι₁·1
+           let ⟨z, x⟩ = recv x in let ∗ = close x in
+           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in
+           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))
+main = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩
+\end{maplisting}

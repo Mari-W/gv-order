@@ -1,0 +1,13 @@
+% Generated from map example ex-factory (The factory). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in
+                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)
+mk₁  = !(f = λp. let ⟨c, c′⟩ = new in
+                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
+main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
+       let ∗ = recvclose p in recvclose q
+-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}
+-- mk₁ places c at ι·0 for p at ι
+-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)
+\end{maplisting}

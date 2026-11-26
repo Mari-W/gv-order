@@ -1,0 +1,11 @@
+% Generated from map example rx-chain (A waiting chain that grows forever). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w
+                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in
+                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action
+                 let ∗ = spawn (λ_. (force f) c′) in
+                 let ∗ = close c in close w)                 -- waits on its child
+main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
+-- every thread waits on the one it spawned, close w′ never proceeds
+\end{maplisting}

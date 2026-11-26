@@ -1,0 +1,8 @@
+% Generated from map example ex-branch-ext (One world per arm). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+thread = case branch e of
+           inl w ⇒ let ∗ = close w in let ∗ = close c in close d
+         | inr w ⇒ let ∗ = close w in let ∗ = close d in close c
+-- e at z, c at x, d at y
+\end{maplisting}

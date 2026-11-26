@@ -1,0 +1,8 @@
+% Generated from map example ex-tree (A tree of three threads). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+mid = case not (inj₂ ∗) of inl w ⇒ close c; close d | inr w ⇒ close d; close c
+a   = close                     -- leaf on c
+b   = close                     -- leaf on d
+-- the process ({c, d}, {mid, a, b}), channel graph a - mid - b
+\end{maplisting}

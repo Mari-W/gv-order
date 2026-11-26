@@ -1,0 +1,8 @@
+% Generated from map example ex-cycle (Cycle). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+cycle = let ⟨c, c′⟩ = new in          -- c at ρ
+        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}
+        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in
+        let ∗ = close c in close d
+\end{maplisting}

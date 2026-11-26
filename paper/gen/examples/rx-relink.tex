@@ -1,0 +1,13 @@
+% Generated from map example rx-relink (Link refresh, a waiting thread that always faces a fresh end). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in
+                     let ∗ = link ⟨w, c⟩ in          -- the waiting end now faces c′
+                     let k = send ⟨∗, k⟩ in           -- one step on another channel
+                     (force f) ⟨c′, k⟩)
+sink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)
+main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
+       let ∗ = spawn (λ_. close w′) in              -- waits forever
+       let ∗ = spawn (λ_. (force sink) k′) in
+       (force refresh) ⟨w, k⟩
+\end{maplisting}

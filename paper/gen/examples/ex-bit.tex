@@ -1,0 +1,12 @@
+% Generated from map example ex-bit (The bit program). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+main = let ⟨e, e′⟩ = new in          -- e at ρ, with the six facts below
+       let ⟨c, c′⟩ = new in          -- at the field ρ·0
+       let ⟨d, d′⟩ = new in          -- at the field ρ·1
+       let ∗ = spawn (λu. close (send ⟨inj₁ ∗, e′⟩)) in
+       let ∗ = spawn (λu. close c′) in let ∗ = spawn (λu. close d′) in
+       let ⟨v, e⟩ = recv e in let ∗ = close e in
+       case v of inl w ⇒ let ∗ = w in let ∗ = close c in close d
+               | inr w ⇒ let ∗ = w in let ∗ = close d in close c
+\end{maplisting}

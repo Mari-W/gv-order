@@ -1,0 +1,101 @@
+\PassOptionsToPackage{inline,shortlabels}{enumitem}
+\PassOptionsToPackage{dvipsnames,rgb}{xcolor}
+
+\documentclass[acmsmall,screen,review,anonymous]{acmart}
+
+\let\Bbbk\relax
+
+\acmJournal{PACMPL}
+\acmYear{2027}
+\acmVolume{1}
+\acmNumber{OOPSLA}
+\acmArticle{1}
+\acmMonth{4}
+\setcopyright{none}
+
+\RequirePackage{enumitem}
+\RequirePackage{subcaption}
+
+\input{preamble}
+\input{mapmacros}
+\input{gen/defs}
+
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\crefname{rule}{rule}{rules}
+\Crefname{rule}{Rule}{Rules}
+
+\AddToHook{env/theorem/begin}{\crefalias{theorem}{theorem}}
+\AddToHook{env/lemma/begin}{\crefalias{theorem}{lemma}}
+\AddToHook{env/definition/begin}{\crefalias{theorem}{definition}}
+\AddToHook{env/example/begin}{\crefalias{theorem}{example}}
+
+\RequirePackage{rocqrefs}
+\input{rocqrefs}
+
+\usepackage[comments]{comments}
+
+\def\OurLang{\texorpdfstring{GV\ensuremath{^{\prec}}}{GV-prec}\xspace}
+
+\begin{document}
+
+% GAP: title, the author's choice
+\title{\OurLang}
+
+\author{Marius Weidner}
+\orcid{0009-0008-1152-165X}
+\affiliation{%
+  \institution{University of Freiburg}
+  \country{Germany}
+}
+\email{weidner@cs.uni-freiburg.de}
+
+\author{Emanuele D'Osualdo}
+\orcid{0000-0002-9179-5827}
+\affiliation{%
+  \institution{University of Konstanz}
+  \country{Germany}
+}
+\email{emanuele.dosualdo@uni-konstanz.de}
+
+\author{Peter Thiemann}
+\orcid{0000-0002-9000-1239}
+\affiliation{%
+  \institution{University of Freiburg}
+  \country{Germany}
+}
+\email{thiemann@cs.uni-freiburg.de}
+
+\begin{abstract}
+  % PAR: abstract | example: ex-flag | figure/rule: - | map: th-compose, th-adeq, th-sound
+\end{abstract}
+
+\ccsdesc[500]{Theory of computation~Type theory}
+\ccsdesc[500]{Theory of computation~Program semantics}
+\ccsdesc[300]{Theory of computation~Process calculi}
+\ccsdesc[300]{Software and its engineering~Concurrent programming languages}
+\keywords{session types, deadlock freedom, lock freedom, logical relations, concurrency}
+
+\maketitle
+
+\input{1-intro}
+\input{2-language}
+\input{3-typing}
+\input{4-relation}
+\input{5-lock-freedom}
+\input{6-algorithmic}
+\input{7-mechanization}
+\input{8-related-work}
+\input{9-conclusion}
+
+\section*{Data-Availability Statement}
+% PAR: artifact, Rocq development, anonymous mirror | example: - | figure/rule: - | map: -
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main.bib}
+
+\clearpage
+\appendix
+\input{10-appendix}
+
+\end{document}

@@ -1,0 +1,11 @@
+% Generated from map example ex-between (A channel between two box arguments). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+between : □(∀ι κ. C. ∗ ⊸ Close_ι ⊗ Close_κ ⊸^κ ∗)
+between = !(f = λp. let ⟨c, e⟩ = p in
+                    let ⟨d, d′⟩ = new in        -- d at ι·0
+                    let ∗ = spawn (λu. let ∗ = u in close d′) in
+                    let ∗ = close c in let ∗ = close d in close e)
+-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0
+main: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)
+\end{maplisting}

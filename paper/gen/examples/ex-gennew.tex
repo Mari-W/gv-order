@@ -1,0 +1,13 @@
+% Generated from map example ex-gennew (Creations with exits). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+-- a at ρ with the facts ρ·0 ≺ ρ·2 ≺ , ρ·1 ≺ ρ·3 ≺  and ρ·0 ≺ (ρ·1)‾
+te = let ⟨a, a′⟩ = new in
+     let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0
+     let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1
+     let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in
+     let ∗ = spawn (λu. close a′) in
+     let ⟨d, d′⟩ = new in     -- d at π, C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ }
+     let ∗ = spawn (λu. let ∗ = close e₁ in let ∗ = close e₂ in close d′) in
+     let ∗ = close d in close a
+\end{maplisting}

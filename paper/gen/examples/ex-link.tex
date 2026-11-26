@@ -1,0 +1,9 @@
+% Generated from map example ex-link (A link at full tickets, closed over its interface). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0
+⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0
+link ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at , both at credit N
+
+link ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺   -- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)
+\end{maplisting}

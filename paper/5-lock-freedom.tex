@@ -1,0 +1,129 @@
+\section{Lock Freedom}
+\label{sec:lock-freedom}
+
+% PAR: section overview, the coloured parts of the earlier figures, no new rules | example: - | figure/rule: fig:typing-core, fig:term-rel | map: ty-ann
+% Option A of PLAN.md. This section explains the colour of fig:props,
+% fig:worlds, fig:types, fig:judgment, fig:typing-core, fig:typing-orders,
+% fig:process-typing, fig:value-rel, fig:term-rel, fig:proc-rel and of
+% the theorems of sec:compose and sec:fundamental. Figures that exist only
+% here are the lock-free blocks of the map.
+
+\subsection{Orders Say on Whom, Counters Say How Long}
+\label{sec:lf-why}
+
+% PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: fig:props | map: sem-props
+% PAR: order alone gives only deadlock freedom, a server postpones one end forever | example: rx-postpone | figure/rule: fig:props | map: sem-props, t-agecap
+% PAR: counters alone do not exclude cyclic waits | example: ex-cycle | figure/rule: fig:props | map: t-lf-counters
+% GAP: no map example for "counters alone admit a cyclic wait"
+% PAR: neither alone suffices, both in one judgment | example: - | figure/rule: fig:lf-counters | map: t-lf-counters, fu-vs
+
+\begin{example}[Postponement \rocq{rx_postpone_rejected}]
+\label{ex:postpone}
+\input{gen/examples/rx-postpone}
+% PAR: deadlock free, not lock free, aging rejects | example: rx-postpone | figure/rule: fig:aging | map: t-agecap
+\end{example}
+
+\subsection{Annotations: Bound, Credits, Tickets, Costs}
+\label{sec:lf-annotations}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{ty-ann}}
+  \mapfittext{\maptable{t-lf-counters}}
+  \caption{Counters, credits and tickets}
+  \label{fig:lf-counters}
+  % FIG: map ty-ann, t-lf-counters | LF-only, explained in sec:lf-annotations
+\end{figure}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{t-agecap}}
+  \caption{Aging}
+  \label{fig:aging}
+  % FIG: map t-agecap | LF-only, explained in sec:lf-annotations
+\end{figure}
+
+% PAR: LF typing = DF typing + annotations, bound N, credit a, tickets m, cost | example: - | figure/rule: fig:types, fig:judgment | map: ty-grammar, t-judgment, ty-ann
+% PAR: counter of an end between credit and tickets | example: - | figure/rule: fig:lf-counters | map: t-lf-counters
+% PAR: aging, what is held while e runs loses c, idle ends lose credit without check | example: ex-controller | figure/rule: fig:aging | map: t-agecap
+% PAR: coloured parts of E-App, E-Pair, E-Case, sequencing of effects | example: - | figure/rule: fig:typing-core | map: r-fun, r-data
+% PAR: actions refill to m, cost one | example: - | figure/rule: E-Send, E-Recv | map: r-act
+% PAR: payload credit, a sent end loses one | example: rx-delegate | figure/rule: E-Send | map: r-act
+% PAR: link tickets, a1 + m2 > N | example: rx-relink | figure/rule: E-Link | map: r-act
+% PAR: creation splits the tickets, m1 + m2 <= N | example: ex-link | figure/rule: E-New | map: r-new
+% PAR: loops charged one force, loops that hold an end | example: ex-guard-neg, ex-guard-pos | figure/rule: E-Force, fig:aging | map: r-boxes, t-agecap
+% PAR: process typing at N and eta | example: - | figure/rule: fig:process-typing | map: p-typing
+% PAR: erasure gives DF typing, conservativity | example: - | figure/rule: thm:conserv | map: th-conserv
+
+\begin{theorem}[Conservativity \rocq{conservative}]
+\label{thm:conserv}
+\[ \mapblock{th-conserv} \]
+\end{theorem}
+
+\begin{example}[Endless delegation \rocq{rx_delegate_rejected}]
+\label{ex:delegate}
+\input{gen/examples/rx-delegate}
+% PAR: payload premise of E-Send rejects | example: rx-delegate | figure/rule: E-Send | map: r-act
+\end{example}
+
+% Listing in the appendix (app:rx-relink), cut from the body for space.
+% PAR: tickets premise of E-Link rejects | example: rx-relink | figure/rule: app:rx-relink, E-Link | map: r-act
+
+% Listing in the appendix (app:ex-controller), cut from the body for space.
+% PAR: idle end held across an unbounded loop, credit truncated | example: ex-controller | figure/rule: app:ex-controller, Age-Idle | map: t-agecap
+
+\subsection{Ranked Worlds}
+\label{sec:lf-ranked}
+
+\begin{figure}[tp]
+  \centering
+  \mapfittext{\maptable{t-lf-wf}}
+  \caption{Ranked worlds}
+  \label{fig:ranked}
+  % FIG: map t-lf-wf | LF-only, explained in sec:lf-ranked
+\end{figure}
+
+% PAR: consistent worlds become ranked worlds, ordinal ranks, well-founded | example: - | figure/rule: fig:worlds, fig:ranked | map: w-world, w-wf, t-lf-wf
+% PAR: they differ only on infinite worlds | example: ex-forkjoin | figure/rule: fig:worlds | map: w-wf
+% PAR: new_ok_N, the new tree rankable | example: ex-gennew | figure/rule: E-New | map: r-new
+% PAR: recursive fork-join, infinite descending chain, typable in DF, no LF typing | example: ex-forkjoin | figure/rule: ex:forkjoin | map: r-new, t-lemmas
+% PAR: a waiting chain that grows forever | example: rx-chain | figure/rule: E-New | map: r-new
+
+% Listing in the appendix (app:rx-chain), cut from the body for space.
+% PAR: ranks admit no infinite descent, rejected at a finite bound | example: rx-chain | figure/rule: app:rx-chain, fig:ranked | map: t-lf-wf
+
+\subsection{The Lock-Free Relation}
+\label{sec:lf-relation}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{fu}}
+  \maprow{\maprule{F-Force}}
+  \maprow{\maprule{F-Send}}
+  \caption{Fuel and selected obligations (all in \cref{app:semantic})}
+  \label{fig:fuel}
+  % FIG: map fu, fu-obls rules F-Force, F-Send (F-Link, fv in the appendix) | LF-only, explained in sec:lf-relation
+\end{figure}
+
+\begin{figure}[tp]
+  \centering
+  \mapfittext{\maptable{soup}}
+  \caption{The lock-free process relation}
+  \label{fig:soup}
+  % FIG: map soup | LF-only, explained in sec:lf-relation
+\end{figure}
+
+% PAR: cost table kappa_L, the same E | example: - | figure/rule: fig:term-rel | map: ct-costs, e-rel
+% PAR: fuel the only new relation, counters, tickets, no world, no readiness | example: - | figure/rule: fig:fuel | map: fu, fu-vs
+% PAR: fuel obligations, force lowers every counter, act needs positive counters | example: ex-guard-neg | figure/rule: F-Force, F-Send | map: fu-obls
+% PAR: link in fuel, counters fall | example: ex-link | figure/rule: app:fu-obls | map: fu-obls
+% PAR: received closures own their ends, exactness | example: ex-forwarder | figure/rule: app:fv | map: fv
+% PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: - | figure/rule: fig:soup | map: soup
+% PAR: lock-free judgment over ranked extensions | example: - | figure/rule: fig:proc-rel | map: sj-all
+% PAR: lock-free composition of two components at own worlds | example: ex-cs-split | figure/rule: thm:compose | map: th-compose, w-ext
+% PAR: coloured lines of thm:fundamental-terms, thm:fundamental-proc, thm:adequacy, thm:soundness | example: ex-cs | figure/rule: sec:fundamental | map: th-terms, th-fund-proc, th-adeq, th-sound
+% PAR: adequacy measure, rank of the awaited point plus counter | example: - | figure/rule: fig:ranked | map: t-lf-wf, th-adeq
+% PAR: classical assumptions, excluded middle and functional choice for the lock-free theorems only | example: ex-ring | figure/rule: thm:adequacy | map: sr-ord, th-sound
+
+% Listing in the appendix (app:ex-cs-split), cut from the body for space.
+% PAR: worlds of their own, join well-founded, lock-free composition | example: ex-cs-split | figure/rule: app:ex-cs-split, thm:compose | map: th-compose

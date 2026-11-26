@@ -1,0 +1,14 @@
+% Generated from map example ex-cs (Client and server cycle). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+main = let ⟨a, a′⟩ = new in                    -- a at ρ
+       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)
+       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in
+       (force cli) ⟨a, b⟩
+cli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in
+                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)
+srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in
+                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
+-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S_ι ⊗ S′_κ ⊸^ζ ∗)
+-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}
+\end{maplisting}

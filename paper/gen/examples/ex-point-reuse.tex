@@ -1,0 +1,9 @@
+% Generated from map example ex-point-reuse (Two exchanges at one point). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+round i k = let (a, ā) = new in
+            let ∗ = spawn (λu. let ∗ = u in close (select i ā)) in
+            let ∗ = case branch a of inl c ⇒ close c | inr c ⇒ close c in k
+thread = round l (round r ∗)
+-- both creations at the field x·0, x the point of the constant 0
+\end{maplisting}

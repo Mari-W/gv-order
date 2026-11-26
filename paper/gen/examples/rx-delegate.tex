@@ -1,0 +1,12 @@
+% Generated from map example rx-delegate (Endless delegation, an end that travels forever). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in
+               (force f) ⟨e, x, y⟩)
+back = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in
+               (force f) ⟨x, y⟩)
+main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in
+       let ∗ = spawn (λ_. close e′) in       -- waits for e forever
+       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in
+       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever
+\end{maplisting}

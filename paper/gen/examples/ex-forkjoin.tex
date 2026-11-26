@@ -1,0 +1,10 @@
+% Generated from map example ex-forkjoin (Recursive fork-join with replies). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+main = let ⟨w, w′⟩ = new in                      -- w at ρ, facts H at 
+       let ∗ = spawn (λu. (force wk) w′) in close w
+wk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new in   -- at ι·0 and ι·1
+             let ∗ = spawn (λu. (force f) c₁′) in
+             let ∗ = spawn (λu. (force f) c₂′) in
+             let ∗ = close c₁ in let ∗ = close c₂ in close w)    -- reply after both
+\end{maplisting}

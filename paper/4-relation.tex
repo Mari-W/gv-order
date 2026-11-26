@@ -1,0 +1,138 @@
+\section{A Logical Relation for Deadlock Freedom}
+\label{sec:relation}
+
+% PAR: section overview, semantic typing of untyped terms and processes, rules as lemmas | example: ex-flag | figure/rule: app:sr-reading | map: sr-reading
+% PAR: standard step-indexed machinery, pointer, ordinal indices, transfinite because of receives | example: - | figure/rule: app:semantic | map: sr-ord
+
+% Cut for space, the table sr-reading is in the appendix (app:sr-reading).
+
+\subsection{Values}
+\label{sec:value-rel}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\maprule{V-Sess}}
+  \maprow{\maprule{V-Arrow}}
+  \maprow{\maprule{V-Box}}
+  \caption{Selected rules of the value relation (all rules in \cref{app:semantic})}
+  \label{fig:value-rel}
+  % FIG: map v-rel rules V-Sess, V-Arrow, V-Box (V-Ex in the appendix) | DF explained in sec:value-rel | LF parts (index step kappa_beta) explained in sec:lf-relation
+\end{figure}
+
+% PAR: exact ownership, a value owns exactly the ends Theta | example: ex-close | figure/rule: V-Sess | map: v-rel
+% PAR: V-Arrow, each extension of the world, future F above u | example: - | figure/rule: V-Arrow | map: v-rel
+% PAR: V-Box, every instance of the constraint at every extension | example: ex-cs | figure/rule: V-Box | map: v-rel
+% PAR: V-Ex, witness points in the world | example: ex-factory | figure/rule: app:v-rel | map: v-rel
+
+\subsection{Terms and Readiness}
+\label{sec:term-rel}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{e-rel}}
+  \maprow{\mapblock{rd}}
+  \maprow{\mapblock{ct-costs}}
+  \maprow{\maprule{O-New}}
+  \maprow{\maprule{O-Send}}
+  \caption{The term relation, readiness, step costs and selected obligations}
+  \label{fig:term-rel}
+  % FIG: map e-rel, rd, ct-costs, e-obl rules O-New, O-Send (O-Recv in the appendix) | DF explained in sec:term-rel and sec:proc-rel (process readiness) | LF parts (cost table kappa_L, index arithmetic) explained in sec:lf-relation
+\end{figure}
+
+% PAR: term relation, stop, ready, step, least fixpoint, each extension of the world | example: ex-flag | figure/rule: fig:term-rel | map: e-rel
+% PAR: readiness, a stuck term offers only ends whose points lie below the dual points of the rest and F | example: ex-cycle | figure/rule: fig:term-rel | map: rd
+% PAR: obligations per label, O-New grows the world, O-Send splits ownership, O-Recv | example: ex-cycle | figure/rule: O-New, O-Send | map: e-obl
+% PAR: step costs, free steps keep the index | example: - | figure/rule: fig:term-rel | map: ct-costs
+% PAR: bind lemma, evaluation frames, future F extended by the held rest | example: - | figure/rule: lem:bind | map: e-bind
+
+\begin{lemma}[Bind \rocq{Erel_bind}]
+\label{lem:bind}
+\[ \mapblock{e-bind} \]
+\end{lemma}
+
+\subsection{Processes}
+\label{sec:proc-rel}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{p-rel}}
+  \maprow{\mapblock{sj-all}}
+  \caption{The process relation and the semantic judgments}
+  \label{fig:proc-rel}
+  % FIG: map p-rel, sj-all | DF explained in sec:proc-rel | LF parts (strict worlds, lock-free judgment) explained in sec:lf-relation
+\end{figure}
+
+% PAR: process relation, stop with a terminated process, ready, step per event | example: ex-close | figure/rule: fig:proc-rel | map: p-rel
+% PAR: process readiness, some offered point below each other dual point | example: ex-cycle | figure/rule: fig:term-rel | map: rd
+% PAR: process obligations, send and receive across the cut, pointer to appendix | example: - | figure/rule: app:semantic | map: p-obls
+% PAR: semantic judgments for terms and processes, consistent extensions | example: - | figure/rule: fig:proc-rel | map: sj-all
+
+\subsection{Compositionality}
+\label{sec:compose}
+
+\begin{theorem}[Semantic P-Term and P-Connect \rocq{sem_p_term} \rocq{sem_p_connect}]
+\label{thm:compose}
+\[ \mapblock{th-compose} \]
+\end{theorem}
+
+% PAR: semantic P-Term, a thread in E with an interface | example: ex-flag | figure/rule: thm:compose | map: th-compose
+% PAR: semantic P-Connect, components at their own worlds, joined world | example: ex-flag | figure/rule: thm:compose, fig:composition-example | map: th-compose, w-ext
+% PAR: the flag thread in E at every index without a typing derivation, three beta steps, live arm | example: ex-flag | figure/rule: ex:flag | map: e-rel, th-terms
+% PAR: composition of the flag thread and its partner, adequacy | example: ex-flag | figure/rule: thm:adequacy | map: th-compose, th-adeq
+% PAR: a tree of three threads | example: ex-tree | figure/rule: thm:compose | map: th-compose
+% PAR: limit, a whole-process proof where per-thread proofs fail | example: ex-flagpair | figure/rule: fig:proc-rel | map: p-rel, e-rel
+
+% Optional figure, see PLAN.md. Facts from the meaning of ex-flag.
+\begin{figure}[tp]
+  \centering
+  \begin{tikzpicture}[
+      comp/.style={draw, rounded corners, minimum width=3.2cm, minimum height=2.4cm},
+      endpt/.style={font=\small},
+      fact/.style={-{Stealth}, thick, blue!60!black},
+      dead/.style={-{Stealth}, thick, dashed, red!70!black},
+      cut/.style={densely dotted}]
+    \node[comp, label=above:{\small thread, world $W_1$}] (t) at (0,0) {};
+    \node[comp, label=above:{\small other, world $W_2$}] (o) at (5,0) {};
+    \node[endpt] (c)  at (0,0.6)  {$c : x$};
+    \node[endpt] (d)  at (0,-0.6) {$d : y$};
+    \node[endpt] (cb) at (5,0.6)  {$\overline{c} : \overline{x}$};
+    \node[endpt] (db) at (5,-0.6) {$\overline{d} : \overline{y}$};
+    \draw[cut] (c) -- node[above, font=\scriptsize] {cut} (cb);
+    \draw[cut] (d) -- (db);
+    \draw[fact] (c.south east) to[bend left=10] node[pos=0.3, above, font=\scriptsize] {$x \prec \overline{y}$} (db.north west);
+    \draw[fact] (cb.south west) to[bend right=10] node[pos=0.3, above, font=\scriptsize] {$\overline{x} \prec y$} (d.north east);
+    \draw[dead] (d.south east) to[bend right=25] node[below, font=\scriptsize] {$y \prec \overline{x}$ (arm that never runs)} (cb.south);
+  \end{tikzpicture}
+  \caption{Composition by P-Connect, the joined world $W_1 \sqcup W_2$}
+  \label{fig:composition-example}
+  % FIG: example ex-flag | explained in sec:compose and sec:proc-typing | LF parts none | optional
+\end{figure}
+
+\subsection{Fundamental Theorems and Adequacy}
+\label{sec:fundamental}
+
+\begin{theorem}[Fundamental theorem for terms \rocq{fundamental}]
+\label{thm:fundamental-terms}
+\[ \mapblock{th-terms} \]
+\end{theorem}
+
+\begin{theorem}[Fundamental theorem for processes \rocq{fundamental_proc}]
+\label{thm:fundamental-proc}
+\[ \mapblock{th-fund-proc} \]
+\end{theorem}
+
+\begin{theorem}[Adequacy \rocq{adequacy}]
+\label{thm:adequacy}
+\[ \mapblock{th-adeq} \]
+\end{theorem}
+
+\begin{theorem}[Soundness \rocq{soundness}]
+\label{thm:soundness}
+\[ \mapblock{th-sound} \]
+\end{theorem}
+
+% PAR: fundamental theorem for terms, every typing rule a compatibility lemma | example: - | figure/rule: thm:fundamental-terms | map: th-terms
+% PAR: fundamental theorem for processes, P-Term and P-Connect by thm:compose | example: ex-close | figure/rule: thm:fundamental-proc | map: th-fund-proc
+% PAR: adequacy, consistent world, deadlock freedom | example: ex-flag | figure/rule: thm:adequacy | map: th-adeq
+% PAR: soundness of the type system as a corollary | example: ex-cycle | figure/rule: thm:soundness | map: th-sound
+% PAR: a ring that grows forever, soundness over an infinite consistent world | example: ex-ring | figure/rule: thm:soundness | map: th-terms

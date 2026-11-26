@@ -1,0 +1,12 @@
+% Generated from map example ex-controller (The controller). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0
+       let ⟨c, c′⟩ = new in                              -- c at ρ·2
+       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in
+       (force cli) ⟨⟨a, b⟩, c⟩
+cli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in
+                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in
+                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)
+-- c sits at Skip on each side, an idle end
+\end{maplisting}

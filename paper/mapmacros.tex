@@ -1,0 +1,63 @@
+% Macros for the TeX that paper/tools/map2tex.py takes from the proof map.
+% The page renderer tools/proof-map/page/index.html defines only
+% \llbracket and \rrbracket beyond MathJax; stmaryrd gives both here.
+
+\RequirePackage{amssymb}
+\RequirePackage{stmaryrd}
+\RequirePackage{adjustbox}
+\RequirePackage{fancyvrb}
+\RequirePackage{newunicodechar}
+\RequirePackage{longtable}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+
+% Lock-free additions (\inmode{lf} in the map), the colour of the map's LF mode.
+\definecolor{lfcolor}{HTML}{7B4D8F}
+\newcommand{\lfadd}[1]{{\color{lfcolor}#1}}
+% A deadlock-free part that the lock-free instance replaces.
+\newcommand{\lfalt}[2]{#1\,{\color{lfcolor}/\,#2}}
+
+% Generated definitions, one per block, rule and table.
+\makeatletter
+\newcommand{\map@get}[2]{%
+  \ifcsname map@#1@#2\endcsname
+    \csname map@#1@#2\endcsname
+  \else
+    \PackageError{mapmacros}{No map #1 `#2'. Rerun paper/tools/map2tex.py}{}%
+  \fi}
+\newcommand{\mapblock}[1]{\map@get{block}{#1}}
+\newcommand{\mapblockdf}[1]{\map@get{blockdf}{#1}}
+\newcommand{\mapblocklf}[1]{\map@get{blocklf}{#1}}
+\newcommand{\maprule}[1]{\map@get{rule}{#1}}
+\newcommand{\mapruledf}[1]{\map@get{ruledf}{#1}}
+\newcommand{\maptable}[1]{\map@get{table}{#1}}
+\makeatother
+
+% A formula scaled down to the line width and the page height when needed.
+\newcommand{\mapfit}[1]{%
+  \begin{adjustbox}{max width=\linewidth,max totalheight=0.8\textheight,center}%
+    $\displaystyle #1$%
+  \end{adjustbox}}
+\newcommand{\mapfittext}[1]{%
+  \begin{adjustbox}{max width=\linewidth,max totalheight=0.8\textheight,center}%
+    #1%
+  \end{adjustbox}}
+% Rules side by side in one row of a figure.
+\newcommand{\maprow}[1]{\mapfit{#1}\par\medskip}
+\newcommand{\rulesep}{\qquad}
+
+% Appendix layout.
+\newcommand{\mapblockhead}[3]{%
+  \paragraph{#1\ifx&#3&\else\ \lfadd{\textsf{(LF)}}\fi}%
+  \hfill{\scriptsize\texttt{#2}}\par\nopagebreak}
+\newcommand{\mapexamplehead}[2]{\paragraph{#1}\hfill{\scriptsize\texttt{#2}}\par\nopagebreak}
+\newcommand{\mapdfvariant}{\par\noindent{\small Deadlock-free instance.}\par\nopagebreak}
+\newcommand{\mapsource}[1]{\par\noindent{\scriptsize\raggedright Rocq: #1\par}\medskip}
+
+% Example listings, generated into gen/examples/.
+\DefineVerbatimEnvironment{maplisting}{Verbatim}{fontsize=\footnotesize,xleftmargin=1em}
+\input{gen/unicode}
+
+% The author's paragraph slots are LaTeX comments of the form
+%   % PAR: concept | example: id | figure/rule: label | map: block ids
+% and the gaps in the map are comments starting with % GAP:.

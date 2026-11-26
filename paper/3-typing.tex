@@ -1,0 +1,150 @@
+\section{Typing Cyclic Process Structures}
+\label{sec:typing}
+
+% PAR: section overview, typing reads the order, deadlock-free rules, coloured parts in sec:lock-freedom | example: ex-cycle | figure/rule: fig:typing-core | map: t-judgment
+
+\subsection{Types and Context-Free Session Types}
+\label{sec:types}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{ty-grammar}}
+  \maprow{\mapblock{ty-session}}
+  \maprow{\mapblock{ty-heads}}
+  \caption{Types, context-free session types and active points}
+  \label{fig:types}
+  % FIG: map ty-grammar, ty-session, ty-heads (ty-dual, ty-payload in the appendix) | DF explained in sec:types | LF parts (credit, tickets, cost) explained in sec:lf-annotations
+\end{figure}
+
+% PAR: end type S_x, point in the subscript | example: ex-cycle | figure/rule: fig:types | map: ty-grammar
+% PAR: arrow with upper point u and lower point l | example: ex-cycle | figure/rule: fig:types | map: ty-grammar, ty-heads
+% PAR: boxes quantify over points and session variables under a constraint, existentials | example: ex-cs | figure/rule: fig:types | map: ty-grammar
+% PAR: context-free session types, Skip, sequencing, mu, unfold, contractive, standard pointer Thiemann Vasconcelos | example: ex-ring | figure/rule: fig:types | map: ty-session, ty-equiv
+% PAR: duality, flip of session variables | example: - | figure/rule: app:ty-dual | map: ty-dual
+% PAR: payload binders, payload_at, pscoped | example: ex-ring | figure/rule: app:ty-payload | map: ty-payload
+% PAR: active points ap, bounds bot and top | example: - | figure/rule: fig:types | map: ty-heads
+% GAP: no map example uses sequencing S.S of context-free session types in a listing (ex-ring uses mu, ex-controller uses Skip in the lock-free view)
+% GAP: contractivity example ex-sinst has no listing in the map, only in the Rocq
+
+\subsection{The Typing Judgment}
+\label{sec:judgment}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{t-judgment}}
+  \maprow{\mapblock{t-contexts}}
+  \maprow{\mapblock{t-side}}
+  \caption{The typing judgment, contexts and side conditions on points}
+  \label{fig:judgment}
+  % FIG: map t-judgment, t-contexts, t-side | DF explained in sec:judgment | LF parts (bound N, effect, aging) explained in sec:lf-annotations
+\end{figure}
+
+% PAR: judgment Gamma, Delta, future F, world W | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment
+% PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment, t-contexts
+% PAR: fact theory, hypotheses from boxes and existentials, Ord rules | example: ex-cs | figure/rule: Ord-World, Ord-Fact, Ord-Trans | map: t-contexts
+% PAR: side conditions u < F, x < H, l below H | example: ex-cycle | figure/rule: fig:judgment | map: t-side
+% PAR: without side conditions plain GV and the reversed cycle types | example: ex-cycle | figure/rule: fig:judgment | map: t-side
+
+\subsection{Typing Rules}
+\label{sec:rules}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\maprule{E-Abs}}
+  \maprow{\maprule{E-App}}
+  \maprow{\maprule{E-Case}}
+  \maprow{\maprule{E-Send}}
+  \maprow{\maprule{E-Close}}
+  \maprow{\maprule{E-Link}}
+  \caption{Selected typing rules for functions, data and actions (all rules in \cref{app:typing})}
+  \label{fig:typing-core}
+  % FIG: map rules E-Abs, E-App (r-fun), E-Case (r-data), E-Send, E-Close, E-Link (r-act), E-Pair, E-Recv, E-Select, E-Branch, E-Spawn in the appendix | DF explained in sec:rules | LF parts (credits, effects, refill, link tickets) explained in sec:lf-annotations
+\end{figure}
+
+% PAR: E-Abs, body under the future of u, l below the captured ends | example: - | figure/rule: E-Abs | map: r-fun
+% PAR: E-App, call waits at most at u, u < F | example: - | figure/rule: E-App | map: r-fun
+% PAR: E-Pair, left component typed under the future extended by the right | example: - | figure/rule: app:r-data | map: r-data
+% PAR: E-Send, E-Recv, E-Close, act at x, x < F, payload above x | example: ex-cycle | figure/rule: E-Send, E-Close | map: r-act, t-consts
+% PAR: choice in the core, select to the dual field, branch to fields | example: ex-point-reuse | figure/rule: app:r-act | map: r-act, syn-moves
+% PAR: E-Case types both arms in one world, dual points make both orders typable | example: ex-bit | figure/rule: E-Case | map: r-data
+% PAR: E-Link, dual types at dual points | example: ex-copycat | figure/rule: E-Link | map: r-act
+% PAR: E-Spawn, thunk | example: ex-cycle | figure/rule: app:r-threads | map: r-threads
+% PAR: subtyping and structural rules, pointer to appendix | example: - | figure/rule: app:typing | map: t-subs
+
+\begin{example}[The bit program \rocq{bit_deadlock_free}]
+\label{ex:bit}
+\input{gen/examples/ex-bit}
+% PAR: both arms in one world, six facts from the creation of e, one point per channel would give a cycle | example: ex-bit | figure/rule: E-Case, E-New | map: r-data, r-new
+\end{example}
+
+% Listing in the appendix (app:ex-copycat), cut from the body for space.
+% PAR: five facts, forwarder at independent points, ring of two forwarders rejected, forwarder in a cut | example: ex-copycat | figure/rule: app:ex-copycat, E-Send, E-Recv, P-Connect | map: r-act, p-typing
+
+\subsection{Creation and Recursion}
+\label{sec:creation}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{r-new}}
+  \maprow{\maprule{E-Box}}
+  \maprow{\maprule{E-Force}}
+  \maprow{\maprule{E-Open}}
+  \caption{Typing rules for creation, boxes and existentials}
+  \label{fig:typing-orders}
+  % FIG: map r-new (E-New with acyc_new), E-Box, E-Force (r-boxes), E-Open (r-ex), E-Pack in the appendix | DF explained in sec:creation | LF parts (new_ok_N, tickets split m1 + m2 <= N, costs) explained in sec:lf-annotations and sec:lf-ranked
+\end{figure}
+
+% PAR: E-New, fresh base with a constraint or a field of a held point | example: ex-factory | figure/rule: E-New | map: r-new
+% PAR: acyc_new, acyclic in the new tree, conservative over the context | example: ex-cycle | figure/rule: E-New | map: r-new, r-ex
+% PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
+% PAR: boxes, recursion, infinitely many facts in one constraint | example: ex-cs | figure/rule: E-Box, E-Force | map: r-boxes
+% PAR: creation inside a box at a field of an argument point | example: ex-between | figure/rule: E-New, E-Box | map: r-new, r-boxes
+% PAR: existentials abstract the points of a fresh base, E-Open conservative | example: ex-factory | figure/rule: E-Open, app:r-ex | map: r-ex
+% PAR: one base and its fields, Milner scheduler, 18 facts | example: ex-milner | figure/rule: E-New | map: r-new
+% PAR: recursive fork-join, consistent world that is not well-founded, typable here | example: ex-forkjoin | figure/rule: E-New, E-Box | map: r-new, w-wf
+
+\begin{example}[Client and server cycle \rocq{cs_deadlock_free}]
+\label{ex:cs}
+\input{gen/examples/ex-cs}
+% PAR: two loops over the same channels, infinite box constraint, next points at each call | example: ex-cs | figure/rule: E-Box, E-Force, E-New | map: r-boxes, r-new
+\end{example}
+
+% Listing in the appendix (app:ex-factory), cut from the body for space.
+% PAR: one creation, two typings, existential at a fresh base or field of a held end | example: ex-factory | figure/rule: app:ex-factory, E-New, E-Pack | map: r-new, r-ex
+
+\begin{example}[Milner's cyclic scheduler \rocq{ms_deadlock_free}]
+\label{ex:milner}
+\input{gen/examples/ex-milner}
+% PAR: six channels at one base and its fields, facts rise with the field label | example: ex-milner | figure/rule: E-New | map: r-new
+\end{example}
+
+\begin{example}[Recursive fork-join with replies \rocq{fj_deadlock_free}]
+\label{ex:forkjoin}
+\input{gen/examples/ex-forkjoin}
+% PAR: infinite descending chain, consistent, deadlock free, revisited in sec:lf-ranked | example: ex-forkjoin | figure/rule: E-New | map: r-new, w-wf
+\end{example}
+
+\subsection{Typing Processes}
+\label{sec:proc-typing}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{p-typing}}
+  \caption{Process typing}
+  \label{fig:process-typing}
+  % FIG: map p-typing (P-Term, P-Connect, P-Connect^n) | DF explained in sec:proc-typing | LF parts (N, eta, ranked) explained in sec:lf-annotations and sec:lf-ranked
+\end{figure}
+
+% PAR: P-Term, one thread, restricted channels, consistent world | example: ex-close | figure/rule: P-Term | map: p-typing
+% PAR: P-Connect, cut on any set of channels, joined world consistent | example: ex-close | figure/rule: P-Connect, fig:worlds | map: p-typing, w-ext
+% PAR: joined world checked as a whole, three components consistent in pairs | example: ex-ring3 | figure/rule: P-Connect | map: p-typing, w-ext
+% PAR: private constants, renaming | example: ex-shared | figure/rule: P-Connect | map: p-typing, th-fund-proc
+% PAR: static rejection of the flag, lemma on two closes | example: ex-flag | figure/rule: lem:two-closes | map: t-lemmas, p-typing
+
+\begin{lemma}[Two closes, renaming \rocq{cl2_needs}]
+\label{lem:two-closes}
+\[ \mapblock{t-lemmas} \]
+\end{lemma}
+
+% Listing in the appendix (app:ex-ring3), cut from the body for space.
+% PAR: consistent two at a time, inconsistent together | example: ex-ring3 | figure/rule: app:ex-ring3, P-Connect | map: p-typing, w-ext

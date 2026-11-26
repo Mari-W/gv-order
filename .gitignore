@@ -51,6 +51,7 @@ rocq_mcp_cache*
 paper/*.pdf
 !paper/rocq-logo.pdf
 !paper/main-old.pdf
+!paper/main.pdf
 paper/old/*.pdf
 !paper/old/rocq-logo.pdf
 

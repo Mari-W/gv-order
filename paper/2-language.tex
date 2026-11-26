@@ -1,0 +1,121 @@
+\section{The Language \OurLang}
+\label{sec:language}
+
+% PAR: section overview, call-by-value lambda calculus with session channels | example: - | figure/rule: fig:syntax | map: syn-terms
+
+\subsection{Syntax and Semantics}
+\label{sec:syntax}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{syn-ends}}
+  \maprow{\mapblock{syn-prims}}
+  \maprow{\mapblock{syn-terms}}
+  \maprow{\mapblock{syn-values} \qquad \mapblock{syn-let}}
+  \maprow{\mapblock{syn-procs}}
+  \caption{Syntax of \OurLang}
+  \label{fig:syntax}
+  % FIG: map syn-ends, syn-prims, syn-terms, syn-values, syn-let, syn-procs | DF explained in sec:syntax | LF parts none
+\end{figure}
+
+% PAR: ends instead of channels, c+ and c-, dual end | example: ex-close | figure/rule: fig:syntax | map: syn-ends
+% PAR: constants k e, thirteen term formers, new as a term, select and branch in the core | example: - | figure/rule: fig:syntax | map: syn-prims, syn-terms
+% PAR: labelled semantics standard GV, pointer to appendix | example: - | figure/rule: app:semantics | map: sem-labels, sem-head, sem-ctx, sem-proc
+% PAR: processes (C, E), restricted channels, instrumented configurations for lock freedom | example: - | figure/rule: fig:syntax | map: syn-procs, sem-events
+
+\begin{example}[Two threads closing one channel \rocq{cl_deadlock_free}]
+\label{ex:close}
+\input{gen/examples/ex-close}
+% PAR: smallest process, two threads, one channel, close synchronises | example: ex-close | figure/rule: fig:syntax | map: syn-procs, sem-proc
+\end{example}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{sem-props}}
+  \caption{Deadlock freedom and \lfadd{lock freedom}}
+  \label{fig:props}
+  % FIG: map sem-props | DF explained in sec:syntax | LF parts explained in sec:lf-why
+\end{figure}
+
+% PAR: terminated, deadlock free, stuck cycle of closes | example: ex-cycle | figure/rule: fig:props | map: sem-props
+% GAP: sem-props shows the reversed cycle only in its breaks text, no map example with a listing for the deadlocked process
+
+\subsection{Points and Worlds}
+\label{sec:points}
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{syn-labels} \qquad \mapblock{syn-points}}
+  \maprow{\mapblock{syn-moves}}
+  \maprow{\mapblock{w-world}}
+  \maprow{\mapblock{w-order}}
+  \maprow{\mapblock{w-wf}}
+  \maprow{\mapblock{w-ext}}
+  \caption{Points, worlds and their order}
+  \label{fig:worlds}
+  % FIG: map syn-labels, syn-points, syn-moves, w-world, w-order, w-wf, w-ext | DF explained in sec:points and sec:proc-typing (join) | LF parts explained in sec:lf-ranked
+\end{figure}
+
+% PAR: point of an end, where it acts next, terms never mention points | example: ex-cycle | figure/rule: fig:points-example | map: syn-points
+% PAR: an action moves an end from x to x+, choice to a field, dual point | example: ex-cycle | figure/rule: fig:worlds | map: syn-moves
+% PAR: payload points, the j-th payload end arrives at x.j, both ends compute the same field | example: ex-ring | figure/rule: fig:points-example | map: syn-moves, syn-points, ty-payload
+% PAR: world, bases and facts, order generated with program order | example: ex-cycle | figure/rule: fig:worlds | map: w-world, w-order
+% PAR: consistent world, no cycle | example: ex-cycle | figure/rule: fig:worlds | map: w-wf
+% PAR: extension, growth by a creation, join, restriction | example: ex-cycle | figure/rule: fig:worlds | map: w-ext
+
+\begin{example}[Cycle \rocq{cy_deadlock_free}]
+\label{ex:cycle}
+\input{gen/examples/ex-cycle}
+% PAR: two threads, two channels, same order, two facts from the second new | example: ex-cycle | figure/rule: fig:points-example | map: r-new, t-side
+\end{example}
+
+% The figure draws ex-cycle (a) with the points and facts of the map
+% example, and one round of ex-ring (b) for the payload point.
+% Panel (b): points from the code comments of ex-ring and the rules
+% syn-moves (payload_pts) and E-Recv (T[x.i]).
+% GAP: the box constraint Cr of ex-ring is not in the map (Rocq
+% GrowRing.v rg_F lists five facts per pair (X, Y), Y < (Y.0)bar,
+% X+ < (X.0)bar, X+ < Y.0, X+ < X.1, X+ < (X.1)bar). No fact arrows in (b)
+% until the map states them.
+% GAP: no map example in the deadlock-free fragment sends an end and states all its facts.
+\begin{figure}[tp]
+  \centering
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \begin{tikzpicture}[
+        thread/.style={draw, rounded corners, minimum width=2.6cm, minimum height=2.6cm},
+        endpt/.style={font=\small},
+        fact/.style={-{Stealth}, thick, blue!60!black},
+        po/.style={-{Stealth}, densely dotted}]
+      \node[thread, label=above:{\small main}] (m) at (0,0) {};
+      \node[thread, label=above:{\small spawned}] (s) at (3.2,0) {};
+      \node[endpt] (c)  at (0,0.6)    {$c : \rho$};
+      \node[endpt] (d)  at (0,-0.6)   {$d : \rho\cdot 0$};
+      \node[endpt] (c') at (3.2,0.6)  {$c' : \overline{\rho}$};
+      \node[endpt] (d') at (3.2,-0.6) {$d' : \overline{\rho\cdot 0}$};
+      \draw[fact] (c.east) -- node[above, sloped, font=\scriptsize] {$\rho \prec \overline{\rho\cdot 0}$} (d'.west);
+      \draw[fact] (c'.west) -- node[below, sloped, font=\scriptsize] {$\overline{\rho} \prec \rho\cdot 0$} (d.east);
+    \end{tikzpicture}
+    \caption{ex-cycle}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \begin{tikzpicture}[
+        thread/.style={draw, rounded corners, minimum width=2.6cm, minimum height=2.6cm},
+        endpt/.style={font=\small},
+        msg/.style={-{Stealth}, thick, dashed}]
+      \node[thread, label=above:{\small round}] (r) at (0,0) {};
+      \node[thread, label=above:{\small sender}] (s) at (3.2,0) {};
+      \node[endpt] (x) at (0,0.6)    {$x : \iota_1$};
+      \node[endpt] (z) at (0,-0.6)   {$z : \iota_1\cdot 0$};
+      \node[endpt] (y) at (3.2,0.6)  {$y : \iota_2$};
+      \node[endpt] (a) at (3.2,-0.6) {$a : \iota_2\cdot 0$};
+      \draw[msg] (a.west) -- node[below, font=\scriptsize] {$\mathsf{send}\,\langle a, y\rangle$} (z.east);
+      % GAP: fact arrows of Cr
+    \end{tikzpicture}
+    \caption{ex-ring, payload point}
+  \end{subfigure}
+  \caption{Points on the ends of threads, facts of the world, a payload point}
+  \label{fig:points-example}
+  % FIG: examples ex-cycle, ex-ring | explained in sec:points | LF parts none
+\end{figure}

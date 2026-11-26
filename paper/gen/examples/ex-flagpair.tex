@@ -1,0 +1,10 @@
+% Generated from map example ex-flagpair (Two threads on one received flag). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+A = let ⟨z, f′⟩ = recv f in let ∗ = close f′ in
+    case z of inl w ⇒ let ∗ = w in let ∗ = close a in close b
+            | inr w ⇒ let ∗ = w in let ∗ = close b in close a
+B = A with f, a, b replaced by g, ā, 
+C = let ∗ = close (send ⟨inj₁ ∗, ⟩) in close (send ⟨inj₁ ∗, ḡ⟩)
+-- the process ({a, b, f, g}, {A, B, C}), a at x, b at y
+\end{maplisting}

@@ -1,0 +1,73 @@
+\section{Related Work: How \OurLang\ Subsumes Other Systems}
+\label{sec:related}
+
+% PAR: section overview, claims only of the form program typable by them and by us | example: - | figure/rule: tab:subsume | map: -
+% Claims in this section use only programs that the other system types
+% (as stated in its paper) and that \OurLang\ types with a Rocq theorem.
+% Rows marked GAP are not confirmed by .claude/notes.
+
+\begin{table}[tp]
+  \centering
+  \small
+  \begin{tabular}{lll}
+    System & Program typable there and here & Here \\ \hline
+    PCP \citep{DardhaG18}, Example 1 & Milner's cyclic scheduler, \cref{ex:milner} & \rocq{ms_dftyped} \\
+    GV \citep{conf/esop/LindleyM15} & GAP & \\
+    PGV \citep{KokkeD23} & GAP & \\
+    \citet{Padovani14} & GAP & \\
+    \citet{Kobayashi06} & GAP & \\
+    \citet{PadovaniN15} & GAP & \\
+    \citet{ThiemannV16}, \citet{MordidoP} & GAP & \\
+    APCP \citep{APCP} & GAP & \\
+  \end{tabular}
+  \caption{Programs typable by other systems and by \OurLang}
+  \label{tab:subsume}
+\end{table}
+
+\subsection{Tree Topologies: GV and CP}
+\label{sec:rw-gv}
+% PAR: GV, CP, one channel per cut, trees as worlds without cross facts | example: ex-close | figure/rule: P-Connect | map: p-typing
+% citations: conf/esop/LindleyM15, conf/icfp/Wadler12, DBLP:journals/jfp/Wadler14, DBLP:conf/concur/CairesP10, DBLP:journals/mscs/CairesPT16
+% GAP: which map example GV types (candidate ex-close), confirm against Lindley and Morris
+
+\subsection{Priorities}
+\label{sec:rw-priorities}
+% PAR: PCP, priorities as points at one base and its fields, Milner scheduler | example: ex-milner | figure/rule: ex:milner | map: r-new
+% citations: DardhaG18 (Example 1, priorities p. 9, per .claude/notes/extensions/literature-examples.md)
+% PAR: PGV, priorities on arrows, upper and lower points | example: ex-cycle | figure/rule: E-Abs, E-App | map: r-fun
+% citations: KokkeD23
+% GAP: PGV example from the map, confirm (candidate ex-cycle)
+% PAR: Padovani, linear pi with priorities, lock freedom | example: rx-postpone | figure/rule: sec:lock-freedom | map: t-lf-counters
+% citations: Padovani14, Padovani13, Kobayashi02
+% PAR: Kobayashi, obligation and capability levels | example: - | figure/rule: - | map: -
+% citations: Kobayashi97, Kobayashi06, KobayashiL17
+% PAR: Padovani and Novara, higher-order functional, levels and polymorphic recursion as boxes | example: ex-cs | figure/rule: E-Box | map: r-boxes
+% citations: PadovaniN15
+% PAR: APCP and cyclic asynchronous systems | example: - | figure/rule: - | map: -
+% citations: APCP
+
+\subsection{Context-Free Session Types}
+\label{sec:rw-cfst}
+% PAR: context-free session types, deadlock freedom with priorities for them | example: ex-ring | figure/rule: fig:types | map: ty-session
+% citations: ThiemannV16, MordidoP, SaffrichT23
+% GAP: no map example taken from Thiemann and Vasconcelos or Mordido and Perez (the old notes list tree and stream programs of the pre-v2 development)
+
+\subsection{Orders in Other Type Systems}
+\label{sec:rw-orders}
+% PAR: acyclic orders on worlds, events, lock orders | example: ex-shared | figure/rule: fig:worlds | map: w-ext
+% citations: BalzerTP19, VieiraV13, FlanaganA99, DBLP:journals/pacmpl/JacobsB23
+
+\subsection{Semantic Approaches}
+\label{sec:rw-semantic}
+% PAR: logical relations for session types, termination and noninterference | example: - | figure/rule: - | map: -
+% citations: DBLP:journals/iandc/PerezCPT14, conf/esop/RochaC23, conf/esop/Atkey17, DBLP:conf/lics/DerakhshanBJ21, DBLP:conf/ecoop/0001DB24, DBLP:journals/pacmpl/YaoICBZ25
+% PAR: separation logics, Actris, LinearActris, connectivity graphs | example: ex-flag | figure/rule: thm:compose | map: th-compose
+% citations: DBLP:journals/pacmpl/HinrichsenBK20, DBLP:journals/lmcs/HinrichsenBK22, JacobsHK24, DBLP:journals/pacmpl/JacobsBK22, TimanyKDB24
+% PAR: step-indexing, pointer | example: - | figure/rule: - | map: sr-ord
+% citations: Ahmed06
+% GAP: the authors' previous paper on GV with a logical relation for deadlock freedom has no bib entry in main.bib
+
+\subsection{Comparing Systems}
+\label{sec:rw-compare}
+% PAR: class comparisons | example: - | figure/rule: - | map: -
+% citations: DardhaP22, Jaramillo025

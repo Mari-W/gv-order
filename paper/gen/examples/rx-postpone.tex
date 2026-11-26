@@ -1,0 +1,10 @@
+% Generated from map example rx-postpone (Postponement, a holding thread that never serves). Do not edit.
+\leavevmode\par\nobreak
+\begin{maplisting}
+chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)
+loop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)
+main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in
+       let ∗ = spawn (λ_. (force chat) a′) in
+       let ∗ = spawn (λ_. close b′) in
+       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever
+\end{maplisting}

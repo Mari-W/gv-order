@@ -1,0 +1,35 @@
+\section{Introduction}
+\label{sec:intro}
+
+% PAR: deadlock freedom, global property, compositional typing hard | example: - | figure/rule: - | map: sem-props
+% PAR: GV and CP, tree topologies, one channel per cut | example: ex-close | figure/rule: - | map: -
+% PAR: priorities, PCP PGV, cyclic structures, numeric annotations | example: ex-cycle | figure/rule: - | map: -
+% PAR: our idea, points on ends, order between points, worlds | example: ex-cycle | figure/rule: fig:points-example | map: syn-points, w-world
+% PAR: semantic typing, logical relation, typing rules as lemmas, programs outside the type system | example: ex-flag | figure/rule: ex:flag | map: th-compose, th-adeq
+
+\begin{example}[Self-computed flag \rocq{sbv_deadlock_free}]
+\label{ex:flag}
+\input{gen/examples/ex-flag}
+\[
+  x \prec \overline{y}\ \text{(running arm)} \qquad
+  \overline{x} \prec y\ \text{(other)} \qquad
+  y \prec \overline{x}\ \text{(arm that never runs)}
+\]
+% PAR: running example, thread computes its own flag, E-Case types both arms in one world | example: ex-flag | figure/rule: E-Case, P-Connect | map: r-data, p-typing
+% PAR: static rejection, cycle y < xbar < y in the joined world | example: ex-flag | figure/rule: fig:composition-example | map: p-typing, t-lemmas
+% PAR: semantic acceptance, thread in E without typing, P-Connect lemma, adequacy | example: ex-flag | figure/rule: thm:compose, thm:adequacy | map: th-compose, th-adeq
+\end{example}
+
+% PAR: lock freedom, second level, same figures with coloured additions | example: rx-postpone | figure/rule: fig:typing-core | map: sem-props, th-sound
+% PAR: context-free session types in the base system | example: ex-ring | figure/rule: fig:types | map: ty-session
+
+% PAR: contributions | example: - | figure/rule: - | map: -
+\begin{itemize}
+  \item % PAR: contribution, GV with orders between points, context-free session types, typing rules | example: ex-cycle | figure/rule: sec:typing | map: r-new, r-act, p-typing
+  \item % PAR: contribution, compositional logical relation, semantic P-Term and P-Connect, fundamental theorem, adequacy | example: ex-flag | figure/rule: sec:relation | map: th-compose, th-fund-proc, th-adeq
+  \item % PAR: contribution, lock freedom by annotations, ranked worlds, fuel | example: rx-postpone | figure/rule: sec:lock-freedom | map: t-lf-counters, t-lf-wf, fu, soup
+  \item % PAR: contribution, subsumption of priority and tree systems by example | example: ex-milner | figure/rule: sec:related | map: -
+  \item % PAR: contribution, mechanization in Rocq, assumptions EM and FC for lock freedom only | example: - | figure/rule: sec:mechanization | map: th-sound
+\end{itemize}
+
+% PAR: outline | example: - | figure/rule: - | map: -
