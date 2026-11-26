@@ -160,7 +160,7 @@ The rules use the following conditions (\cref{app:p-typing}).
   \item $\tfree\,\ty$ holds when $\ty$ is built from $\tyunit$, box types, products and sums, so a value of type $\ty$ holds no ends.
   \item $\pfree\,\senv$ holds when $\senv$ never holds both ends of a channel.
   \item $\pairs^{\lf{N}}(\cTheta_B, C_0)$ holds when $\cTheta_B$ holds exactly the two ends of each channel in $C_0$, the restricted channels of the thread, at dual points with dual protocols\lf{,} \lfw{each} \lfw{end} \lfw{with} \lfw{credit} \lfw{equal} \lfw{to} \lfw{its} \lfw{tickets} \lfw{and} \lfw{the} \lfw{two} \lfw{tickets} \lfw{summing} \lfw{to} \lfw{at} \lfw{most} \lfw{$N$.}
-  \item $\dual{\senv_C}$ holds the dual ends of $\senv_C$ at dual points with dual protocols\lf{,} \lfw{with} \lfw{credits} \lfw{and} \lfw{tickets} \lfw{of} \lfw{their} \lfw{own,} and $\proc_1 \cpar{\senv_C} \proc_2$ runs $\proc_1$ beside $\proc_2$ and restricts the channels of $\senv_C$.
+  \item $\dual{\senv_C}$ holds the dual ends of $\senv_C$ at dual points with dual protocols\lf{,} \lfw{with} \lfw{credits} \lfw{and} \lfw{tickets} \lfw{of} \lfw{their} \lfw{own,} and $\proc_1 \cpar{\senv_C} \proc_2$ runs $\proc_1$ beside $\proc_2$, with their threads at disjoint names, and restricts the channels of $\senv_C$.
   \item \lfw{$\tk(o)$} \lfw{is} \lfw{the} \lfw{number} \lfw{of} \lfw{tickets} \lfw{$m$} \lfw{of} \lfw{an} \lfw{end} \lfw{$o : \sty_x^{a,m}$.}
 \end{itemize}
 \end{definition}

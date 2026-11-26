@@ -6,21 +6,7 @@
 \subsection{Three Ways to Wait Forever}
 \label{sec:lf-why}
 
-% PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: def:lf | map: sem-props
-\begin{definition}[Lock freedom \rocq{lock_free}]
-\label{def:lf}
-\[
-  \lfree\,\proc \iff \forall (r, l).\ \mathsf{maximal}\,r\,l \land \mathsf{wfair}\,r\,l \Rightarrow
-  \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
-\]
-\begin{itemize}
-  \item $(r, l)$: a run of $\proc$, configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = \proc$ (\cref{app:syn-procs}) and events $l_i$ from $r_i$ to $r_{i+1}$ (\cref{app:sem-events}), none when $r_{i+1} = r_i$.
-  \item $\mathsf{parts}(l_i)$: the threads that take part in $l_i$.
-  \item $\mathsf{maximal}\,r\,l$: $r_{i+1} = r_i$ only where $r_i$ has no internal step.
-  \item $\mathsf{wfair}\,r\,l$: for each $i$ and thread $t$ some $j \geq i$ has $t \in \mathsf{parts}(l_j)$ or $t$ unable to step at $r_j$.
-  \item $\mathsf{pend}(r_i, t)$: the next step of $t$ at $r_i$ is a session action (\cref{app:sem-props}).
-\end{itemize}
-\end{definition}
+% PAR: lock freedom as defined in def:lf, every pending thread eventually takes part | example: - | figure/rule: def:lf | map: sem-props
 % PAR: order alone gives only deadlock freedom, a thread waits forever in three ways, each excluded by one rule on counters (fig:lf-failures) | example: rx-postpone, rx-delegate, rx-relink | figure/rule: fig:lf-failures | map: sem-props, t-lf-counters
 % PAR: endless postponement, a thread holds an end across a loop that never acts on it, every action lowers the counter of the held end, a cost lowers its credit | example: rx-postpone | figure/rule: ex:postpone, fig:lf-failures, app:t-agecap | map: t-agecap
 
@@ -151,16 +137,16 @@ It reads no point and no world and has no readiness clause. It holds at $\ix$ wh
 % PAR: LF process relation = E at kappa_L plus the counters under one ownership map, the term relation extended with counters at cost bound infinity | example: ex-cycle | figure/rule: def:lf-rel | map: soup
 \begin{definition}[Lock-free process relation \rocq{SoupK}]
 \label{def:lf-rel}
-An annotated configuration is $a = (q, K, W_a)$ with
+An annotated process is $a = (\proc_a, K, W_a)$ with
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $q$ & configuration, threads with names \\
+  $\proc_a$ & process \\
   $K$ & ownership map, $K(o) = (t, x, f, m)$ the owner, point, counter and tickets of each held end $o$ \\
   $W_a$ & ranked world of the run so far
 \end{tabular}
 \end{center}
-$a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\ty$, $K$ fits $q$ and $\senv$ (\cref{app:soup}), and for some session type and protocol per held end each thread $\tm = q(t)$ has
+$a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\ty$, $K$ fits $\proc_a$ and $\senv$ (\cref{app:soup}), and for some session type and protocol per held end each thread $\tm = \proc_a(t)$ has
 \[
   \tm \in E[\kappa_L]^{W_a}_{\ix}\llbracket \cTheta_t \vdash \tyB_t \rrbracket^{\varnothing}
   \qquad\text{and}\qquad
@@ -170,7 +156,7 @@ $a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\t
   \item $\cTheta_t$, $\cPhi_t$: the ends $K$ gives $t$, at their points and at their counters and tickets.
   \item $\tyB_t$: $\ty$ for the main thread and $\ast$ otherwise.
   \item $E[\kappa_L]$: the term relation of \cref{fig:term-rel} under the cost table $\kappa_L$, which charges $1$ for $\tforce$ and each session action and $0$ for $\beta$, $\tnew$, $\tspawn$ and $\tlink$ (\cref{app:ct-costs}).
-  \item $K$ fits $q$ and $\senv$: each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\senv$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\senv$ carries the point and protocol of its entry of $\senv$ and at most the tickets of that entry.
+  \item $K$ fits $\proc_a$ and $\senv$: each held end belongs to a thread of $\proc_a$ and is restricted in $\proc_a$ or listed in $\senv$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\senv$ carries the point and protocol of its entry of $\senv$ and at most the tickets of that entry.
 \end{itemize}
 \end{definition}
 
@@ -178,8 +164,9 @@ $a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\t
 \begin{definition}[Lock-free judgment \rocq{lf_sems}]
 \label{def:lf-judgment}
 \[
-  \senv \semlf^{N}_{W} \proc : \ty \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \ix.\ \exists a = (q, K, W_a).\ \mathsf{erase}(q) = \proc \land a \in \LFrel{N,W'}{\ix}{\senv}{\ty}
+  \senv \semlf^{N}_{W} \proc : \ty \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \ix.\ \exists a = (\proc_a, K, W_a).\ \proc_a \sim \proc \land a \in \LFrel{N,W'}{\ix}{\senv}{\ty}
 \]
+Here $\proc_a \sim \proc$ holds when $\proc_a$ is $\proc$ with its threads renamed (\cref{app:syn-procs}).
 \end{definition}
 
 % PAR: lock-free composition of two components at own worlds | example: ex-cs-split | figure/rule: thm:lf-compose | map: th-compose, w-ext
@@ -187,7 +174,7 @@ $a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\t
 \label{thm:lf-compose}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
-  \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\senv \semlf^{N}_{W} (C_0, \{t\}) : \ty$.
+  \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\senv \semlf^{N}_{W} (C_0, \{\tm\}) : \ty$.
   \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semlf^{N}_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semlf^{N}_{W_2} \proc_2 : \tyunit$ and $\tk(o) + \tk(\dual{o}) \leq N$ for each $o \in \mathrm{dom}\,\senv_C$, then $\senv_1 \cup \senv_2 \semlf^{N}_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
@@ -197,7 +184,7 @@ Let $N \in \mathbb{N}$.
 \label{thm:lf-fundamental}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
-  \item If $\varnothing ; \lenv \vdash^{F}_{W,N} t : \ty\ !\ \varepsilon$, then $|\lenv| \semt[\kappa_L]^{F}_{W'} t : |\ty|$ for each consistent $W' \sqsupseteq W$, where $|{\cdot}|$ erases the annotations and $\semt[\kappa_L]$ is the term judgment of \cref{def:sem-judgments} over $E[\kappa_L]$.
+  \item If $\varnothing ; \lenv \vdash^{F}_{W,N} \tm : \ty\ !\ \varepsilon$, then $|\lenv| \semt[\kappa_L]^{F}_{W'} \tm : |\ty|$ for each consistent $W' \sqsupseteq W$, where $|{\cdot}|$ erases the annotations and $\semt[\kappa_L]$ is the term judgment of \cref{def:sem-judgments} over $E[\kappa_L]$.
   \item If $\senv \vdash^{N}_{W} \proc : \ty$, then $\senv \semlf^{N}_{W} \proc : \ty$.
   \item If $\ranked\,W$ and $\varnothing \semlf^{N}_{W} \proc : \ty$, then $\proc$ is lock free.
 \end{enumerate}

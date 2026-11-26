@@ -11,16 +11,34 @@
 
 % PAR: constants k e, thirteen term formers, new as a term, select and branch in the core | example: - | figure/rule: fig:syntax | map: syn-prims, syn-terms
 % PAR: labelled semantics standard GV, pointer to appendix | example: - | figure/rule: app:semantics | map: sem-labels, sem-head, sem-ctx, sem-proc
-% PAR: processes (C, E), restricted channels, instrumented configurations for lock freedom, the scheduler after its creations and spawns as a process with six restricted channels and seven threads | example: ex-milner | figure/rule: fig:syntax | map: syn-procs, sem-events
+% PAR: processes (C, E), restricted channels, threads with names, the scheduler after its creations and spawns as a process with six restricted channels and seven threads | example: ex-milner | figure/rule: fig:syntax, def:runs | map: syn-procs, sem-events
 % PAR: smallest process, two threads close one channel, listing in the appendix | example: ex-close | figure/rule: app:ex-close | map: syn-procs, sem-proc
+% PAR: events name the threads of a step, closed steps, runs, maximal and weakly fair runs, pending threads | example: - | figure/rule: def:runs | map: sem-events
+\begin{definition}[Steps and runs \rocq{istep} \rocq{maximal} \rocq{wfair}]
+\label{def:runs}
+Processes step as in \cref{app:sem-proc}.
+\begin{itemize}
+  \item A step $\proc \xrightarrow{ev} \proc'$ has an event $ev$, which records the threads $\mathsf{parts}(ev)$ that take part and their labels (\cref{app:sem-events}).
+  \item The event is internal unless a thread offers an action on a free channel to the environment. A closed step $\proc \to \proc'$ has an internal event.
+  \item A run of $\proc$ is a sequence $\proc_0 \proc_1 \ldots$ with $\proc_0 = \proc$ and, at each $i$, either a closed step $\proc_i \xrightarrow{ev_i} \proc_{i+1}$ or $\proc_{i+1} = \proc_i$ with no event.
+  \item A run is maximal when $\proc_{i+1} = \proc_i$ only where $\proc_i$ has no closed step.
+  \item A run is weakly fair when each thread $t$ at each $i$ has some $j \geq i$ at which $t$ takes part in $ev_j$ or takes part in no closed step of $\proc_j$.
+  \item A thread $t$ is pending in $\proc$ when the next step of $\proc(t)$ is a session action, a link included.
+\end{itemize}
+$(C, \{\tm_1, \ldots, \tm_n\})$ is the process whose threads $\tm_1, \ldots, \tm_n$ have distinct names. Typing and the relations of \cref{sec:typing,sec:relation} read only the restricted channels and the terms of a process, not the names of its threads.
+\end{definition}
 
 % PAR: terminated, deadlock free, the scheduler with one agent reversed waits in a ring | example: ex-milner | figure/rule: def:df | map: sem-props
-\begin{definition}[Deadlock freedom \rocq{deadlock_free}]
-\label{def:df}
-\begin{gather*}
-  \terminated\,\proc \iff \exists v, E.\ \proc = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
-  \dfree\,\proc \iff \forall \proc'.\ \proc \to^{*} \proc' \Rightarrow \terminated\,\proc' \lor \exists \proc''.\ \proc' \to \proc''
-\end{gather*}
+% PAR: lock freedom, every pending thread eventually takes part, weak fairness, deadlock freedom lets a thread wait forever while others step | example: - | figure/rule: def:df | map: sem-props
+\begin{definition}[Deadlock freedom and lock freedom \rocq{deadlock_free} \rocq{lock_free}]
+\label{def:df}\label{def:lf}
+\begin{align*}
+  \terminated\,\proc &\iff \exists \val.\ \proc = (\varnothing, \{\val, \tunit, \ldots, \tunit\}) \\
+  \dfree\,\proc &\iff \forall \proc'.\ \proc \to^{*} \proc' \Rightarrow \terminated\,\proc' \lor \exists \procB.\ \proc' \to \procB \\
+  \lfree\,\proc &\iff \text{each maximal weakly fair run } \proc_0 \proc_1 \ldots \text{ of } \proc \text{ has} \\
+  &\qquad \forall i, t.\ t \text{ pending in } \proc_i \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(ev_j)
+\end{align*}
+Runs, pending threads and $\mathsf{parts}$ are those of \cref{def:runs} (\cref{app:sem-events,app:sem-props}).
 \end{definition}
 % GAP: sem-props shows the deadlocking reversed cycle only in its breaks text, no map example with a listing for a deadlocked process (the scheduler with A_1 reversed is a candidate)
 

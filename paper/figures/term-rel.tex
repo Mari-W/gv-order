@@ -60,7 +60,7 @@
     \and
     \infer*[lab=P]
       {\ix > 0 \\\\
-       \forall W' \sqsupseteq W.\ \ \irred\,\proc \Rightarrow \exists \val, E.\ \proc = (\varnothing, \{\val\} \uplus E) \land E \subseteq \{\tunit\} \land \val \in \Vrel{W'}{\ix}{\senv}{\ty} \\\\
+       \forall W' \sqsupseteq W.\ \ \irred\,\proc \Rightarrow \exists \val.\ \proc = (\varnothing, \{\val, \tunit, \ldots, \tunit\}) \land \val \in \Vrel{W'}{\ix}{\senv}{\ty} \\\\
        \forall W' \sqsupseteq W.\ \ \neg\irred\,\proc \Rightarrow \ready_{W'}(\senv, \proc) \\\\
        \forall W' \sqsupseteq W,\ ev, \proc'.\ \ \proc \xrightarrow{ev} \proc' \Rightarrow \mathsf{Pobl}^{W'}_{ev}(\proc')}
       {\proc \in \Prel{W}{\ix}{\senv}{\ty}}
