@@ -19,7 +19,7 @@
 
 \begin{convention}[Lock-free parts]
 \label{conv:lf}
-A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $\sty_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term, the bound $N$ and the interface annotation $\eta$ (\cref{def:lf-ann}). $\lenv - \varepsilon$ ages $\lenv$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
+A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $\sty_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term and the bound $N$ (\cref{def:lf-ann}). $\lenv - \varepsilon$ ages $\lenv$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
 \end{convention}
 
 \begin{convention}[Implicit premises]
@@ -27,11 +27,8 @@ A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ a
 The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the following premises (\cref{app:typing}).
 \begin{itemize}
   \item Contexts combined in one rule are disjoint.
-  \item Every session type that enters a derivation is contractive (\cref{app:ty-session}).
-  \item A payload $!(\bar\iota.\,\ty)$ or $?(\bar\iota.\,\ty)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
-  \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\cGamma$, $\lenv$, $F$ and the result type.
-  \item $\Inst$ is the set of lists $\bar s$ of contractive session types whose payloads mention only their own point variables, the instances of \ruleref{E-Box} and \ruleref{E-Force}.
 \end{itemize}
+A derivation uses only well-formed types and instances, whose session types are contractive and whose payloads mention only their own point variables, and binds only fresh point variables (\cref{app:ty-session,app:ty-payload,app:r-boxes}).
 \end{convention}
 
 \subsection{The Typing Judgment}
@@ -60,34 +57,9 @@ with the components
 % PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-milner | figure/rule: def:side | map: t-judgment, t-contexts
 \begin{definition}[Contexts, futures and side conditions \rocq{slt}]
 \label{def:side}
-Kinds of types and contexts.
-\begin{gather*}
-  \unl\,\ty \iff \exists \bar\iota, \bar \tvar{}, C, u, \tyB.\ \ty = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u} \tyB)
-  \qquad
-  \unl\,\lenv \iff \forall (z : \ty) \in \lenv.\ \unl\,\ty \\
-  \tfree\,\ty \iff \ty \in \mathcal{T}_0 \qquad
-  \mathcal{T}_0 ::= \tyunit \mid \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u} \tyB) \mid \mathcal{T}_0 \tyotimes \mathcal{T}_0 \mid \mathcal{T}_0 \tyoplus \mathcal{T}_0
-\end{gather*}
-The order judgment $\cGamma \vdash_W x \prec y$ is the least relation with (\cref{app:t-contexts})
-\begin{gather*}
-  x \ordW y \Rightarrow \cGamma \vdash_W x \prec y
-  \qquad
-  C[\bar x] \in \cGamma \land (y \prec z) \in C[\bar x] \Rightarrow \cGamma \vdash_W y \prec z \\
-  \cGamma \vdash_W x \prec y \land \cGamma \vdash_W y \prec z \Rightarrow \cGamma \vdash_W x \prec z \\
-  \cGamma \vdash_W x \preccurlyeq y \iff x = y \lor \cGamma \vdash_W x \prec y
-  \qquad
-  \cGamma \vdash_W C[\bar x] \iff \forall (y \prec z) \in C[\bar x].\ \cGamma \vdash_W y \prec z
-\end{gather*}
-Futures and side conditions, for a type or a context $H$.
-\begin{gather*}
-  F = X \cup \up{v} \qquad F \held H = F \cup \ap(H) \\
-  u \prec F \iff (\forall y \in X.\ \cGamma \vdash_W u \prec y) \land \cGamma \vdash_W u \preccurlyeq v \\
-  x \prec H \iff \forall y \in \ap(H).\ \cGamma \vdash_W x \prec y
-  \qquad
-  l \preccurlyeq H \iff \forall y \in \ap(H).\ \cGamma \vdash_W l \preccurlyeq y \\
-  \bot \prec F \qquad\quad \bot \in X \lor v = \bot \ \Rightarrow\ x \not\prec F
-\end{gather*}
-Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bound $v$, $\lenv_1, \lenv_2$ splits a context, and $\ty \leq \tyB$ is subtyping (\cref{app:t-subs}).
+$\unl\,\lenv$ holds when every entry of $\lenv$ has a box type. The order judgment $\cGamma \vdash_W x \prec y$ is the transitive closure of $\ordW$ and the facts of the instances $C[\bar x]$ in $\cGamma$ (\cref{app:t-contexts}). $\cGamma \vdash_W x \preccurlyeq y$ adds $x = y$, and $\cGamma \vdash_W C[\bar x]$ holds when each fact of $C[\bar x]$ does.
+
+A future $F$ is a set of points, and $x \prec F$ holds when $\cGamma \vdash_W x \prec y$ for each $y \in F$. $F \held H = F \cup \ap(H)$ adds the active points of a type or context $H$. $x \prec H$ holds when $x$ lies below each active point of $H$, and $l \preccurlyeq H$ when $l$ lies at or below each. A closure body with upper bound $u$ runs under the future $\up{u}$, and $x \prec \up{u}$ holds when $\cGamma \vdash_W x \preccurlyeq u$. The general form of futures also admits the bounds $\bot$ and $\top$ (\cref{app:t-contexts,app:t-side}). $\lenv_1, \lenv_2$ splits a context, and $\ty \leq \tyB$ is subtyping (\cref{app:t-subs}).
 \end{definition}
 % PAR: fact theory, hypotheses from boxes and existentials, Ord rules | example: ex-cs | figure/rule: def:side, app:t-contexts | map: t-contexts
 % PAR: side conditions u < F, x < H, l below H, the first action of A_1 asks rho-bar below the duals of the points of a_1 and c_1 | example: ex-milner | figure/rule: def:side | map: t-side
@@ -127,11 +99,8 @@ Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bou
 % PAR: the remaining five channels are created at the fields rho.1 to rho.5 and add no facts | example: ex-milner | figure/rule: E-New-Field | map: r-new
 \end{example}
 
-\begin{example}[The bit program \rocq{bit_deadlock_free}]
-\label{ex:bit}
-\input{gen/examples/ex-bit}
-% PAR: both arms in one world, six facts from the creation of e, one point per channel would give a cycle | example: ex-bit | figure/rule: E-Case, E-New | map: r-data, r-new
-\end{example}
+% Listing in the appendix (app:ex-bit), cut from the body for space.
+% PAR: both arms in one world, six facts from the creation of e, one point per channel would give a cycle | example: ex-bit | figure/rule: app:ex-bit, E-Case, E-New | map: r-data, r-new
 
 % Listing in the appendix (app:ex-copycat), cut from the body for space.
 % PAR: five facts, forwarder at independent points, ring of two forwarders rejected, forwarder in a cut | example: ex-copycat | figure/rule: app:ex-copycat, E-Send, E-Recv, P-Connect | map: r-act, p-typing
@@ -145,20 +114,19 @@ Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bou
 % PAR: acyc_new, acyclic in the new tree, conservative over the context, the scheduler's constraint acyclic because its facts rise with the field label | example: ex-milner | figure/rule: def:creation, fig:world-example | map: r-new, r-ex
 \begin{definition}[Creation constraints \rocq{acyc_new} \rocq{new_ok}]
 \label{def:creation}
-The tree of the bases $\bar\iota$ is $\tree(\bar\iota) = \{x \mid \base(x) \in \bar\iota\}$, the points built from $\bar\iota$ by $\pplus{\cdot}$, $\fld{\cdot}{\kappa}$ and $\dual{\cdot}$.
-\begin{align*}
-  x \prec^{\rho}_{C} y &\iff x, y \in \tree(\rho) \land \big((x \prec y) \in C \lor y = \pplus{x} \lor y = \pplus{\dual{x}}\big) \\
-  \acyc_{\rho}(C) &\iff \forall x \in \tree(\rho).\ \neg\, x \mathrel{(\prec^{\rho}_{C})^{+}} x \\
-  \conserv_{\cGamma}(\bar\iota, C) &\iff \forall z, y \notin \tree(\bar\iota).\ \cGamma, C(\bar\iota) \vdash_W z \prec y \Rightarrow \cGamma \vdash_W z \prec y
-\end{align*}
-$\lf{\rankable_{\cGamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founded and each ranked world in which the facts of $\cGamma$ hold has ranks for $\tree(\rho)$ (\cref{def:ranked}, \cref{app:r-new}).
+The new points of the bases $\bar\iota$ are the points with a base in $\bar\iota$, and the other points are old. Below means derivably below in $\cGamma \vdash_W$ (\cref{app:r-new,app:r-ex}).
+\begin{itemize}
+  \item $\acyc_{\rho}(C)$ holds when the facts of $C$ among the new points of $\rho$ form no cycle together with program order, the facts $x \prec \pplus{x}$ and $x \prec \pplus{\dual{x}}$.
+  \item $\conserv_{\cGamma}(\bar\iota, C)$ holds when each fact between two old points that $\cGamma, C(\bar\iota)$ derives, $\cGamma$ derives alone.
+  \item \lfw{$\rankable_{\cGamma}(\rho, C)$} \lfw{holds} \lfw{when} \lfw{the} \lfw{facts} \lfw{of} \lfw{$C$} \lfw{among} \lfw{the} \lfw{new} \lfw{points} \lfw{of} \lfw{$\rho$} \lfw{and} \lfw{program} \lfw{order} \lfw{are} \lfw{also} \lfw{well-founded,} \lfw{and} \lfw{some} \lfw{relation} \lfw{pairs} \lfw{new} \lfw{points} \lfw{$s$} \lfw{with} \lfw{finite} \lfw{nonempty} \lfw{sets} \lfw{$T$} \lfw{of} \lfw{old} \lfw{points} \lfw{such} \lfw{that} \lfw{each} \lfw{fact} \lfw{$u \prec y$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{a} \lfw{new} \lfw{point} \lfw{$u$} \lfw{to} \lfw{an} \lfw{old} \lfw{point} \lfw{$y$} \lfw{pairs} \lfw{$u$} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{lie} \lfw{below} \lfw{$y$,} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{new} \lfw{point} \lfw{$s'$} \lfw{with} \lfw{$s' \prec s$} \lfw{in} \lfw{$C$} \lfw{or} \lfw{program} \lfw{order} \lfw{is} \lfw{paired} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{each} \lfw{lie} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$,} \lfw{and} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{fact} \lfw{$z \prec s$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{an} \lfw{old} \lfw{point} \lfw{$z$} \lfw{has} \lfw{$z$} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$.}
+\end{itemize}
 \end{definition}
 % PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
 % PAR: mechanization insight, points are reused, a field creation may repeat, no labelling of points fixed before the run | example: ex-point-reuse | figure/rule: E-New-Field, app:ex-point-reuse | map: r-new, rd
 % PAR: boxes, recursion, infinitely many facts in one constraint | example: ex-cs | figure/rule: E-Box, E-Force | map: r-boxes
 % PAR: creation inside a box at a field of an argument point | example: ex-between | figure/rule: E-New, E-Box | map: r-new, r-boxes
 % PAR: existentials abstract the points of a fresh base, E-Open conservative | example: ex-factory | figure/rule: E-Open, app:r-ex | map: r-ex
-% PAR: recursive fork-join, consistent world that is not well-founded, typable here | example: ex-forkjoin | figure/rule: E-New, E-Box | map: r-new, w-wf
+% PAR: recursive fork-join, consistent world that is not well-founded, typable here, forward pointer to ex:forkjoin | example: ex-forkjoin | figure/rule: E-New, E-Box, ex:forkjoin | map: r-new, w-wf
 
 \begin{example}[Client and server cycle \rocq{cs_deadlock_free}]
 \label{ex:cs}
@@ -169,12 +137,6 @@ $\lf{\rankable_{\cGamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founde
 % Listing in the appendix (app:ex-factory), cut from the body for space.
 % PAR: one creation, two typings, existential at a fresh base or field of a held end | example: ex-factory | figure/rule: app:ex-factory, E-New, E-Pack | map: r-new, r-ex
 
-\begin{example}[Recursive fork-join with replies \rocq{fjr_deadlock_free}]
-\label{ex:forkjoin}
-\input{gen/examples/ex-forkjoin}
-% PAR: infinite descending chain, consistent, deadlock free, revisited in sec:lf-ranked | example: ex-forkjoin | figure/rule: E-New | map: r-new, w-wf
-\end{example}
-
 \subsection{Typing Processes}
 \label{sec:proc-typing}
 
@@ -182,28 +144,25 @@ $\lf{\rankable_{\cGamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founde
 \begin{definition}[Process judgment \rocq{ptyped}]
 \label{def:proc-judgment}
 The process judgment has the form
-\[ \senv \vdash^{\lf{N,\eta}}_{W} \proc : \ty \]
+\[ \senv \vdash^{\lf{N}}_{W} \proc : \ty \]
 with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $\senv$ & interface, an end type $\sty_x$ for each free end of $\proc$ \\
+  $\senv$ & interface, an end type $\sty_x\lf{^{a,m}}$ for each free end of $\proc$ \\
   $W$ & world of $\proc$ \\
   $\proc : \ty$ & the process and the type of the value of its main thread \\
-  $\lf{N}$ & bound on the tickets of the two ends of a channel \\
-  $\lf{\eta}$ & credit and tickets $\eta(o) = (a, m)$ of each interface end $o$
+  $\lf{N}$ & bound on the tickets of the two ends of a channel
 \end{tabular}
 \end{center}
-with $\lf{\tk_\eta(o) = m}$, and $\lf{\senv^{\eta}}$ maps $o$ to $\sty_x^{a,m}$ for $(o : \sty_x) \in \senv$ and $\eta(o) = (a, m)$. The rules use
-\begin{align*}
-  \pfree\,\senv &\iff \forall o \in \mathrm{dom}\,\senv.\ \dual{o} \notin \mathrm{dom}\,\senv \\
-  \chans\,\senv &= \{c \mid c^{+} \in \mathrm{dom}\,\senv \lor c^{-} \in \mathrm{dom}\,\senv\} \qquad
-  \dual{\senv} = \{\dual{o} : \dual{\sty}_{\dual{x}} \mid (o : \sty_x) \in \senv\} \\
-  (C_1, E_1) \cpar{\senv} (C_2, E_2) &= (C_1 \cup C_2 \cup \chans\,\senv,\ E_1 \uplus E_2) \\
-  \pairs^{\lf{N}}(\cTheta_B, C_0) &\iff \mathrm{dom}\,\cTheta_B = \ends(C_0) \land \forall c \in C_0. \\
-  &\phantom{{}\iff{}} \cTheta_B(c^{+}) = \sty_x\lf{^{m,m}} \land \cTheta_B(c^{-}) = \dual{\sty}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
-\end{align*}
-where $\ends(C_0) = \{c^{+}, c^{-} \mid c \in C_0\}$.
+The rules use the following conditions (\cref{app:p-typing}).
+\begin{itemize}
+  \item $\tfree\,\ty$ holds when $\ty$ is built from $\tyunit$, box types, products and sums, so a value of type $\ty$ holds no ends.
+  \item $\pfree\,\senv$ holds when $\senv$ never holds both ends of a channel.
+  \item $\pairs^{\lf{N}}(\cTheta_B, C_0)$ holds when $\cTheta_B$ holds exactly the two ends of each channel in $C_0$, the restricted channels of the thread, at dual points with dual protocols\lf{,} \lfw{each} \lfw{end} \lfw{with} \lfw{credit} \lfw{equal} \lfw{to} \lfw{its} \lfw{tickets} \lfw{and} \lfw{the} \lfw{two} \lfw{tickets} \lfw{summing} \lfw{to} \lfw{at} \lfw{most} \lfw{$N$.}
+  \item $\dual{\senv_C}$ holds the dual ends of $\senv_C$ at dual points with dual protocols\lf{,} \lfw{with} \lfw{credits} \lfw{and} \lfw{tickets} \lfw{of} \lfw{their} \lfw{own,} and $\proc_1 \cpar{\senv_C} \proc_2$ runs $\proc_1$ beside $\proc_2$ and restricts the channels of $\senv_C$.
+  \item \lfw{$\tk(o)$} \lfw{is} \lfw{the} \lfw{number} \lfw{of} \lfw{tickets} \lfw{$m$} \lfw{of} \lfw{an} \lfw{end} \lfw{$o : \sty_x^{a,m}$.}
+\end{itemize}
 \end{definition}
 
 % PAR: P-Term, one thread, restricted channels, consistent world, the scheduler's main thread before it runs | example: ex-milner | figure/rule: P-Term | map: p-typing

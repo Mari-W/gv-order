@@ -1,9 +1,9 @@
-% Creation, boxes, existentials. From map blocks r-new (one rule there with
-% a triple, two constructors e_new and e_new_fld in the Rocq), r-boxes,
-% r-ex. E-Pack is in the appendix.
+% Creation and boxes. From map blocks r-new (one rule there with a triple,
+% two constructors e_new and e_new_fld in the Rocq) and r-boxes. E-New-Field,
+% E-Force, E-Open and E-Pack are in the appendix, glossed in the caption.
 \begin{figure}[tbp]
   \small
-  \judghead{Creation, boxes and existentials}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
+  \judghead{Creation and boxes}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
   \begin{rules}
     \infer*[lab=E-New]
       {\unl\,\lenv \\ \acyc_{\rho}(C) \\ \conserv_{\cGamma}(\rho, C) \\\\
@@ -11,32 +11,14 @@
       {\tyj{\cGamma}{\lenv}{F}{\tnew}{\tyexists^{\bot}\rho.\ C.\ \sty_{\rho}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{\rho}}\lf{^{m_2,m_2}}}\eff{0}}
     \label{rule:E-New}
     \and
-    \infer*[lab=E-New-Field]
-      {\unl\,\lenv \\ \lf{m_1 + m_2 \leq N}}
-      {\tyj{\cGamma}{\lenv}{F}{\tnew}{\sty_{\fld{x}{\kappa}}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{\fld{x}{\kappa}}}\lf{^{m_2,m_2}}}\eff{0}}
-    \label{rule:E-New-Field}
-  \end{rules}
-  \begin{rules}
     \infer*[lab=E-Box]
       {B = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB) \\ \unl\,\lenv \\\\
-       \forall \bar s \in \Inst.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, f : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
+       \forall \bar s.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, f : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
       {\tyj{\cGamma}{\lenv}{F}{\tbox{f}{\tm}}{B}\eff{0}}
     \label{rule:E-Box}
-    \and
-    \infer*[lab=E-Force]
-      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB)}\eff{\varepsilon_0} \\\\
-       \cGamma \vdash C[\bar x] \\ u[\bar x] \prec F}
-      {\tyj{\cGamma}{\lenv}{F}{\tforce\,\tm}{\tyB[\bar s][\bar x]}\eff{\varepsilon_0 + 1 + \varepsilon}}
-    \label{rule:E-Force}
-    \and
-    \infer*[lab=E-Open]
-      {\lenv(a) = \tyexists^{l}\bar\iota.\ C.\ \ty \\ \neg\,\unl\,\ty \\ \conserv_{\cGamma}(\bar\iota, C) \\\\
-       \tyj{\cGamma, C(\bar\iota)}{\lenv[a \mapsto \ty]}{F}{\tm}{\tyB}\eff{\varepsilon}}
-      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyB}\eff{\varepsilon}}
-    \label{rule:E-Open}
   \end{rules}
   \figrule
-  \Description{Inference rules E-New, E-New-Field, E-Box, E-Force and E-Open.}
-  \caption{Creation, recursion and existentials, under \cref{conv:lf,conv:implicit}. $\acyc$, $\conserv$ and $\rankable$ are defined in \cref{def:creation}, $\Inst$ in \cref{conv:implicit}, and E-Pack is in \cref{app:r-ex}.}
+  \Description{Inference rules E-New and E-Box.}
+  \caption{Creation and recursion, under \cref{conv:lf,conv:implicit}, with $\acyc$, $\conserv$ and $\rankable$ of \cref{def:creation}. E-New-Field creates a channel at a field $\fld{x}{\kappa}$ of any point and adds no facts, E-Force calls a box at points $\bar x$ with $\cGamma \vdash C[\bar x]$ and $u[\bar x] \prec F$, E-Open opens a held existential and assumes its constraint when the constraint is conservative over $\cGamma$, and E-Pack packs one (\cref{app:r-new,app:r-boxes,app:r-ex}).}
   \label{fig:typing-orders}
 \end{figure}
