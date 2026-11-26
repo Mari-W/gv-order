@@ -19,7 +19,7 @@
   \begin{rules}
     \infer*[lab=E-Box]
       {B = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U) \\ \unl\,\Delta \\\\
-       \forall \bar s.\ \ \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}}
+       \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}\ \ \text{for every instance $\bar s$}}
       {\tyj{\Gamma}{\Delta}{F}{\tbox{f}{e}}{B}\eff{0}}
     \label{rule:E-Box}
     \and
@@ -37,6 +37,6 @@
   \end{rules}
   \figrule
   \Description{Inference rules E-New, E-New-Field, E-Box, E-Force and E-Open.}
-  \caption{Typing rules for creation, recursion and existentials}
+  \caption{Creation, recursion and existentials, under \cref{conv:implicit}. $\acyc$, $\conserv$ and $\tree$ are in \cref{def:creation}, $\rankable$ in \cref{def:ranked}. E-Pack is in \cref{app:r-ex}.}
   \label{fig:typing-orders}
 \end{figure}

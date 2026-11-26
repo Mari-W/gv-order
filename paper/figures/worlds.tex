@@ -12,11 +12,11 @@
     \dual{\dual{x}} = x \qquad \fld{\dual{x}}{\kappa} = \fld{x}{\kappa} \qquad \dual{\pplus{x}} = \pplus{\dual{x}}
   \end{array}
   \]
-  \judghead{Where an end moves}{x \mapsto x'}
+  \judghead{Where an end moves, where a payload arrives}{x \mapsto x'}
   \[
   \begin{array}{@{}l@{\qquad}l@{\qquad}l@{\qquad}l@{}}
-    x \mapsto \pplus{x} & x \mapsto \dual{\fld{x}{i}} & x \mapsto \fld{x}{i} & \fld{x}{j} \\
-    \text{\footnotesize send, receive, close} & \text{\footnotesize $\tselect_i$} & \text{\footnotesize $\tbranch$, side $i$} & \text{\footnotesize $j$-th payload end of a message at $x$}
+    x \mapsto \pplus{x} & x \mapsto \dual{\fld{x}{i}} & x \mapsto \fld{x}{i} & \fld{x}{j} = \fld{\dual{x}}{j} \\
+    \text{\footnotesize send, receive, close at $x$} & \text{\footnotesize $\tselect_i$ at $x$} & \text{\footnotesize $\tbranch$ at $x$, side $i$} & \text{\footnotesize $j$-th payload end of a message at $x$}
   \end{array}
   \]
   \judghead{Worlds}{W}
@@ -25,13 +25,14 @@
     W = (A, {\prec_A}),\ \ {\prec_A} \subseteq \Point_A^2 &
     {\ordW} = \mathsf{tc}\big({\prec_A} \cup \{x \prec \pplus{x}\} \cup \{x \prec \pplus{\dual{x}}\}\big) \\[3pt]
     \cons\,W \iff \forall x.\ x \not\ordW x &
-    W \wext W' \iff A \subseteq A' \land {\ordW} \subseteq {\ordW[W']} \\[3pt]
+    x \preccurlyeq_W y \iff x = y \lor x \ordW y \\[3pt]
+    W \wext W' \iff A \subseteq A' \land {\ordW} \subseteq {\ordW[W']} &
+    W_1 \wjoin W_2 = (A_1 \cup A_2,\ {\prec_{A_1}} \cup {\prec_{A_2}}) \\[3pt]
     W \grow{\rho}{C} = (A \cup \{\rho\},\ {\prec_A} \cup C[\rho]) &
-    W_1 \wjoin W_2 = (A_1 \cup A_2,\ {\prec_{A_1}} \cup {\prec_{A_2}})
   \end{array}
   \]
   \figrule
   \Description{Grammar of points, the moves of an end, and the definitions of worlds, their order, consistency, extension, growth and join.}
-  \caption{Points, moves and worlds (restriction and joins in \cref{app:w-ext})}
+  \caption{Points, moves and worlds. $\Point_A$ is the set of points with a base in $A$, $\mathsf{tc}$ the transitive closure (restriction and the join lemma in \cref{app:w-ext}).}
   \label{fig:worlds}
 \end{figure}
