@@ -1,31 +1,33 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at 3479b882 by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at a4d41eaa by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 
 | kind | count |
 |---|---|
 | other | 1 |
-| simplified | 8 |
+| simplified | 10 |
 | merged | 14 |
-| renamed | 47 |
-| notation | 57 |
+| renamed | 52 |
+| notation | 58 |
 
 ## Statements with no Rocq counterpart (other, 1)
 
 - **block fu-vs** (`Erel`, `FuelE`, `o_recv`, `f_recv`, `o_new`, `f_new`). The Rocq proves no lemma that merges `Erel` and `FuelE` into one fixed point. Such a fixed point would read at a receive only the values in both $V$ and $ZV$, and it would choose one session type at a creation where O-New and F-New choose one each. Its equivalence with the conjunction is unproved.
 
-## The map says less than the Rocq (simplified, 8)
+## The map says less than the Rocq (simplified, 10)
 
 - **block t-lf-wf** (`wok`, `swf`, `wfit`, `wstrict`, `wranked`). The Rocq asks `wok N W` of process typing, which is `swf W` at a finite bound. The induction behind the fundamental theorems reads worlds under `wfit N W`, which is `wstrict W`, or `wranked W` with $N$ finite and excluded middle. The lock-free view shows the ranked case only.
 - **block p-typing** (`wok`, `sacyc`, `swf`). The Rocq premise is `wok N W`, which is `sacyc W` at $N = \infty$ and `swf W` at a finite $N$. The lock-free view shows the finite case as $\mathsf{ranked}\,W$, and the deadlock-free view the case $N = \infty$ as $\mathsf{cons}\,W$.
+- **block p-typing** (`iann`, `tenv_ofk`, `ptyped_iann_local`, `p_connect_iann`). The Rocq keeps the credits and tickets of the interface ends in a map `iann` beside $\Sigma$ and lifts $\Sigma$ to a context of ends by `tenv_ofk`. The map writes them into $\Sigma$, $o : S_x^{a,m}$ with $\mathsf{tk}(o) = m$. A derivation reads `iann` only at the ends of its interface and of its restricted channels (`ptyped_iann_local`, `p_connect_iann`), so each component may annotate its own interface.
 - **block fu** (`Fdef`, `kinj`, `renk`). `Fdef` states both clauses for each renaming `g` of ends injective on the held ends (`kinj`, `renk`), at the term `emap g e`. The map shows the identity renaming. The closure under renamings is a proof device for a link, which renames the dual end of a removed end in another thread.
 - **block soup** (`soup_consistent`, `soup_gen`). $\mathsf{wa}$ names the other eleven conjuncts of `soup_consistent`, the fields `sp_owner` to `sp_sigcap` of `soup_gen`. Its note lists each conjunct.
 - **note se.r0** (`lock_free`, `erase`). `lock_free` asks `erase (r 0) = p` of the `config` `r 0` and the `proc` `p`, so a run may start at each naming of the threads of $P$. The map starts it at $P$. The Rocq form implies the map form, which takes $r_0 = P$.
 - **note tp.msunion** (`proc`, `erase`). The Rocq composes two `proc`s and adds their multisets of terms. The map composes processes at disjoint thread names, whose union erases to that sum.
 - **note fu.Phi** (`sp_fin`, `sp_cap`). Counters and tickets range over $\mathbb{N} \cup \{\infty\}$, the type `fuel`. The map writes $\mathbb{N}$, and the lock-free process relation keeps both finite by `sp_fin` and `sp_cap`.
-- **note sp.own** (`soup_inv`, `khalf`, `sp_sigcap`). The interface annotation $\eta$ of `soup_gen` gives the bound on the tickets of an interface end. `soup_inv` fixes it to $\lfloor N/2 \rfloor$ at each end by `khalf`, and the map writes that bound.
+- **note P-Term.ann** (`iann`, `p_term`). The Rocq reads the credit and tickets from `iann`, the map from the entry of $\Sigma$.
+- **note tp.tk** (`iann`). The Rocq reads the tickets as the second component of `iann` at $o$.
 
 ## One notion in the map, two in the Rocq (merged, 14)
 
@@ -44,13 +46,14 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note E-New.pos** (`e_new`, `e_new_fld`). The two constructors e_new and e_new_fld are the two cases of the triple.
 - **note sp.delta** (`sp_pts`, `sp_dom`). The Rocq keeps an environment `A` of the relation and a protocol map `Π` of the counter relation, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\Delta$ states the three maps.
 
-## Renamed (renamed, 47)
+## Renamed (renamed, 52)
 
 - **block w-wf** (`sacyc`). $\mathsf{cons}$ is `sacyc`. A world is consistent exactly when its order has no cycle.
 - **block w-wf** (`swf`). $\mathsf{ranked}$ for a world of typing is `swf`, which is `wf` of relation/Ranks.v at the order of the world, the existence of a rank function.
 - **block t-agecap** (`tage`, `lage`, `thage`). The Rocq calls $T - c$ aging (`tage`, `lage`, `thage`). The map says that the credits drop by the cost and names the rules Lower-Free, Lower-Credit, Lower-Idle and Lower-Arr.
 - **block fu** (`FuelE`, `Vfuel`, `fsem`). The Rocq calls $Z$ and $ZV$ fuel (`FuelE`, `Vfuel`, `fsem`) and the argument $d$ the frame. The map calls $Z$ the counter relation, $ZV$ the counters of values and $d$ the cost bound, because $d$ bounds the actions of the term as its cost does. The letter $Z$ keeps $F$ for futures.
 - **note syn.values** (`is_val`). The Rocq writes the injections as `Inj`, shown as $\mathsf{inj}_i$, and `is_val` decides which terms are values.
+- **note end.ech** (`ech`). The Rocq calls $\mathsf{chan}$ `ech`.
 - **note proc.proc** (`config`). The Rocq type `gmap nat expr` of the threads is shown as $\mathbb{N} \rightharpoonup \mathsf{Expr}$, with $\mathsf{Expr}$ for the type `expr` of terms.
 - **note sx.kappai** (`bfield`). `bfield false` is $0$ and `bfield true` is $1$, shown as the fields $\kappa_{\mathsf{false}}$ and $\kappa_{\mathsf{true}}$.
 - **note ev.event** (`event`). The constructors `EvSolo`, `EvSync` and `EvOffer` of `event` are shown as $\mathsf{solo}$, $\mathsf{sync}$ and $\mathsf{offer}$.
@@ -83,6 +86,10 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note P-Stop** (`Pclauses`). $(\mathsf{stop})$ labels the first clause of `Pclauses`.
 - **note P-Ready** (`Pclauses`). $(\mathsf{ready})$ labels the second clause of `Pclauses`, and $\mathsf{pirred}$ is the Rocq predicate `pirred`.
 - **note P-Step** (`Psteps`). $(\mathsf{step})$ labels the clause that `Psteps` states.
+- **note Q-Send.split** (`send_split`). The Rocq calls $\mathsf{opened}$ `send_split`.
+- **note Q-Recv.ok** (`recv_ok`). The Rocq calls $\mathsf{matches}$ `recv_ok`.
+- **note Q-Recv.back** (`recv_back`). The Rocq calls $\mathsf{closed}$ `recv_back`.
+- **note Q-Recv.env** (`recv_env`). The Rocq calls $\mathsf{iface}$ `recv_env`.
 - **note Q-Link** (`q_close`, `q_select`, `q_branch`, `q_link`). Q-Close, Q-Select, Q-Branch and Q-Link are the clauses `q_close`, `q_select`, `q_branch` and `q_link`, shown as the term obligations they repeat.
 - **note fu.rty** (`rty`). $\mathsf{thread}$ is the constructor `RThread` of `rty`.
 - **note fu.val** (`Fdef`). $(\mathsf{stop})$ labels the value clause of `Fdef`, and $\mathsf{Val}$ is the set of terms that `is_val` accepts.
@@ -94,7 +101,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note sr.FE** (`FuelE`, `Fdef`, `FLevA`). $\mathsf{thread}$ is the constructor `RThread` of `rty`, the result of a thread.
 - **note new.wf** (`new_ok`). $\mathsf{wf}$ is `well_founded` of the Rocq standard library, which `new_ok` applies to `new_step C`.
 
-## Notation (notation, 57)
+## Notation (notation, 58)
 
 - **block syn-let** (`ELet`). Derived form. Syntax.v defines `ELet e1 e2` as `LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))`, the pair elimination and unit elimination shown.
 - **block syn-procs** (`erase`). $P \sim P'$ stands for `erase` $P$ $=$ `erase` $P'$. Two finite maps have the same multiset of terms exactly when a bijection of their domains maps one to the other.
@@ -140,8 +147,9 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note sj.term** (`sem_typed`). The Rocq writes the judgment at $\kappa_L$ with a turnstile of its own, `⊫`, for `sem_typed κ_L` and `sem_ptyped κ_L`. The map writes $\vDash[\kappa_L]$, the instance of the family $\vDash[\kappa]$ at $\kappa_L$, so that one symbol serves each cost table.
 - **note sj.proc** (`sem_ptyped`). The Rocq calls it `sem_ptyped`, with the notation $\Sigma \vDash_W P : T$. The map writes the quantifier out and keeps $\Sigma \vDash_W P : T$ for the judgment at each consistent extension of [[sj-all]].
 - **note sp.allR** (`lf_sems`). `lf_sems` quantifies over the ranked Rocq worlds of type `world` that `wmodels` relates to $W$, which the map writes as ranked extensions.
-- **note sp.lfsem** (`lf_sem`, `lf_sems`). The Rocq reads `lf_sem` at each ranked world, with the notation $\Sigma \Vvdash^{N}_W P : T$. The map writes it out and keeps $\Sigma \Vvdash^{N}_W P : T$ for `lf_sems`, the judgment at each ranked extension. `lf_sems` reads `lf_semk`, the judgment at the annotations $\eta$ of the interface. The map leaves $\eta$ implicit here and in the theorem rows, because it is fixed with the interface.
+- **note sp.lfsem** (`lf_sem`, `lf_sems`). The Rocq reads `lf_sem` at each ranked world, with the notation $\Sigma \Vvdash^{N}_W P : T$. The map writes it out and keeps $\Sigma \Vvdash^{N}_W P : T$ for `lf_sems`, the judgment at each ranked extension. `lf_sems` reads `lf_semk`, the judgment at the annotations `iann` of the interface, which the map writes into $\Sigma$.
 - **note sp.lfsem** (`lf_sem`, `s_q`, `erase`). $P_a \sim P$ stands for `erase (s_q a) = p`, the process of $a$ with its threads renamed.
+- **note sp.own** (`soup_invk`, `SoupK`, `soup_inv`, `khalf`). The map reads `soup_invk`, which bounds the tickets of an interface end by the tickets of its entry of $\Sigma$, as `SoupK` and `lf_sems` do. `soup_inv` and `lf_sem` fix the bound to $\lfloor N/2 \rfloor$ by `khalf`.
 - **note E-New.vanish** (`e_new_fld`). The Rocq types the field case at the product directly, and the map writes it as an existential with no bound point and no facts.
 - **note ty.up** (`frest`, `rest_of`, `abs_fut`, `rest_below`). The Rocq writes the rest of a future as `RAbove v` for ${\vartriangle}v$, `RAll` for ${\vartriangle}\bot$ and no rest for ${\vartriangle}\top$, and compares by `rest_below`, which is $x \preccurlyeq v$, false and true in the three cases.
 - **note fu.at** (`Fobl`). The Rocq repeats the premise in each obligation of `Fobl`, as `FuelE` at each lower level.
