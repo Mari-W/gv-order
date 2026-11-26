@@ -3,7 +3,7 @@
 \begin{minipage}{\linewidth}
 \begin{maplisting}
 grow = !(f = λw. \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}                 \lstcmt{-- c below the point of w}
-                 \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λ_. recvclose d′) \lstkw{in}
+                 \lstkw{let} ⟨d, d′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ∗ = \lstkw{spawn} (λ_. \lstkw{wait} d′) \lstkw{in}
                  \lstkw{let} ∗ = \lstkw{close} (\lstkw{send} ⟨∗, d⟩) \lstkw{in}              \lstcmt{-- one session action}
                  \lstkw{let} ∗ = \lstkw{spawn} (λ_. (\lstkw{force} f) c′) \lstkw{in}
                  \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} w)                 \lstcmt{-- waits on its child}

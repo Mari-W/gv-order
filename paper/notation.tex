@@ -12,10 +12,10 @@
 % cTm, types, session types and type environments in cTy, processes in cPr
 % (black). Points, worlds, judgments and relations stay black. The keyword
 % colour of the listings (kwcolor, mapmacros.tex) is the term colour.
-% Lock-free parts sit on a neutral grey box (\lf, colour lfbg), which stays
-% visible behind coloured text and in greyscale.
+% Lock-free parts sit on a pale pink box (\lf, colour lfbg), which stays
+% visible behind coloured text.
 \colorlet{kwcolor}{cTm}
-\colorlet{lfbg}{black!11}
+\definecolor{lfbg}{HTML}{FADCE8}
 \colorlet{factcolor}{cTy}
 \DeclareRobustCommand{\lf}[1]{\lfadd{#1}}
 \DeclareRobustCommand{\kw}[1]{\mathord{{\color{cTm}\mathsf{#1}}}}

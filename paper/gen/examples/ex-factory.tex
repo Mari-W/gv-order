@@ -7,7 +7,7 @@ mk₀  = !(f = λu. \lstkw{let} ∗ = u \lstkw{in} \lstkw{let} ⟨c, c′⟩ = \
 mk₁  = !(f = λp. \lstkw{let} ⟨c, c′⟩ = \lstkw{new} \lstkw{in}
                 \lstkw{let} ∗ = \lstkw{spawn} (λv. \lstkw{let} ∗ = v \lstkw{in} \lstkw{close} (\lstkw{send} ⟨∗, c⟩)) \lstkw{in} ⟨p, c′⟩)
 main = \lstkw{let} p = (\lstkw{force} mk₀) ∗ \lstkw{in} \lstkw{let} ⟨p, q⟩ = (\lstkw{force} mk₁) p \lstkw{in}
-       \lstkw{let} ∗ = recvclose p \lstkw{in} recvclose q
+       \lstkw{let} ∗ = \lstkw{wait} p \lstkw{in} \lstkw{wait} q
 \lstcmt{-- mk₀ places c at a fresh ρ with C(ρ) = \textbraceleft{}ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0\textbraceright{}}
 \lstcmt{-- mk₁ places c at ι·0 for p at ι}
 \lstcmt{-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)}
