@@ -1,6 +1,6 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at bff66458 by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at b43618f3 by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 
@@ -10,7 +10,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 | simplified | 6 |
 | merged | 12 |
 | renamed | 45 |
-| notation | 43 |
+| notation | 54 |
 
 ## Statements with no Rocq counterpart (other, 1)
 
@@ -88,7 +88,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note sr.FE** (`FuelE`, `Fdef`, `FLevA`). $\mathsf{thread}$ is the constructor `RThread` of `rty`, the result of a thread.
 - **note new.wf** (`new_ok`). $\mathsf{wf}$ is `well_founded` of the Rocq standard library, which `new_ok` applies to `new_step C`.
 
-## Notation (notation, 43)
+## Notation (notation, 54)
 
 - **block syn-let** (`ELet`). Derived form. Syntax.v defines `ELet e1 e2` as `LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))`, the pair elimination and unit elimination shown.
 - **block ty-equiv** (`seqv`, `sequiv`, `sty_df`). The deadlock-free view shows one equivalence, $\approx$ for `seqv`. `seqv` compares two session types after `sty_df`, which is the identity on the types of that view, so `seqv` and `sequiv` coincide there. The lock-free view shows both.
@@ -105,6 +105,10 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **block fu** (`Fobl`). $e'\ \mathsf{at}\ \Phi'\ !\ d'$ abbreviates the premise that each obligation of `Fobl` states for its successor, `FuelE` at each lower level.
 - **block fu-obls** (`refill`, `fhand`, `mres`, `mrem`). $\Phi{\downarrow}[o \mapsto S^{m,m}]$ is `refill o φ` with the protocol of $o$ updated in the map `Π`, and $\Phi_M{\downarrow}$ is `fhand`. $\Phi = \Phi_M \uplus \Phi_r$ with $\mathrm{dom}\,\Phi_M = \mathsf{fends}(v)$ states the inclusion of `fends v` in the held ends and the maps `mres` and `mrem`.
 - **block th-compose** (`conn`, `sem_p_connect_sw`). The Rocq states P-Connect with a second interface $\Sigma_D$ and asks in `conn` that $\Sigma_D$ has the domain of $\Sigma_C$ with dual types up to $\approx$. The map writes this interface as $\overline{\Sigma_C}$.
+- **block alg-annot** (`aexpr`). The Rocq names the opened variable by its index, `AOpen i U t`. The annotations inside $t$ use de Bruijn point variables as the premise of `e_open` does, the opened ones at $0, \ldots, m - 1$ and the others shifted by $m$. `AAsc T c t` has the cost $c$ in both modes, at $\infty$ in the deadlock-free one.
+- **block alg-judgment** (`tpart`, `lpart`). The Rocq keeps the ends in their own context $\Theta$, as [[t-contexts]] records, and splits it by the ends of the erased first subterm (`tpart`), and the variables by `lpart`. The map writes both as one split of $\Delta$.
+- **block alg-intro** (`box_inst`, `box_base`). The fresh variables $\bar\zeta$ are `box_inst M k` with `M = box_base k U Δ`, the session variables $M, \ldots, M + k - 1$ above the free session variables of the box context. Checking returns the cost of the body, and Chk-Lam and Chk-Box ask it at most the cost in the type, which E-Sub then raises.
+- **block alg-thms** (`algo_complete`). Completeness is stated for each weakening of $\Delta$ by unlimited entries (`algo_complete`), and `algo_complete_at` is the form shown. The contractive context is `tenv_contr Θ` and `lenv_contr Δ`.
 - **note ty.ubound** (`ubound`). `UNone` is $\bot$, `UPt x` is $x$ and `UTop` is $\top$.
 - **note ty.heads** (`heads`, `hbot`, `lb_heads`). The map writes $\mathsf{ap}$ for the Rocq function `heads`, with $\bot$ added when `hbot` holds and $\top$ added for a closure or existential at `LNone`, whose `lb_heads` is empty.
 - **note ty.lbound** (`lbound`). `LBot` is $\bot$, `LNone` is $\top$ and `LPt x` is $x$.
@@ -133,3 +137,10 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note E-New.vanish** (`e_new_fld`). The Rocq types the field case at the product directly, and the map writes it as an existential with no bound point and no facts.
 - **note ty.up** (`frest`, `rest_of`, `abs_fut`, `rest_below`). The Rocq writes the rest of a future as `RAbove v` for ${\vartriangle}v$, `RAll` for ${\vartriangle}\bot$ and no rest for ${\vartriangle}\top$, and compares by `rest_below`, which is $x \preccurlyeq v$, false and true in the three cases.
 - **note fu.at** (`Fobl`). The Rocq repeats the premise in each obligation of `Fobl`, as `FuelE` at each lower level.
+- **note alg.erase** (`erase`). The Rocq function `erase` maps each annotation constructor of `aexpr` to the term former it marks or to its subterm.
+- **note alg.new** (`aexpr`). The Rocq writes this form as a constructor of `aexpr`.
+- **note alg.newf** (`aexpr`). The Rocq writes this form as a constructor of `aexpr`.
+- **note alg.force** (`aexpr`). The Rocq writes this form as a constructor of `aexpr`.
+- **note alg.pack** (`aexpr`). The Rocq writes this form as a constructor of `aexpr`.
+- **note alg.open** (`aexpr`). The Rocq writes this form as a constructor of `aexpr`.
+- **note alg.bysub** (`by_sub`). The Rocq tests the head constructor with the boolean function `by_sub`.

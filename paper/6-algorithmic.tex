@@ -1,5 +1,18 @@
 \section{Algorithmic Typing}
 \label{sec:algorithmic}
 
-% GAP: algorithmic (undecided by the author). Placeholder only. The map has no block on algorithmic typing.
-% PAR: placeholder | example: - | figure/rule: - | map: -
+% PAR: section overview, annotated terms, synthesis and checking, sound, complete and decidable relative to oracles, both instances | example: - | figure/rule: fig:algorithmic | map: alg-annot, alg-judgment, alg-thms
+% PAR: annotations record the choices of E-New, E-Force, E-Sub, E-Pack and E-Open, erasure, opened points named inside open | example: ex-cycle | figure/rule: app:alg-annot | map: alg-annot
+% PAR: split by occurrence, linear entries to the subterm that mentions them, boxes to both, future of the first premise known | example: - | figure/rule: app:alg-judgment | map: alg-judgment, alg-elim
+% PAR: checked forms lambda, inj, case, box, one check of a box body at fresh session variables (typed_sinst) | example: ex-sinst | figure/rule: Chk-Box | map: alg-intro
+% PAR: oracles entailment, instance, conservativity, creation, equality of constraints, session equivalence and subtyping, finite constraints decidable, infinite ones | example: ex-cs | figure/rule: app:alg-oracles | map: alg-oracles
+% PAR: theorems soundness, completeness over contractive contexts, decision procedure alg, determinism | example: - | figure/rule: fig:algorithmic | map: alg-thms
+% PAR: not done, inference of credits, tickets and N as linear constraints, inference of the annotations of new and open | example: - | figure/rule: - | map: -
+
+\begin{figure}[tp]
+  \centering
+  \maprow{\mapblock{alg-thms}}
+  \caption{Soundness, completeness and decidability of algorithmic typing (all rules in \cref{app:algorithmic})}
+  \label{fig:algorithmic}
+  % FIG: map alg-thms | rules alg-annot to alg-oracles in the appendix
+\end{figure}

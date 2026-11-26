@@ -2734,6 +2734,312 @@
      ]
     }
    ]
+  },
+  {
+   "id": "algorithmic",
+   "title": "Algorithmic typing",
+   "intro": "The algorithmic system types annotated terms by two syntax-directed judgments, synthesis and checking. It is sound and complete for the declarative judgment of [[t-judgment]] and decidable relative to oracles for the order facts and for session types.\\inmode{lf}{ Costs, credits and tickets are literals of the annotations or computed from them.}",
+   "blocks": [
+    {
+     "id": "alg-annot",
+     "title": "Annotated terms",
+     "formula": "\\begin{array}{c}\\begin{array}{rl}t ::= & i \\mid \\ast \\mid o \\mid \\lambda t \\mid t_1\\,t_2 \\mid \\langle t_1, t_2\\rangle \\mid \\sym{syn.letu}{\\mathsf{let}\\ \\ast = t_1\\ \\mathsf{in}\\ t_2} \\mid \\sym{syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = t_1\\ \\mathsf{in}\\ t_2} \\\\\\mid & \\sym{syn.inj}{\\mathsf{inj}_i\\,t} \\mid \\sym{syn.case}{\\mathsf{case}\\ t\\,(t_1)\\,(t_2)} \\mid\\ \\sym{syn.box}{!t} \\mid \\sym{syn.op}{k\\,t} \\\\\\mid & \\sym{alg.new}{\\mathsf{new}[C, S\\inmode{lf}{, m_1, m_2}]} \\mid \\sym{alg.newf}{\\mathsf{new}[x\\cdot\\kappa, S\\inmode{lf}{, m_1, m_2}]} \\mid \\sym{alg.force}{\\mathsf{force}[\\bar x, \\bar s]\\,t} \\\\\\mid & \\sym{alg.asc}{(t : T\\inmode{lf}{\\ !\\ \\varepsilon})} \\mid \\sym{alg.pack}{\\mathsf{pack}[\\bar x]\\,t : \\exists^{l}\\bar\\iota.\\,C.\\,T} \\mid \\sym{alg.open}{\\mathsf{open}\\ i : U\\ \\mathsf{in}\\ t}\\end{array} \\\\[2ex]\\sym{alg.erase}{|\\mathsf{new}[\\ldots]| = \\mathsf{new} \\qquad |\\mathsf{force}[\\bar x, \\bar s]\\,t| = \\mathsf{force}\\,|t| \\qquad |(t : T)| = |\\mathsf{pack}[\\bar x]\\,t : T| = |\\mathsf{open}\\ i : U\\ \\mathsf{in}\\ t| = |t|}\\end{array}",
+     "caption": "An annotated term $t$ is a [[syn-terms|term]] with five more forms, each of which records a choice that the declarative rules make and the term does not show. $\\mathsf{new}[C, S]$ creates at a fresh base with the constraint $C$ of [[r-new|E-New]], and $\\mathsf{new}[x\\cdot\\kappa, S]$ creates at a field. $\\mathsf{force}[\\bar x, \\bar s]$ fixes the instance of [[r-boxes|E-Force]]. The ascription $(t : T)$ is one use of E-Sub of [[t-subs]], $\\mathsf{pack}$ one use of E-Pack and $\\mathsf{open}$ one use of E-Open of [[r-ex]]. Inside $\\mathsf{open}\\ i : U\\ \\mathsf{in}\\ t$ the annotations of $t$ name the opened points $\\bar\\iota$. The erasure $|t|$ deletes the annotations and gives the term that the declarative judgment types.",
+     "why": "No program mentions a point, so the term alone does not fix where E-Open applies, which points it introduces, or at which position and constraint $\\mathsf{new}$ creates. The annotations record these choices and the erasure removes them before the declarative judgment, which therefore stays as it is.",
+     "source": [
+      {
+       "file": "algorithmic/Annot.v",
+       "names": [
+        "aexpr",
+        "erase"
+       ]
+      }
+     ],
+     "deviations": [
+      {
+       "kind": "notation",
+       "reason": "The Rocq names the opened variable by its index, `AOpen i U t`. The annotations inside $t$ use de Bruijn point variables as the premise of `e_open` does, the opened ones at $0, \\ldots, m - 1$ and the others shifted by $m$. `AAsc T c t` has the cost $c$ in both modes, at $\\infty$ in the deadlock-free one.",
+       "names": [
+        "aexpr"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-judgment",
+     "title": "Algorithmic judgments",
+     "formula": "\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\qquad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\[2ex]\\sym{alg.split}{\\Delta{\\restriction}t = \\{\\, z : T \\in \\Delta \\mid z \\in |t| \\lor \\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T \\,\\}} \\qquad \\sym{alg.split}{\\Delta{\\setminus}t = \\{\\, z : T \\in \\Delta \\mid z \\notin |t| \\lor \\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T \\,\\}}\\end{array}",
+     "caption": "Synthesis $\\Rightarrow$ computes the type\\inmode{lf}{ and the cost} from $\\Gamma$, $\\Delta$, $F$ and $t$. Checking $\\Leftarrow$ takes the type as input\\inmode{lf}{ and computes the cost}. A binary rule splits $\\Delta$ by occurrence. The first premise receives the entries that its term mentions, the second the rest, and both receive the [[ty-kinds|unlimited]] entries. The future of the first premise is then known before it runs, as in [[t-judgment]].",
+     "why": "The declarative split of [[t-contexts]] is a choice, and the future of the first premise reads its second half. A linear entry occurs in exactly the subterm that uses it, so the occurrences fix the split. An unlimited entry is a box, which has no active point and ages to itself, so handing it to both sides changes neither future nor aging.",
+     "source": [
+      {
+       "file": "algorithmic/Algo.v",
+       "names": [
+        "syn",
+        "chk",
+        "fut1"
+       ]
+      },
+      {
+       "file": "algorithmic/Annot.v",
+       "names": [
+        "tpart",
+        "lpart",
+        "lpart_wk"
+       ]
+      }
+     ],
+     "deviations": [
+      {
+       "kind": "notation",
+       "reason": "The Rocq keeps the ends in their own context $\\Theta$, as [[t-contexts]] records, and splits it by the ends of the erased first subterm (`tpart`), and the variables by `lpart`. The map writes both as one split of $\\Delta$.",
+       "names": [
+        "tpart",
+        "lpart"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-leaves",
+     "title": "Leaves and creation",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ast \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Syn-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, i : T} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} i \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Syn-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Chan.crtk}{a \\leq m}}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, o : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} o \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Syn-Chan}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{sty.contr}{\\mathsf{contr}}\\,S\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.new}{\\mathsf{new}[C, S\\inmode{lf}{, m_1, m_2}]} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\exists^{\\bot}\\rho.\\ C.\\ \\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Syn-New}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{sty.contr}{\\mathsf{contr}}\\,S\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.newf}{\\mathsf{new}[x\\cdot\\kappa, S\\inmode{lf}{, m_1, m_2}]} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\sym{ty.sess}{S_{x\\cdot\\kappa}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{x\\cdot\\kappa}}\\inmode{lf}{^{m_2,m_2}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Syn-New-Field}\\end{array}",
+     "caption": "The leaves synthesize the types of [[r-base]] with the same premises. $\\mathsf{new}$ synthesizes the type of [[r-new|E-New]] at the base or field and the constraint\\inmode{lf}{ and tickets} that its annotation names.",
+     "why": "Each premise is a declarative premise, so the rule decides it by an oracle or by computation.",
+     "source": [
+      {
+       "file": "algorithmic/Algo.v",
+       "names": [
+        "a_unit",
+        "a_var",
+        "a_chan",
+        "a_new",
+        "a_new_fld"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-elim",
+     "title": "Application, pairs and let",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\sym{E-App.ub}{u \\prec F} \\\\ \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U)\\inmode{lf}{^{a}}} t_2 \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\varepsilon_2 \\leq a}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_1\\,t_2 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{Syn-App}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_1\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} T_1} t_2 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\langle t_1, t_2\\rangle \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\inmode{lf}{(}T_1\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_2}}\\inmode{lf}{)} \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Syn-Pair}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.chk}{\\Leftarrow}} \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = t_1\\ \\sym{syn.letu}{\\mathsf{in}}\\ t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Alg-LetU}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_1 \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; T_2, T_1, \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = t_1\\ \\sym{syn.letp}{\\mathsf{in}}\\ t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Alg-LetP}\\end{array}",
+     "caption": "The function of an application synthesizes its arrow, which gives the argument type to check against. A pair synthesizes both components. A let checks or synthesizes its body in the mode $d \\in \\{\\Rightarrow, \\Leftarrow\\}$ of the conclusion. The futures and the aging are those of [[r-fun]] and [[r-data]], with the split of [[alg-judgment]].",
+     "why": "The arrow has the upper point $u$ and the lower point $l$. Once synthesized, it fixes the premise $u \\prec F$ and the future of the argument.",
+     "source": [
+      {
+       "file": "algorithmic/Algo.v",
+       "names": [
+        "a_app",
+        "a_pair",
+        "a_letu",
+        "a_letp",
+        "c_letu",
+        "c_letp"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-intro",
+     "title": "Checked forms",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Abs.lb}{l \\preccurlyeq \\Delta}\\quad \\sym{E-Abs.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T} \\\\ \\Gamma ; \\Delta\\inmode{lf}{ \\sym{E-Abs.cap}{- a}}, T \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\varepsilon_0 \\leq \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\lambda t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Chk-Lam}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T_i\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{E-Inj.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,(T_1 \\oplus T_2)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.inj}{\\mathsf{inj}_i\\,t} \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{Chk-Inj}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t}} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0} \\\\ \\Gamma ; T_j, \\sym{alg.split}{\\Delta{\\setminus}t}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_0}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_j \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_j}\\quad (j = 1, 2)\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.case}{\\mathsf{case}\\ t\\,(t_1)\\,(t_2)} \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)}}}\\;\\textsf{Chk-Case}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{alg.boxcontr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U, \\Delta}\\quad \\sym{alg.boxfresh}{\\bar\\zeta \\mathrel{\\#} \\Delta, B} \\\\ \\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} \\sym{alg.boxinst}{U[\\bar Z \\mapsto \\bar\\zeta]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\varepsilon_0 \\leq \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} !t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{Chk-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{alg.bysub}{t \\neq \\lambda t', \\mathsf{inj}_i\\,t', \\mathsf{case}\\ldots, !t', \\mathsf{let}\\ldots}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_0\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\ \\sym{sub.tsub}{\\Gamma \\vdash T_0 \\leq T}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T_0 \\Rightarrow \\mathsf{contr}\\,T}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{Chk-Sub}\\end{array}",
+     "introduces": [
+      "\\zeta"
+     ],
+     "caption": "A $\\lambda$, an injection, a case and a box are only checked, against an expected type that fixes their points\\inmode{lf}{, credit and cost}. Chk-Box checks the body once, at fresh session variables $\\bar\\zeta$ for the $\\bar Z$ of the box, and asks the box context contractive. The other forms are checked by synthesis followed by [[t-subs|subtyping]].",
+     "why": "E-Box quantifies over the session instances. A derivation over contractive contexts at fresh variables gives one at each contractive instance (`typed_sinst`), so one check suffices. A $\\lambda$ has no best upper point, which is why it needs its arrow from outside.",
+     "source": [
+      {
+       "file": "algorithmic/Algo.v",
+       "names": [
+        "c_lam",
+        "c_inj",
+        "c_case",
+        "c_box",
+        "c_sub",
+        "by_sub"
+       ]
+      },
+      {
+       "file": "algorithmic/Annot.v",
+       "names": [
+        "box_inst",
+        "box_base"
+       ]
+      },
+      {
+       "file": "algorithmic/Sound.v",
+       "names": [
+        "box_body_all"
+       ]
+      },
+      {
+       "file": "static/Sinst.v",
+       "names": [
+        "typed_sinst"
+       ]
+      }
+     ],
+     "deviations": [
+      {
+       "kind": "notation",
+       "reason": "The fresh variables $\\bar\\zeta$ are `box_inst M k` with `M = box_base k U Δ`, the session variables $M, \\ldots, M + k - 1$ above the free session variables of the box context. Checking returns the cost of the body, and Chk-Lam and Chk-Box ask it at most the cost in the type, which E-Sub then raises.",
+       "names": [
+        "box_inst",
+        "box_base"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-struct",
+     "title": "Constants, force and the annotation rules",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_0\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{alg.prem}{\\mathsf{prem}_k(\\Gamma, F, T_0)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} k\\,t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\sym{alg.prem}{\\mathsf{res}_k(T_0)}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\varepsilon_k}}\\;\\textsf{Syn-Op}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0} \\\\ \\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.force}{\\mathsf{force}[\\bar x, \\bar s]\\,t} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{Syn-Force}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.asc}{(t : T\\inmode{lf}{\\ !\\ \\varepsilon'})} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{Syn-Asc}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Pack.lb}{l \\preccurlyeq \\sym{tp.pinst}{T[\\bar x]}}\\quad \\sym{E-Pack.wf}{\\Gamma, C \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T[\\bar x]\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.pack}{\\mathsf{pack}[\\bar x]\\,t : \\exists^{l}\\bar\\iota.\\,C.\\,T} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\exists^{l}\\bar\\iota.\\,C.\\,T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{Syn-Pack}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T,\\ \\neg\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F, U}\\quad \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C)} \\\\ \\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{alg.open}{\\mathsf{open}\\ i : U\\ \\mathsf{in}\\ t} \\mathrel{\\sym{alg.syn}{\\Rightarrow}} U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{Syn-Open}\\end{array}",
+     "caption": "Syn-Op stands for one rule per constant $k$ of [[r-act]] and [[r-threads]]. $\\mathsf{prem}_k$ and $\\mathsf{res}_k$ are the premises and the result of the rule of $k$, one of E-Send, E-Recv, E-Close, E-Select, E-Branch, E-Link and E-Spawn. They are read on the synthesized type of the argument.\\inmode{lf}{ The cost $\\varepsilon_k$ is $1$ for the actions and $0$ for link and spawn.} Syn-Asc, Syn-Pack and Syn-Open are E-Sub, E-Pack and E-Open at the place that the annotation marks.",
+     "why": "A constant reads the session type of its argument, so the argument synthesizes. The three annotation rules are the only places, besides Chk-Sub, where a type changes without a change of term.",
+     "source": [
+      {
+       "file": "algorithmic/Algo.v",
+       "names": [
+        "a_send",
+        "a_recv",
+        "a_close",
+        "a_select",
+        "a_branch",
+        "a_link",
+        "a_spawn",
+        "a_force",
+        "a_asc",
+        "a_pack",
+        "a_open"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-oracles",
+     "title": "Oracles",
+     "table": {
+      "align": "l",
+      "header": [
+       "oracle",
+       "decides"
+      ],
+      "rows": [
+       {
+        "label": "entailment",
+        "cells": [
+         {
+          "formula": "\\sym{ctx.slt}{\\Gamma \\vdash_W x \\prec y}"
+         }
+        ]
+       },
+       {
+        "label": "instance of a constraint",
+        "cells": [
+         {
+          "formula": "\\Gamma \\mathrel{\\sym{side.hold}{\\vdash_W}} C[\\bar x]"
+         }
+        ]
+       },
+       {
+        "label": "conservativity",
+        "cells": [
+         {
+          "formula": "\\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C)}"
+         }
+        ]
+       },
+       {
+        "label": "creation",
+        "cells": [
+         {
+          "formula": "\\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}"
+         }
+        ]
+       },
+       {
+        "label": "equality of constraints",
+        "cells": [
+         {
+          "formula": "C = C'"
+         }
+        ]
+       },
+       {
+        "label": "session types",
+        "cells": [
+         {
+          "formula": "S \\sym{sty.seqv}{\\approx} S'\\inmode{lf}{ \\qquad S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S'}"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "The algorithm is decidable relative to these six oracles. From them it decides equality of types, the side conditions of [[t-side]], the scope of payloads and [[t-subs|subtyping]], each by recursion on the types. For finite constraints the first five reduce to finite searches over the facts.",
+     "why": "A constraint is a set of facts, and the client and server example uses an infinite one. The rules read it only through these questions, so the algorithm is as decidable as the theory of the constraints it meets and the equivalence of context-free session types.",
+     "source": [
+      {
+       "file": "algorithmic/Oracles.v",
+       "names": [
+        "SltOracle",
+        "HoldOracle",
+        "ConsOracle",
+        "NewOracle",
+        "BcsOracle",
+        "SequivOracle",
+        "SsubOracle",
+        "tsub_dec",
+        "ty_eq_dec"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "alg-thms",
+     "title": "Soundness, completeness and decidability",
+     "formula": "\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\implies \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} |t| : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\[1ex]\\sym{ctx.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Delta} \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\implies \\exists t.\\ |t| = e \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\[1ex]\\sym{alg.dec}{\\mathsf{alg}(t)(\\Gamma, \\Delta, F) = (T\\inmode{lf}{, \\varepsilon}) \\iff \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}",
+     "caption": "Soundness. A synthesized type is a declarative type of the erasure, at the same contexts\\inmode{lf}{ and cost}. Completeness. Over a contractive context a declarative derivation for $e$ gives an annotation of $e$ that synthesizes the same type\\inmode{lf}{ and cost}. Decidability. The function $\\mathsf{alg}$ computes synthesis and checking by recursion on $t$ and returns exactly the derivable results, so each judgment is decidable relative to the [[alg-oracles|oracles]] and has at most one result. The three theorems hold at each bound $N$, so for both instances.",
+     "why": "Together they make the algorithmic system an implementation of the declarative one for annotated programs. A program typed by P-Term starts from contractive ends and no variables, so completeness covers the programs that P-Term types.",
+     "source": [
+      {
+       "file": "algorithmic/Sound.v",
+       "names": [
+        "algo_sound"
+       ]
+      },
+      {
+       "file": "algorithmic/Complete.v",
+       "names": [
+        "algo_complete",
+        "algo_iff"
+       ]
+      },
+      {
+       "file": "algorithmic/Decide.v",
+       "names": [
+        "alg",
+        "alg_sound",
+        "alg_complete",
+        "syn_dec",
+        "chk_dec",
+        "syn_det",
+        "chk_det",
+        "typed_annot_dec"
+       ]
+      }
+     ],
+     "deviations": [
+      {
+       "kind": "notation",
+       "reason": "Completeness is stated for each weakening of $\\Delta$ by unlimited entries (`algo_complete`), and `algo_complete_at` is the form shown. The contractive context is `tenv_contr Θ` and `lenv_contr Δ`.",
+       "names": [
+        "algo_complete"
+       ]
+      }
+     ]
+    }
+   ]
   }
  ],
  "notes": {
@@ -18067,6 +18373,335 @@
      "reason": "$\\mathsf{wf}$ is `well_founded` of the Rocq standard library, which `new_ok` applies to `new_step C`.",
      "names": [
       "new_ok"
+     ]
+    }
+   ]
+  },
+  "alg.syn": {
+   "title": "Synthesis $\\Rightarrow$",
+   "meaning": "$\\Gamma ; \\Delta \\vdash^{F} t \\Rightarrow T$ computes $T$\\inmode{lf}{ and the cost} from the inputs and $t$.",
+   "why": "The type of an elimination form or an annotation follows from its parts.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\Gamma ; \\Delta \\vdash^{F} \\ast \\Rightarrow \\ast$.",
+   "signature": "\\Gamma ; \\Delta \\vdash^{F} t \\Rightarrow T\\inmode{lf}{\\ !\\ \\varepsilon}",
+   "source": [
+    {
+     "file": "algorithmic/Algo.v",
+     "names": [
+      "syn"
+     ]
+    }
+   ]
+  },
+  "alg.chk": {
+   "title": "Checking $\\Leftarrow$",
+   "meaning": "$\\Gamma ; \\Delta \\vdash^{F} t \\Leftarrow T$ takes $T$ as input\\inmode{lf}{ and computes the cost}.",
+   "why": "A $\\lambda$, an injection, a case and a box read their points from the expected type.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\Gamma ; \\Delta \\vdash^{F} \\lambda t \\Leftarrow \\ast \\multimap^{\\top}_{\\bot} \\ast$ when the body checks.",
+   "signature": "\\Gamma ; \\Delta \\vdash^{F} t \\Leftarrow T\\inmode{lf}{\\ !\\ \\varepsilon}",
+   "source": [
+    {
+     "file": "algorithmic/Algo.v",
+     "names": [
+      "chk"
+     ]
+    }
+   ]
+  },
+  "alg.mode": {
+   "title": "Mode $d$",
+   "meaning": "$d$ is $\\Rightarrow$ or $\\Leftarrow$, the mode of the conclusion, passed to the body of a let.",
+   "why": "A let returns what its body returns.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A let in checking position checks its body."
+  },
+  "alg.split": {
+   "title": "Split by occurrence",
+   "meaning": "$\\Delta{\\restriction}t$ holds the entries of $\\Delta$ that $|t|$ mentions and the unlimited ones, $\\Delta{\\setminus}t$ the others and the unlimited ones.",
+   "why": "Linear entries occur exactly in the subterm that uses them, so the split needs no choice.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "With $\\Delta = c : S_x, d : S'_y$ and $t = \\mathsf{close}\\,c$, $\\Delta{\\restriction}t = c : S_x$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "tpart",
+      "lpart"
+     ]
+    }
+   ]
+  },
+  "alg.erase": {
+   "title": "Erasure $|t|$",
+   "meaning": "The term left when the annotations of $t$ are deleted.",
+   "why": "The declarative judgment types terms without annotations.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$|(\\mathsf{open}\\ 0 : \\ast\\ \\mathsf{in}\\ \\ast : \\ast)| = \\ast$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "erase"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq function `erase` maps each annotation constructor of `aexpr` to the term former it marks or to its subterm.",
+     "names": [
+      "erase"
+     ]
+    }
+   ]
+  },
+  "alg.new": {
+   "title": "$\\mathsf{new}[C, S]$",
+   "meaning": "Creation at a fresh base with constraint $C$ and protocol $S$\\inmode{lf}{ at tickets $m_1$ and $m_2$}.",
+   "why": "E-New picks $C$, $S$\\inmode{lf}{ and the tickets}, and the term shows none of these choices.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{new}[\\varnothing, \\mathsf{Close}]$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq writes this form as a constructor of `aexpr`.",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.newf": {
+   "title": "$\\mathsf{new}[x\\cdot\\kappa, S]$",
+   "meaning": "Creation at the field $\\kappa$ of the point $x$.",
+   "why": "E-New picks the position, which the term does not show.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{new}[\\rho\\cdot 0, \\mathsf{Close}]$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq writes this form as a constructor of `aexpr`.",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.force": {
+   "title": "$\\mathsf{force}[\\bar x, \\bar s]$",
+   "meaning": "A force at the point instance $\\bar x$ and the session instance $\\bar s$.",
+   "why": "E-Force picks both instances, and matching against the expected type does not always find the session instance.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{force}[\\rho^{+}, \\cdot]\\,f$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq writes this form as a constructor of `aexpr`.",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.asc": {
+   "title": "Ascription $(t : T)$",
+   "meaning": "$t$ at the type $T$\\inmode{lf}{ and the cost $\\varepsilon$}, one use of E-Sub.",
+   "why": "E-Sub has no term former. The annotation marks the node where a derivation applies E-Sub.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$(\\lambda t : \\ast \\multimap^{\\top}_{\\bot} \\ast)$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.pack": {
+   "title": "$\\mathsf{pack}[\\bar x]$",
+   "meaning": "One use of E-Pack at the witness $\\bar x$ and the existential type that follows.",
+   "why": "A witness that occurs only in the constraint or the lower bound is found by no match on the type.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{pack}[\\rho]\\,t : \\exists^{\\bot}\\iota.\\,\\varnothing.\\,\\mathsf{Close}_{\\iota}$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq writes this form as a constructor of `aexpr`.",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.open": {
+   "title": "$\\mathsf{open}\\ i : U\\ \\mathsf{in}\\ t$",
+   "meaning": "One use of E-Open on the existential of the variable $i$, around $t$, with result type $U$.",
+   "why": "E-Open has no term former, and the points it introduces have no name in the term. The node fixes the place and names the points.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{open}\\ 0 : \\ast\\ \\mathsf{in}\\ t$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq writes this form as a constructor of `aexpr`.",
+     "names": [
+      "aexpr"
+     ]
+    }
+   ]
+  },
+  "alg.boxcontr": {
+   "title": "Contractive box context",
+   "meaning": "$U$ and the types of $\\Delta$ are contractive.",
+   "why": "Instantiating a derivation at a session instance needs contractive contexts (`typed_sinst`).",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A box whose context holds only contractive boxes.",
+   "source": [
+    {
+     "file": "static/Sinst.v",
+     "names": [
+      "lenv_contr"
+     ]
+    }
+   ]
+  },
+  "alg.boxfresh": {
+   "title": "Fresh session variables $\\bar\\zeta$",
+   "meaning": "Session variables above the free session variables of $\\Delta$ and $B$.",
+   "why": "The body is checked once at them and instantiated afterwards, which leaves the context unchanged.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "For a closed $\\Delta$, $\\bar\\zeta = 0, \\ldots, k - 1$ above the box variables of $B$.",
+   "source": [
+    {
+     "file": "algorithmic/Annot.v",
+     "names": [
+      "box_inst",
+      "box_base"
+     ]
+    }
+   ],
+   "signature": "\\bar\\zeta \\mathrel{\\#} \\Delta, B",
+   "args": [
+    {
+     "name": "\\bar\\zeta",
+     "meaning": "the fresh session variables, one for each session variable of the box"
+    }
+   ]
+  },
+  "alg.boxinst": {
+   "title": "$U[\\bar Z \\mapsto \\bar\\zeta]$",
+   "meaning": "The result of the box with its session variables replaced by the fresh ones.",
+   "why": "It is one instance of E-Box, and `box_body_all` derives the other instances from this one.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{Close}_{x}[\\cdot] = \\mathsf{Close}_{x}$.",
+   "source": [
+    {
+     "file": "algorithmic/Sound.v",
+     "names": [
+      "box_body_all"
+     ]
+    }
+   ]
+  },
+  "alg.bysub": {
+   "title": "Forms checked by subtyping",
+   "meaning": "The forms other than a $\\lambda$, an injection, a case, a box and a let.",
+   "why": "These forms synthesize, so checking them is synthesis followed by subtyping.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "An application in checking position.",
+   "source": [
+    {
+     "file": "algorithmic/Algo.v",
+     "names": [
+      "by_sub"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq tests the head constructor with the boolean function `by_sub`.",
+     "names": [
+      "by_sub"
+     ]
+    }
+   ]
+  },
+  "alg.prem": {
+   "title": "$\\mathsf{prem}_k$ and $\\mathsf{res}_k$",
+   "meaning": "The premises and the result type of the rule of the constant $k$, read on the type of its argument.",
+   "why": "Each constant has one rule, so the type of the argument fixes premises and result.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "For $k = \\mathsf{close}$, $\\mathsf{prem}_k$ asks $\\mathsf{unfold}(S) = \\mathsf{Close}$ and $x \\prec F$, and $\\mathsf{res}_k$ is $\\ast$."
+  },
+  "alg.dec": {
+   "title": "The algorithm $\\mathsf{alg}$",
+   "meaning": "A function from an annotated term to a synthesis function and a checking function, each returning a result or none.",
+   "why": "It decides the algorithmic judgments relative to the oracles.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{alg}(\\ast)(\\Gamma, \\Delta, F) = \\ast$ when $\\Delta$ is unlimited.",
+   "source": [
+    {
+     "file": "algorithmic/Decide.v",
+     "names": [
+      "alg"
+     ]
+    }
+   ]
+  },
+  "ctx.contr": {
+   "title": "Contractive context",
+   "meaning": "The session types in $\\Delta$ are contractive.",
+   "why": "Completeness needs contractive contexts at boxes. P-Term gives its thread a contractive context.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$c : \\mathsf{Close}_{x}$.",
+   "source": [
+    {
+     "file": "static/Sinst.v",
+     "names": [
+      "lenv_contr",
+      "tenv_contr"
      ]
     }
    ]
