@@ -1,0 +1,39 @@
+% The obligations of process steps. From map block p-obls, deadlock-free
+% reading. The disjointness side conditions of Q-Tau, Q-Send and Q-Recv
+% (C' disjoint from chans Sigma, ech[dom Theta_2] disjoint from C, the
+% first conjuncts of send_split and recv_ok) are covered by the convention
+% on disjoint contexts. send_split, recv_ok, recv_back and recv_env are
+% opened, matches, closed and iface of def:proc-conds.
+\begin{figure}[tbp]
+  \small
+  \judghead{Obligations of process steps}{\mathsf{Pobl}^{W}_{ev}(\proc')}
+  \begin{rules}
+    \infer*[lab=Q-Tau]
+      {\proc'\ \mathsf{at}\ \senv}
+      {\mathsf{Pobl}^{W}_{\tau}(\proc')}
+    \label{rule:Q-Tau}
+    \and
+    \infer*[lab=Q-Send]
+      {\senv(o) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\
+       \senv \setminus o = \senv_v \uplus \senv_r \\\\
+       \mathrm{dom}\,\cTheta_e = \{o' \in \fends(\valB) \mid \ech(o') \in C\} \\
+       \mathsf{opened}(\senv_e, \cTheta_e) \\\\
+       \valB \in \Vrel{W}{\alpha}{\senv_v \cup \cTheta_e}{\payload{\tyB}{x}} \\
+       \proc'\ \mathsf{at}\ (\senv_r \cup \senv_e)[o \mapsto \sty_{\pplus{x}}]}
+      {\mathsf{Pobl}^{W}_{\tsend\,o\,\valB}(\proc')}
+    \label{rule:Q-Send}
+    \and
+    \infer*[lab=Q-Recv]
+      {\senv(o) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
+       \senv' = \senv[o \mapsto \sty_{\pplus{x}}] \\\\
+       \forall \beta < \alpha.\ \forall \valB, \cTheta_2. \\\\
+       \mathsf{matches}(\senv', \cTheta_2) \land \valB \in \Vrel{W}{\beta}{\cTheta_2}{\payload{\tyB}{x}} \\\\
+       \Rightarrow\ (C' \cup \mathsf{closed}(\senv', \cTheta_2),\ E') \in \Prel{W}{\beta}{\mathsf{iface}(\senv', \cTheta_2)}{\ty}}
+      {\mathsf{Pobl}^{W}_{\trecv\,o\,\valB}(\proc')}
+    \label{rule:Q-Recv}
+  \end{rules}
+  \figrule
+  \Description{Inference rules for the obligations of an internal step, of a send to the environment and of a receive from the environment.}
+  \caption{Obligations of process steps for $\proc = (C, E)$ and $\proc' = (C', E')$, under \cref{def:rel-anatomy,def:proc-conds}. $\tau$ is an internal step, a message between two threads of $\proc$ included, and a close, a choice and a link on an interface end repeat O-Close, O-Select, O-Branch and O-Link with $\Sigma$ in place of $\Theta$ (\cref{app:p-obls}).}
+  \label{fig:proc-obl}
+\end{figure}

@@ -8,11 +8,33 @@
 \RequirePackage{flafter}
 
 % ------------------------------------------------------------------ colour
-% Term keywords carry one quiet colour (kwcolor, from mapmacros.tex). Types,
-% points and judgments stay black. Lock-free parts are shaded (\lf).
+% Syntax colouring of the first paper (lrlight.sty, preamble.tex): terms in
+% cTm, types, session types and type environments in cTy, processes in cPr
+% (black). Points, worlds, judgments and relations stay black. The keyword
+% colour of the listings (kwcolor, mapmacros.tex) is the term colour.
+% Lock-free parts sit on a neutral grey box (\lf, colour lfbg), which stays
+% visible behind coloured text and in greyscale.
+\colorlet{kwcolor}{cTm}
+\colorlet{lfbg}{black!11}
+\colorlet{factcolor}{cTy}
 \DeclareRobustCommand{\lf}[1]{\lfadd{#1}}
-\DeclareRobustCommand{\kw}[1]{\mathord{{\color{kwcolor}\mathsf{#1}}}}
-\DeclareRobustCommand{\tyc}[1]{\mathord{\mathsf{#1}}}
+\DeclareRobustCommand{\kw}[1]{\mathord{{\color{cTm}\mathsf{#1}}}}
+\DeclareRobustCommand{\tyc}[1]{\mathord{{\color{cTy}\mathsf{#1}}}}
+% Type-level operators and metavariables that lrlight.sty does not declare.
+\DeclareRobustCommand{\tyotimes}{\mathbin{{\color{cTy}\otimes}}}
+\DeclareRobustCommand{\tyoplus}{\mathbin{{\color{cTy}\oplus}}}
+\DeclareRobustCommand{\tywith}{\mathbin{{\color{cTy}\&}}}
+\DeclareRobustCommand{\tymultimap}{\mathbin{{\color{cTy}\multimap}}}
+\DeclareRobustCommand{\tyBox}{\mathord{{\color{cTy}\Box}}}
+\DeclareRobustCommand{\tyexists}{\mathord{{\color{cTy}\exists}}}
+\DeclareRobustCommand{\tyforall}{\mathord{{\color{cTy}\forall}}}
+\DeclareRobustCommand{\tymu}{\mathord{{\color{cTy}\mu}}}
+\DeclareRobustCommand{\tyunit}{\mathord{{\color{cTy}\ast}}}
+\DeclareMetaVar\cGamma{Ty}{\Gamma}
+\DeclareMetaVar\cTheta{Ty}{\Theta}
+\DeclareMetaVar\cPhi{Ty}{\Phi}
+\DeclareMetaVar\styZ{Ty}{Z}
+\DeclareMetaVar\cstr{Ty}{C}
 
 % ------------------------------------------------------------------ terms
 \DeclareRobustCommand{\tsend}{\kw{send}}
@@ -28,12 +50,12 @@
 \DeclareRobustCommand{\tin}{\kw{in}}
 \DeclareRobustCommand{\tcase}{\kw{case}}
 \DeclareRobustCommand{\tinj}{\kw{inj}}
-\DeclareRobustCommand{\tunit}{\ast}
-\DeclareRobustCommand{\tlam}[2]{\lambda #1.\,#2}
-\DeclareRobustCommand{\tpair}[2]{\langle #1, #2\rangle}
-\DeclareRobustCommand{\tbox}[2]{{!}(#1 = #2)}
+\DeclareRobustCommand{\tunit}{\mathord{{\color{cTm}\ast}}}
+\DeclareRobustCommand{\tlam}[2]{{\color{cTm}\lambda} #1{\color{cTm}.}\,#2}
+\DeclareRobustCommand{\tpair}[2]{\mathopen{{\color{cTm}\langle}} #1, #2\mathclose{{\color{cTm}\rangle}}}
+\DeclareRobustCommand{\tbox}[2]{{\color{cTm}!}(#1 = #2)}
 \DeclareRobustCommand{\tletp}[4]{\tlet\ \tpair{#1}{#2} = #3\ \tin\ #4}
-\DeclareRobustCommand{\tletu}[2]{\tlet\ \ast = #1\ \tin\ #2}
+\DeclareRobustCommand{\tletu}[2]{\tlet\ \tunit = #1\ \tin\ #2}
 \DeclareRobustCommand{\tletv}[3]{\tlet\ #1 = #2\ \tin\ #3}
 \DeclareRobustCommand{\tcasee}[5]{\tcase\ #1\,(#2.\,#3)\,(#4.\,#5)}
 
@@ -51,16 +73,16 @@
 \DeclareRobustCommand{\wjoin}{\sqcup}
 \DeclareRobustCommand{\grow}[2]{\oplus_{#1} #2}
 \DeclareRobustCommand{\tree}{\mathsf{tree}}
-\DeclareRobustCommand{\ech}{\mathsf{ech}}
+\DeclareRobustCommand{\ech}{\mathsf{chan}}
 \DeclareRobustCommand{\fends}{\mathsf{fends}}
 
 % ------------------------------------------------------------------ types
 \DeclareRobustCommand{\Close}{\tyc{Close}}
 \DeclareRobustCommand{\Skip}{\tyc{Skip}}
 \DeclareRobustCommand{\unfold}{\mathsf{unfold}}
-\DeclareRobustCommand{\sSend}[2]{{!}(#1.\,#2)}
-\DeclareRobustCommand{\sRecvT}[2]{{?}(#1.\,#2)}
-\DeclareRobustCommand{\arr}[2]{\multimap^{#1}_{#2}}
+\DeclareRobustCommand{\sSend}[2]{{\color{cTy}!}(#1.\,#2)}
+\DeclareRobustCommand{\sRecvT}[2]{{\color{cTy}?}(#1.\,#2)}
+\DeclareRobustCommand{\arr}[2]{\tymultimap^{#1}_{#2}}
 \DeclareRobustCommand{\ap}{\mathsf{ap}}
 \DeclareRobustCommand{\up}[1]{{\vartriangle}#1}
 \DeclareRobustCommand{\payload}[2]{#1[#2\cdot\bar\jmath]}

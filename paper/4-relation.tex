@@ -9,9 +9,9 @@
 \label{def:rel-anatomy}
 The relations have the forms
 \[
-  v \in \Vrel{W}{\alpha}{\Theta}{T} \qquad
-  e \in \Erel{W}{\alpha}{\Theta}{T}{F} \qquad
-  p \in \Prel{W}{\alpha}{\Sigma}{T}
+  v \in \Vrel{W}{\alpha}{\cTheta}{\ty} \qquad
+  \tm \in \Erel{W}{\alpha}{\cTheta}{\ty}{F} \qquad
+  \proc \in \Prel{W}{\alpha}{\senv}{\ty}
 \]
 with the components
 \begin{center}
@@ -19,13 +19,13 @@ with the components
 \begin{tabular}{@{}l@{\quad}l@{}}
   $W$ & world whose order the relation reads \\
   $\alpha$ & ordinal index (\cref{app:sr-ord}) \\
-  $\Theta$ & owned ends, each with its end type $S_x$ \\
-  $\Sigma$ & interface of the process \\
-  $T$ & type of the value \\
+  $\cTheta$ & owned ends, each with its end type $\sty_x$ \\
+  $\senv$ & interface of the process \\
+  $\ty$ & type of the value \\
   $F$ & future of the term, as in \cref{def:side}
 \end{tabular}
 \end{center}
-$W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W H$ and $W \vdash C[\bar x]$ read \cref{def:side} with $\ordW$ in place of $\Gamma \vdash_W$. $\ap(\Theta)$ is the set of dual points of the ends of $\Theta$, $\fends(e)$ the set of ends in $e$ (\cref{app:syn-fends}), and $\Theta(o) \doteq S_x$ compares up to $\unfold$.
+$W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W H$ and $W \vdash C[\bar x]$ read \cref{def:side} with $\ordW$ in place of $\cGamma \vdash_W$. $\ap(\cTheta)$ is the set of dual points of the ends of $\cTheta$, $\fends(\tm)$ the set of ends in $\tm$ (\cref{app:syn-fends}), and $\cTheta(o) \doteq \sty_x$ compares up to $\unfold$.
 \end{definition}
 
 \subsection{Values}
@@ -45,14 +45,14 @@ $W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W
 \begin{definition}[Readiness \rocq{ready_t} \rocq{ready_p}]
 \label{def:readiness}
 \begin{align*}
-  \ready_W(\Theta \mid F, t) &\iff \mathsf{stable}\,t \Rightarrow \big(\Theta|_{\offered\,t} = \varnothing \Rightarrow t \in \mathsf{Val}\big) \land \big(\mathsf{link}\,t \lor \Theta|_{\offered\,t} \ordW \dual{\Theta \setminus \offered\,t} \cup F\big) \\
-  \ready_W(\Sigma, p) &\iff \mathsf{stable}\,p \Rightarrow \mathsf{link}\,p \lor \big(\big(\Sigma|_{\offered\,p} = \varnothing \Rightarrow \terminated\,p\big) \\
-  &\phantom{{}\iff{}} \land \forall y \in \dual{\Sigma \setminus \offered\,p}.\ \exists x \in \Sigma|_{\offered\,p}.\ x \ordW y\big)
+  \ready_W(\cTheta \mid F, t) &\iff \mathsf{stable}\,t \Rightarrow \big(\cTheta|_{\offered\,t} = \varnothing \Rightarrow t \in \mathsf{Val}\big) \land \big(\mathsf{link}\,t \lor \cTheta|_{\offered\,t} \ordW \dual{\cTheta \setminus \offered\,t} \cup F\big) \\
+  \ready_W(\senv, \proc) &\iff \mathsf{stable}\,\proc \Rightarrow \mathsf{link}\,\proc \lor \big(\big(\senv|_{\offered\,\proc} = \varnothing \Rightarrow \terminated\,\proc\big) \\
+  &\phantom{{}\iff{}} \land \forall y \in \dual{\senv \setminus \offered\,\proc}.\ \exists x \in \senv|_{\offered\,\proc}.\ x \ordW y\big)
 \end{align*}
 \begin{itemize}
   \item $\mathsf{stable}\,t$: every step of $t$ is a session action.
   \item $\offered\,t$: the set of ends on which $t$ can act. $\mathsf{link}\,t$: $t$ is at a link.
-  \item $\Theta|_A$: the points of the ends of $\Theta$ in $A$. $\Theta \setminus A$: the points of the other ends. $\dual{B}$: the dual points of $B$.
+  \item $\cTheta|_A$: the points of the ends of $\cTheta$ in $A$. $\cTheta \setminus A$: the points of the other ends. $\dual{B}$: the dual points of $B$.
   \item $A \ordW B$: $x \ordW y$ for each $x \in A$ and $y \in B$.
 \end{itemize}
 \end{definition}
@@ -66,7 +66,7 @@ $W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W
 
 \begin{lemma}[Bind \rocq{Erel_bind}]
 \label{lem:bind}
-Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $\Theta_2$. If $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$, then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
+Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $\cTheta_2$. If $\tm \in \Erel{W}{\alpha}{\cTheta_1}{\ty}{F \cup \ap(\cTheta_2)}$, and $\mathcal{E}[v] \in \Erel{W'}{\beta}{\cTheta_v \cup \cTheta_2}{\tyB}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\cTheta_v}{\ty}$, then $\mathcal{E}[\tm] \in \Erel{W}{\alpha}{\cTheta_1 \cup \cTheta_2}{\tyB}{F}$.
 \end{lemma}
 
 \subsection{Processes}
@@ -74,19 +74,46 @@ Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $
 
 % PAR: process relation, stop with a terminated process, ready, step per event | example: ex-milner | figure/rule: P | map: p-rel
 % PAR: process readiness, some offered point below each other dual point | example: ex-milner | figure/rule: def:readiness | map: rd
-% PAR: process obligations, internal steps keep Sigma, send and receive across the cut, pointer to appendix | example: - | figure/rule: app:p-obls | map: p-obls
+% PAR: process obligations, internal steps keep Sigma, send and receive across the interface, a sent end of a restricted channel hands its dual to the interface, an arriving end may meet its dual inside | example: - | figure/rule: fig:proc-obl | map: p-obls
+\begin{definition}[Conditions of a message with the environment \rocq{send_split} \rocq{recv_ok}]
+\label{def:proc-conds}
+Let $\ech(o)$ be the channel of the end $o$ and $\mathsf{sdual}\,S\,S'$ say that $S'$ is dual to $S$ up to $\approx$ (\cref{app:ty-dual}).
+\begin{itemize}
+  \item A send gives away the ends $\cTheta_e$ of restricted channels, and the dual of each one that stays in $\proc$ becomes an interface end in $\senv_e$, at the dual point and a dual protocol.
+  \[
+    \mathsf{opened}(\senv_e, \cTheta_e) \iff
+    \begin{array}[t]{@{}l@{}}
+      \mathrm{dom}\,\senv_e = \{\dual{o} \mid o \in \mathrm{dom}\,\cTheta_e,\ \dual{o} \notin \mathrm{dom}\,\cTheta_e\} \\
+      {} \land \forall (o : \sty_y) \in \cTheta_e.\ \exists \sty'.\ (\senv_e \cup \cTheta_e)(\dual{o}) = \sty'_{\dual{y}} \land \mathsf{sdual}\,\sty\,\sty'
+    \end{array}
+  \]
+  \item An arriving end whose dual the receiver already holds or receives sits at the dual point with a dual protocol.
+  \[
+    \mathsf{matches}(\senv', \cTheta_2) \iff \forall (o : \sty_y) \in \cTheta_2.\ (\senv' \cup \cTheta_2)(\dual{o}) = \sty'_{y'} \Rightarrow y' = \dual{y} \land \mathsf{sdual}\,\sty\,\sty'
+  \]
+  \item The channels whose two ends the receiver now holds become restricted.
+  \[
+    \mathsf{closed}(\senv', \cTheta_2) = \{\ech(o) \mid o \in \mathrm{dom}\,\cTheta_2,\ \dual{o} \in \mathrm{dom}\,\senv' \cup \mathrm{dom}\,\cTheta_2\}
+  \]
+  \item The other ends form the new interface.
+  \[
+    \mathsf{iface}(\senv', \cTheta_2) = \{(o : \sty_y) \in \senv' \mid \dual{o} \notin \mathrm{dom}\,\cTheta_2\} \cup \{(o : \sty_y) \in \cTheta_2 \mid \dual{o} \notin \mathrm{dom}\,\senv' \cup \mathrm{dom}\,\cTheta_2\}
+  \]
+\end{itemize}
+\end{definition}
+\input{figures/proc-obl}
 
 % PAR: semantic judgments for terms and processes, consistent extensions | example: - | figure/rule: def:sem-judgments | map: sj-all
 \begin{definition}[Semantic judgments \rocq{sem_typed} \rocq{sem_ptyped_sw}]
 \label{def:sem-judgments}
 \begin{align*}
-  \Delta \semt^{F}_{W} e : T &\iff \forall Y.\ \Delta \semt^{\mathsf{den}_Y(F)}_{W} e : T \\
-  \Delta \semt^{X}_{W} e : T &\iff \forall \alpha, W' \sqsupseteq W, \Theta', \gamma.\ \gamma \in G^{W'}_{\alpha}\llbracket \Theta' \vdash \Delta \rrbracket \Rightarrow \gamma(e) \in \Erel{W'}{\alpha}{|\Delta| \cup \Theta'}{T}{X} \\
-  \Sigma \semt_{W} p : T &\iff \forall W' \sqsupseteq W.\ \cons\,W' \Rightarrow \forall \alpha.\ p \in \Prel{W'}{\alpha}{\Sigma}{T}
+  \lenv \semt^{F}_{W} \tm : \ty &\iff \forall Y.\ \lenv \semt^{\mathsf{den}_Y(F)}_{W} \tm : \ty \\
+  \lenv \semt^{X}_{W} \tm : \ty &\iff \forall \alpha, W' \sqsupseteq W, \cTheta', \gamma.\ \gamma \in G^{W'}_{\alpha}\llbracket \cTheta' \vdash \lenv \rrbracket \Rightarrow \gamma(\tm) \in \Erel{W'}{\alpha}{|\lenv| \cup \cTheta'}{\ty}{X} \\
+  \senv \semt_{W} \proc : \ty &\iff \forall W' \sqsupseteq W.\ \cons\,W' \Rightarrow \forall \alpha.\ \proc \in \Prel{W'}{\alpha}{\senv}{\ty}
 \end{align*}
 \begin{itemize}
-  \item $\gamma \in G^{W}_{\alpha}\llbracket \Theta' \vdash \Delta \rrbracket$: $\gamma$ substitutes for each variable of $\Delta$ a value in $V$ at its type, and these values own $\Theta'$.
-  \item $|\Delta|$: the ends of $\Delta$.
+  \item $\gamma \in G^{W}_{\alpha}\llbracket \cTheta' \vdash \lenv \rrbracket$: $\gamma$ substitutes for each variable of $\lenv$ a value in $V$ at its type, and these values own $\cTheta'$.
+  \item $|\lenv|$: the ends of $\lenv$.
   \item $\mathsf{den}_Y(F)$ for $F = X \cup \up{v}$: $X \cup Y$ for a finite set $Y$ of points above $v$, any finite $Y$ when $\bot \in X$ (\cref{app:sj-all}).
 \end{itemize}
 \end{definition}
@@ -97,10 +124,10 @@ Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $
 % PAR: semantic P-Term, a thread in E with an interface | example: ex-flag | figure/rule: thm:compose | map: th-compose
 \begin{theorem}[Semantic P-Term and P-Connect \rocq{sem_p_term} \rocq{sem_p_connect_sw}]
 \label{thm:compose}
-Let $\tfree\,T$.
+Let $\tfree\,\ty$.
 \begin{enumerate}
-  \item If $\pfree\,\Sigma$, $\pairs(\Theta_B, C_0)$ and $t \in \Erel{W}{\alpha}{\Sigma \cup \Theta_B}{T}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\alpha}{\Sigma}{T}$.
-  \item If $\pfree\,\Sigma_1$, $\pfree\,\Sigma_2$, $\pfree\,\Sigma_C$, $\Sigma_1 \cup \Sigma_C \semt_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semt_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semt_{W_1 \wjoin W_2} p_1 \cpar{\Sigma_C} p_2 : T$.
+  \item If $\pfree\,\senv$, $\pairs(\cTheta_B, C_0)$ and $t \in \Erel{W}{\alpha}{\senv \cup \cTheta_B}{\ty}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\alpha}{\senv}{\ty}$.
+  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semt_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semt_{W_2} \proc_2 : \ast$, then $\senv_1 \cup \senv_2 \semt_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
 % PAR: semantic P-Connect, components at their own worlds, joined world | example: ex-flag | figure/rule: thm:compose, fig:composition-example | map: th-compose, w-ext
@@ -117,7 +144,7 @@ Let $\tfree\,T$.
 % PAR: static rejection, E-Case types both arms in one world, the arm that never runs asks y < xbar, the lemma on two closes | example: ex-flag | figure/rule: lem:two-closes, E-Case | map: t-lemmas, p-typing
 \begin{lemma}[Two closes \rocq{cl2_needs}]
 \label{lem:two-closes}
-Let $a \neq b$ be ends with $\Delta(a) = S_x$ and $\Delta(b) = S'_y$. If $\Gamma ; \Delta \vdash^{F}_{W} \tletu{\tclose\,a}{\tclose\,b} : T$, then $\Gamma \vdash_W x \prec \dual{y}$.
+Let $a \neq b$ be ends with $\lenv(a) = \sty_x$ and $\lenv(b) = \sty'_y$. If $\cGamma ; \lenv \vdash^{F}_{W} \tletu{\tclose\,a}{\tclose\,b} : \ty$, then $\cGamma \vdash_W x \prec \dual{y}$.
 \end{lemma}
 
 \begin{proposition}[The flag is untypable \rocq{sbv_rejected}]
@@ -147,25 +174,25 @@ $(\{c, d\}, \{\mathit{thread}, \mathit{other}\})$ is deadlock free.
 % PAR: fundamental theorem for terms, every typing rule a compatibility lemma | example: - | figure/rule: thm:fundamental-terms | map: th-terms
 \begin{theorem}[Fundamental theorem for terms \rocq{fundamental}]
 \label{thm:fundamental-terms}
-If $\varnothing ; \Delta \vdash^{F}_{W} t : T$, then $\Delta \semt^{F}_{W'} t : T$ for each consistent $W' \sqsupseteq W$.
+If $\varnothing ; \lenv \vdash^{F}_{W} t : \ty$, then $\lenv \semt^{F}_{W'} t : \ty$ for each consistent $W' \sqsupseteq W$.
 \end{theorem}
 
 % PAR: fundamental theorem for processes, P-Term and P-Connect by thm:compose | example: ex-milner | figure/rule: thm:fundamental-proc | map: th-fund-proc
 \begin{theorem}[Fundamental theorem for processes \rocq{fundamental_proc}]
 \label{thm:fundamental-proc}
-If $\Sigma \vdash_{W} p : T$, then $\Sigma \semt_{W} p : T$.
+If $\senv \vdash_{W} \proc : \ty$, then $\senv \semt_{W} \proc : \ty$.
 \end{theorem}
 
 % PAR: adequacy, consistent world, deadlock freedom | example: ex-flag | figure/rule: thm:adequacy | map: th-adeq
 \begin{theorem}[Adequacy \rocq{adequacy_sw}]
 \label{thm:adequacy}
-If $\cons\,W$ and $\varnothing \semt_{W} p : T$, then $p$ is deadlock free.
+If $\cons\,W$ and $\varnothing \semt_{W} \proc : \ty$, then $\proc$ is deadlock free.
 \end{theorem}
 
 % PAR: deadlock freedom of well-typed programs, corollary of the fundamental theorem and adequacy, the scheduler | example: ex-milner | figure/rule: thm:df | map: th-sound
 \begin{theorem}[Deadlock freedom \rocq{soundness}]
 \label{thm:df}
-Every closed well-typed process is deadlock free. If $\varnothing \vdash_{W} p : T$, then $p$ is deadlock free (\cref{def:df}).
+Every closed well-typed process is deadlock free. If $\varnothing \vdash_{W} \proc : \ty$, then $\proc$ is deadlock free (\cref{def:df}).
 \end{theorem}
 % PAR: footnote slot, the proof of thm:df uses no axiom beyond the Rocq kernel | example: - | figure/rule: thm:df | map: th-sound
 % PAR: a ring that grows forever, deadlock freedom over an infinite consistent world | example: ex-ring | figure/rule: thm:df | map: th-terms

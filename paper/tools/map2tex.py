@@ -162,8 +162,16 @@ def strip_sym(s):
         s = before + rep + s[k:]
 
 
+# Presentation only, the map's mathematics is unchanged. The map tags the
+# term and process relations with (lfp): at a fixed index they are the
+# least relations closed under their clauses, for the steps of cost 0
+# (Rocq Eind, Pind, map note rel.lfp). The paper spells this out.
+LFP_TAG = r'(\mathsf{lfp})'
+LFP_TEXT = r'(\text{least fixed point over steps of cost } 0)'
+
+
 def tex(s, mode):
-    return strip_sym(resolve(s or '', mode))
+    return strip_sym(resolve(s or '', mode)).replace(LFP_TAG, LFP_TEXT)
 
 
 # ---------------------------------------------------------------- splitting
@@ -307,6 +315,49 @@ def prose(s, mode='both'):
             part = part.replace('&', '\\&').replace('%', '\\%').replace('#', '\\#')
             part = re.sub(r'(?<!\\)_', r'\\_', part)
             out.append(part)
+    return shade_words(''.join(out))
+
+
+def split_words(s):
+    """Split at spaces that sit outside $...$ and outside braces."""
+    words, cur, depth, math = [], '', 0, False
+    for i, ch in enumerate(s):
+        if ch == '$' and (i == 0 or s[i - 1] != '\\'):
+            math = not math
+        elif ch == '{' and (i == 0 or s[i - 1] != '\\'):
+            depth += 1
+        elif ch == '}' and (i == 0 or s[i - 1] != '\\'):
+            depth -= 1
+        if ch == ' ' and depth == 0 and not math:
+            if cur:
+                words.append(cur)
+            cur = ''
+        else:
+            cur += ch
+    if cur:
+        words.append(cur)
+    return words
+
+
+def shade_words(s):
+    """A lock-free part of running text gets the grey box word by word, so
+    that the line can still break. Lock-free parts are marked only by the
+    shade, never by a text colour."""
+    out, i, math = [], 0, False
+    while i < len(s):
+        if s[i] == '$' and (i == 0 or s[i - 1] != '\\'):
+            math = not math
+            out.append(s[i]); i += 1
+            continue
+        if not math and s.startswith('\\lfadd{', i):
+            k = close(s, i + len('\\lfadd'))
+            body = s[i + len('\\lfadd{'):k - 1]
+            lead = ' ' if body[:1] == ' ' else ''
+            tail = ' ' if body[-1:] == ' ' else ''
+            out.append(lead + ' '.join('\\lfw{' + w + '}' for w in split_words(body)) + tail)
+            i = k
+            continue
+        out.append(s[i]); i += 1
     return ''.join(out)
 
 

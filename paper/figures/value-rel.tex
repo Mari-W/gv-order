@@ -3,44 +3,44 @@
 % beta + kappa <= alpha is in the appendix (PLAN.md, simplifications).
 \begin{figure}[tbp]
   \small
-  \judghead{Values}{v \in \Vrel{W}{\alpha}{\Theta}{T}}
+  \judghead{Values}{\val \in \Vrel{W}{\alpha}{\cTheta}{\ty}}
   \begin{rules}
     \infer*[lab=V-Unit]{ }{\ast \in \Vrel{W}{\alpha}{\varnothing}{\ast}}
     \label{rule:V-Unit}
     \and
-    \infer*[lab=V-Sess]{S' \approx S}{o \in \Vrel{W}{\alpha}{\{o \mapsto S'_x\}}{S_x}}
+    \infer*[lab=V-Sess]{\sty' \approx \sty}{o \in \Vrel{W}{\alpha}{\{o \mapsto \sty'_x\}}{\sty_x}}
     \label{rule:V-Sess}
     \and
     \infer*[lab=V-Prod]
-      {v_1 \in \Vrel{W}{\alpha}{\Theta_1}{T_1} \\ v_2 \in \Vrel{W}{\alpha}{\Theta_2}{T_2}}
-      {\tpair{v_1}{v_2} \in \Vrel{W}{\alpha}{\Theta_1 \uplus \Theta_2}{T_1 \otimes T_2}}
+      {\val_1 \in \Vrel{W}{\alpha}{\cTheta_1}{\ty_1} \\ \val_2 \in \Vrel{W}{\alpha}{\cTheta_2}{\ty_2}}
+      {\tpair{\val_1}{\val_2} \in \Vrel{W}{\alpha}{\cTheta_1 \uplus \cTheta_2}{\ty_1 \tyotimes \ty_2}}
     \label{rule:V-Prod}
     \and
     \infer*[lab=V-Sum]
-      {v \in \Vrel{W}{\alpha}{\Theta}{T_i}}
-      {\tinj_i\,v \in \Vrel{W}{\alpha}{\Theta}{T_1 \oplus T_2}}
+      {\val \in \Vrel{W}{\alpha}{\cTheta}{\ty_i}}
+      {\tinj_i\,\val \in \Vrel{W}{\alpha}{\cTheta}{\ty_1 \tyoplus \ty_2}}
     \label{rule:V-Sum}
   \end{rules}
   \begin{rules}
     \infer*[lab=V-Arrow]
-      {\mathrm{dom}\,\Theta = \fends(e) \\ l \preccurlyeq_W \ap(\Theta) \\\\
-       \forall W' \sqsupseteq W,\ \beta < \alpha,\ F,\ \Theta',\ w.\ \
-       W' \vdash u \prec F \land w \in \Vrel{W'}{\beta}{\Theta'}{T}
-       \ \Rightarrow\ e[w/b] \in \Erel{W'}{\beta}{\Theta \cup \Theta'}{U}{F}}
-      {\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}}
+      {\mathrm{dom}\,\cTheta = \fends(\tm) \\ l \preccurlyeq_W \ap(\cTheta) \\\\
+       \forall W' \sqsupseteq W,\ \beta < \alpha,\ F,\ \cTheta',\ \valB.\ \
+       W' \vdash u \prec F \land \valB \in \Vrel{W'}{\beta}{\cTheta'}{\ty}
+       \ \Rightarrow\ \tm[\valB/b] \in \Erel{W'}{\beta}{\cTheta \cup \cTheta'}{\tyB}{F}}
+      {\tlam{b}{\tm} \in \Vrel{W}{\alpha}{\cTheta}{\ty \arr{u}{l} \tyB}}
     \label{rule:V-Arrow}
     \and
     \infer*[lab=V-Box]
-      {\fends(e) = \varnothing \\\\
+      {\fends(\tm) = \varnothing \\\\
        \forall W' \sqsupseteq W,\ \bar x,\ \bar s \in \Inst,\ \beta < \alpha,\ F.\ \
        W' \vdash C[\bar x] \land W' \vdash u[\bar x] \prec F
-       \ \Rightarrow\ e[\tbox{f}{e}/f] \in \Erel{W'}{\beta}{\varnothing}{U[\bar s][\bar x]}{F}}
-      {\tbox{f}{e} \in \Vrel{W}{\alpha}{\varnothing}{\Box(\forall\bar\iota\,\bar Z.\,C.\ \ast \multimap^{u} U)}}
+       \ \Rightarrow\ \tm[\tbox{f}{\tm}/f] \in \Erel{W'}{\beta}{\varnothing}{\tyB[\bar s][\bar x]}{F}}
+      {\tbox{f}{\tm} \in \Vrel{W}{\alpha}{\varnothing}{\tyBox(\forall\bar\iota\,\bar Z.\,C.\ \ast \tymultimap^{u} \tyB)}}
     \label{rule:V-Box}
     \and
     \infer*[lab=V-Ex]
-      {l \preccurlyeq_W \ap(\Theta) \\ W \vdash C[\bar x] \\ v \in \Vrel{W}{\alpha}{\Theta}{T[\bar x]}}
-      {v \in \Vrel{W}{\alpha}{\Theta}{\exists^{l}\bar\iota.\,C.\,T}}
+      {l \preccurlyeq_W \ap(\cTheta) \\ W \vdash C[\bar x] \\ \val \in \Vrel{W}{\alpha}{\cTheta}{\ty[\bar x]}}
+      {\val \in \Vrel{W}{\alpha}{\cTheta}{\tyexists^{l}\bar\iota.\,C.\,\ty}}
     \label{rule:V-Ex}
   \end{rules}
   \figrule

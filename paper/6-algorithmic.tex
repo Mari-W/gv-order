@@ -8,20 +8,20 @@
 \label{def:algo}
 The algorithmic judgments have the forms
 \[
-  \Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Rightarrow T \eff{\varepsilon}
+  \cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Rightarrow \ty \eff{\varepsilon}
   \qquad
-  \Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Leftarrow T \eff{\varepsilon}
+  \cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Leftarrow \ty \eff{\varepsilon}
 \]
-with $\Gamma$, $\Delta$, $F$, $W$ and $N$ as in \cref{def:judgment} and
+with $\cGamma$, $\lenv$, $F$, $W$ and $N$ as in \cref{def:judgment} and
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
   $t$ & annotated term, $|t|$ its erasure to a term (\cref{app:alg-annot}) \\
-  $\Rightarrow T$ & synthesis, $T$ and $\lf{\varepsilon}$ are outputs \\
-  $\Leftarrow T$ & checking, $T$ is an input and $\lf{\varepsilon}$ an output
+  $\Rightarrow \ty$ & synthesis, $\ty$ and $\lf{\varepsilon}$ are outputs \\
+  $\Leftarrow \ty$ & checking, $\ty$ is an input and $\lf{\varepsilon}$ an output
 \end{tabular}
 \end{center}
-A binary rule gives the first premise the entries of $\Delta$ that its term mentions and the second premise the rest, both the entries of box type (\cref{app:alg-judgment}).
+A binary rule gives the first premise the entries of $\lenv$ that its term mentions and the second premise the rest, both the entries of box type (\cref{app:alg-judgment}).
 \end{definition}
 % PAR: split by occurrence, linear entries to the subterm that mentions them, boxes to both, future of the first premise known | example: - | figure/rule: def:algo, app:alg-elim | map: alg-judgment, alg-elim
 % PAR: checked forms lambda, inj, case, box, one check of a box body at fresh session variables | example: ex-sinst | figure/rule: app:alg-intro | map: alg-intro
@@ -33,31 +33,31 @@ The algorithm takes a decision procedure for each of
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $\Gamma \vdash_W x \prec y$ & entailment of a fact \\
-  $\Gamma \vdash_W C[\bar x]$ & an instance of a constraint, for \ruleref{E-Force}, E-Pack and Sub-Ex \\
-  $\conserv_{\Gamma}(\bar\iota, C)$ & conservativity, for \ruleref{E-Open} \\
-  $\acyc_{\rho}(C) \land \conserv_{\Gamma}(\rho, C) \lf{{} \land (N \in \mathbb{N} \Rightarrow \rankable_{\Gamma}(\rho, C))}$ & creation, for \ruleref{E-New} \\
+  $\cGamma \vdash_W x \prec y$ & entailment of a fact \\
+  $\cGamma \vdash_W C[\bar x]$ & an instance of a constraint, for \ruleref{E-Force}, E-Pack and Sub-Ex \\
+  $\conserv_{\cGamma}(\bar\iota, C)$ & conservativity, for \ruleref{E-Open} \\
+  $\acyc_{\rho}(C) \land \conserv_{\cGamma}(\rho, C) \lf{{} \land (N \in \mathbb{N} \Rightarrow \rankable_{\cGamma}(\rho, C))}$ & creation, for \ruleref{E-New} \\
   $C = C'$ & equality of constraints \\
-  $S \approx S'$, $\lf{S \sqsubseteq S'}$ & equivalence and subtyping of session types
+  $\sty \approx \sty'$, $\lf{\sty \sqsubseteq \sty'}$ & equivalence and subtyping of session types
 \end{tabular}
 \end{center}
 \end{definition}
 
 \begin{theorem}[Soundness \rocq{algo_sound}]
 \label{thm:algo-sound}
-If $\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Rightarrow T \eff{\varepsilon}$ or $\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Leftarrow T \eff{\varepsilon}$, then $\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} |t| : T \eff{\varepsilon}$.
+If $\cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Rightarrow \ty \eff{\varepsilon}$ or $\cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Leftarrow \ty \eff{\varepsilon}$, then $\cGamma ; \lenv \vdash^{F}_{W\lf{,N}} |t| : \ty \eff{\varepsilon}$.
 \end{theorem}
 
 \begin{theorem}[Completeness \rocq{algo_complete} \rocq{algo_iff}]
 \label{thm:algo-complete}
-Let $\Delta$ hold only contractive session types. If $\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}$, then $\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Rightarrow T \eff{\varepsilon}$ for some $t$ with $|t| = e$.
+Let $\lenv$ hold only contractive session types. If $\cGamma ; \lenv \vdash^{F}_{W\lf{,N}} \tm : \ty \eff{\varepsilon}$, then $\cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Rightarrow \ty \eff{\varepsilon}$ for some $t$ with $|t| = \tm$.
 \end{theorem}
 
 \begin{theorem}[Decidability relative to the oracles \rocq{syn_dec} \rocq{chk_dec} \rocq{alg_sound} \rocq{alg_complete}]
 \label{thm:algo-dec}
 For the oracles of \cref{def:oracles}, a function $\mathsf{alg}$ computes, by recursion on $t$,
 \[
-  \mathsf{alg}(t)(\Gamma, \Delta, F) = (T\lf{, \varepsilon}) \iff \Gamma ; \Delta \vdash^{F}_{W\lf{,N}} t \Rightarrow T \eff{\varepsilon}
+  \mathsf{alg}(t)(\cGamma, \lenv, F) = (\ty\lf{, \varepsilon}) \iff \cGamma ; \lenv \vdash^{F}_{W\lf{,N}} t \Rightarrow \ty \eff{\varepsilon}
 \]
 and the same for checking. So both judgments are decidable and have at most one result.
 \end{theorem}

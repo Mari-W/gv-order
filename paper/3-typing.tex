@@ -19,7 +19,7 @@
 
 \begin{convention}[Lock-free parts]
 \label{conv:lf}
-A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $S_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term, the bound $N$ and the interface annotation $\eta$ (\cref{def:lf-ann}). $\Delta - \varepsilon$ ages $\Delta$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
+A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $\sty_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term, the bound $N$ and the interface annotation $\eta$ (\cref{def:lf-ann}). $\lenv - \varepsilon$ ages $\lenv$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
 \end{convention}
 
 \begin{convention}[Implicit premises]
@@ -28,8 +28,8 @@ The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the fo
 \begin{itemize}
   \item Contexts combined in one rule are disjoint.
   \item Every session type that enters a derivation is contractive (\cref{app:ty-session}). In the Rocq this is a premise of \ruleref{E-Abs}, E-Inj, \ruleref{E-Box}, \ruleref{E-New} and \ruleref{P-Term}.
-  \item A payload $!(\bar\iota.\,T)$ or $?(\bar\iota.\,T)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
-  \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\Gamma$, $\Delta$, $F$ and the result type.
+  \item A payload $!(\bar\iota.\,\ty)$ or $?(\bar\iota.\,\ty)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
+  \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\cGamma$, $\lenv$, $F$ and the result type.
   \item $\Inst$ is the set of lists $\bar s$ of contractive session types whose payloads mention only their own point variables, the instances of \ruleref{E-Box} and \ruleref{E-Force}.
 \end{itemize}
 \end{convention}
@@ -41,18 +41,18 @@ The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the fo
 \begin{definition}[Typing judgment \rocq{typed}]
 \label{def:judgment}
 The typing judgment has the form
-\[ \Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon} \]
+\[ \cGamma ; \lenv \vdash^{F}_{W\lf{,N}} \tm : \ty \eff{\varepsilon} \]
 with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $\Gamma$ & facts the thread assumes, a list of instances $C[\bar x]$ of constraints \\
-  $\Delta$ & held context, ends $o : S_x$ and variables $a : T$ \\
-  $F$ & future, the points at which the thread acts after $e$ returns \\
+  $\cGamma$ & facts the thread assumes, a list of instances $C[\bar x]$ of constraints \\
+  $\lenv$ & held context, ends $o : \sty_x$ and variables $a : \ty$ \\
+  $F$ & future, the points at which the thread acts after $\tm$ returns \\
   $W$ & world, fixed for a whole derivation and left implicit in the rules \\
-  $e : T$ & the term and its type \\
+  $\tm : \ty$ & the term and its type \\
   $\lf{N}$ & bound on the tickets of the two ends of a channel \\
-  $\lf{\varepsilon}$ & cost, the number of actions $e$ performs before it returns
+  $\lf{\varepsilon}$ & cost, the number of actions $\tm$ performs before it returns
 \end{tabular}
 \end{center}
 \end{definition}
@@ -62,32 +62,32 @@ with the components
 \label{def:side}
 Kinds of types and contexts.
 \begin{gather*}
-  \unl\,T \iff \exists \bar\iota, \bar Z, C, u, U.\ T = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u} U)
+  \unl\,\ty \iff \exists \bar\iota, \bar Z, C, u, \tyB.\ \ty = \tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u} \tyB)
   \qquad
-  \unl\,\Delta \iff \forall (z : T) \in \Delta.\ \unl\,T \\
-  \tfree\,T \iff T \in \mathcal{T}_0 \qquad
-  \mathcal{T}_0 ::= \ast \mid \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u} U) \mid \mathcal{T}_0 \otimes \mathcal{T}_0 \mid \mathcal{T}_0 \oplus \mathcal{T}_0
+  \unl\,\lenv \iff \forall (z : \ty) \in \lenv.\ \unl\,\ty \\
+  \tfree\,\ty \iff \ty \in \mathcal{\ty}_0 \qquad
+  \mathcal{\ty}_0 ::= \ast \mid \tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u} \tyB) \mid \mathcal{\ty}_0 \tyotimes \mathcal{\ty}_0 \mid \mathcal{\ty}_0 \tyoplus \mathcal{\ty}_0
 \end{gather*}
-The order judgment $\Gamma \vdash_W x \prec y$ is the least relation with (\cref{app:t-contexts})
+The order judgment $\cGamma \vdash_W x \prec y$ is the least relation with (\cref{app:t-contexts})
 \begin{gather*}
-  x \ordW y \Rightarrow \Gamma \vdash_W x \prec y
+  x \ordW y \Rightarrow \cGamma \vdash_W x \prec y
   \qquad
-  C[\bar x] \in \Gamma \land (y \prec z) \in C[\bar x] \Rightarrow \Gamma \vdash_W y \prec z \\
-  \Gamma \vdash_W x \prec y \land \Gamma \vdash_W y \prec z \Rightarrow \Gamma \vdash_W x \prec z \\
-  \Gamma \vdash_W x \preccurlyeq y \iff x = y \lor \Gamma \vdash_W x \prec y
+  C[\bar x] \in \cGamma \land (y \prec z) \in C[\bar x] \Rightarrow \cGamma \vdash_W y \prec z \\
+  \cGamma \vdash_W x \prec y \land \cGamma \vdash_W y \prec z \Rightarrow \cGamma \vdash_W x \prec z \\
+  \cGamma \vdash_W x \preccurlyeq y \iff x = y \lor \cGamma \vdash_W x \prec y
   \qquad
-  \Gamma \vdash_W C[\bar x] \iff \forall (y \prec z) \in C[\bar x].\ \Gamma \vdash_W y \prec z
+  \cGamma \vdash_W C[\bar x] \iff \forall (y \prec z) \in C[\bar x].\ \cGamma \vdash_W y \prec z
 \end{gather*}
 Futures and side conditions, for a type or a context $H$.
 \begin{gather*}
   F = X \cup \up{v} \qquad F \held H = F \cup \ap(H) \\
-  u \prec F \iff (\forall y \in X.\ \Gamma \vdash_W u \prec y) \land \Gamma \vdash_W u \preccurlyeq v \\
-  x \prec H \iff \forall y \in \ap(H).\ \Gamma \vdash_W x \prec y
+  u \prec F \iff (\forall y \in X.\ \cGamma \vdash_W u \prec y) \land \cGamma \vdash_W u \preccurlyeq v \\
+  x \prec H \iff \forall y \in \ap(H).\ \cGamma \vdash_W x \prec y
   \qquad
-  l \preccurlyeq H \iff \forall y \in \ap(H).\ \Gamma \vdash_W l \preccurlyeq y \\
+  l \preccurlyeq H \iff \forall y \in \ap(H).\ \cGamma \vdash_W l \preccurlyeq y \\
   \bot \prec F \qquad\quad \bot \in X \lor v = \bot \ \Rightarrow\ x \not\prec F
 \end{gather*}
-Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bound $v$, $\Delta_1, \Delta_2$ splits a context, and $T \leq U$ is subtyping (\cref{app:t-subs}).
+Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bound $v$, $\lenv_1, \lenv_2$ splits a context, and $\ty \leq \tyB$ is subtyping (\cref{app:t-subs}).
 \end{definition}
 % PAR: fact theory, hypotheses from boxes and existentials, Ord rules | example: ex-cs | figure/rule: def:side, app:t-contexts | map: t-contexts
 % PAR: side conditions u < F, x < H, l below H, the first action of A_1 asks rho-bar below the duals of the points of a_1 and c_1 | example: ex-milner | figure/rule: def:side | map: t-side
@@ -112,10 +112,10 @@ Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bou
 \begin{example}[The scheduler typed \rocq{ms_dftyped}]
 \label{ex:milner-typed}
 \begin{gather*}
-  S_m = {!}\ast.\Close \qquad
-  c_i : (S_m)_{x},\ d_{i+1} : (\dual{S_m})_{\dual{x}} \qquad
-  a_i : (S_m)_{y},\ b_i : (\dual{S_m})_{\dual{y}} \\
-  \tnew : \exists^{\bot}\rho.\ C_m.\ (S_m)_{\rho} \otimes (\dual{S_m})_{\dual{\rho}} \qquad
+  \sty_m = {!}\ast.\Close \qquad
+  c_i : (\sty_m)_{x},\ d_{i+1} : (\dual{\sty_m})_{\dual{x}} \qquad
+  a_i : (\sty_m)_{y},\ b_i : (\dual{\sty_m})_{\dual{y}} \\
+  \tnew : \tyexists^{\bot}\rho.\ C_m.\ (\sty_m)_{\rho} \tyotimes (\dual{\sty_m})_{\dual{\rho}} \qquad
   C_m = \{x \prec y,\ \pplus{x} \prec y \mid (x \prec y) \in B\} \\
   B = \begin{array}[t]{@{}l@{\qquad}l@{}}
     \{\dual{\rho} \prec \dual{\fld{\rho}{1}},\ \dual{\rho} \prec \dual{\fld{\rho}{2}},\ \fld{\rho}{1} \prec \dual{\fld{\rho}{2}}, & (A_1) \\
@@ -149,9 +149,9 @@ The tree of the bases $\bar\iota$ is $\tree(\bar\iota) = \{x \mid \base(x) \in \
 \begin{align*}
   x \prec^{\rho}_{C} y &\iff x, y \in \tree(\rho) \land \big((x \prec y) \in C \lor y = \pplus{x} \lor y = \pplus{\dual{x}}\big) \\
   \acyc_{\rho}(C) &\iff \forall x \in \tree(\rho).\ \neg\, x \mathrel{(\prec^{\rho}_{C})^{+}} x \\
-  \conserv_{\Gamma}(\bar\iota, C) &\iff \forall z, y \notin \tree(\bar\iota).\ \Gamma, C(\bar\iota) \vdash_W z \prec y \Rightarrow \Gamma \vdash_W z \prec y
+  \conserv_{\cGamma}(\bar\iota, C) &\iff \forall z, y \notin \tree(\bar\iota).\ \cGamma, C(\bar\iota) \vdash_W z \prec y \Rightarrow \cGamma \vdash_W z \prec y
 \end{align*}
-$\lf{\rankable_{\Gamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founded and each ranked world in which the facts of $\Gamma$ hold has ranks for $\tree(\rho)$ (\cref{def:ranked}, \cref{app:r-new}).
+$\lf{\rankable_{\cGamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founded and each ranked world in which the facts of $\cGamma$ hold has ranks for $\tree(\rho)$ (\cref{def:ranked}, \cref{app:r-new}).
 \end{definition}
 % PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
 % PAR: mechanization insight, points are reused, a field creation may repeat, no labelling of points fixed before the run | example: ex-point-reuse | figure/rule: E-New-Field, app:ex-point-reuse | map: r-new, rd
@@ -182,25 +182,25 @@ $\lf{\rankable_{\Gamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founded
 \begin{definition}[Process judgment \rocq{ptyped}]
 \label{def:proc-judgment}
 The process judgment has the form
-\[ \Sigma \vdash^{\lf{N,\eta}}_{W} p : T \]
+\[ \senv \vdash^{\lf{N,\eta}}_{W} \proc : \ty \]
 with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $\Sigma$ & interface, an end type $S_x$ for each free end of $p$ \\
-  $W$ & world of $p$ \\
-  $p : T$ & the process and the type of the value of its main thread \\
+  $\senv$ & interface, an end type $\sty_x$ for each free end of $\proc$ \\
+  $W$ & world of $\proc$ \\
+  $\proc : \ty$ & the process and the type of the value of its main thread \\
   $\lf{N}$ & bound on the tickets of the two ends of a channel \\
   $\lf{\eta}$ & credit and tickets $\eta(o) = (a, m)$ of each interface end $o$
 \end{tabular}
 \end{center}
-with $\lf{\tk_\eta(o) = m}$, and $\lf{\Sigma^{\eta}}$ maps $o$ to $S_x^{a,m}$ for $(o : S_x) \in \Sigma$ and $\eta(o) = (a, m)$. The rules use
+with $\lf{\tk_\eta(o) = m}$, and $\lf{\senv^{\eta}}$ maps $o$ to $\sty_x^{a,m}$ for $(o : \sty_x) \in \senv$ and $\eta(o) = (a, m)$. The rules use
 \begin{align*}
-  \pfree\,\Sigma &\iff \forall o \in \mathrm{dom}\,\Sigma.\ \dual{o} \notin \mathrm{dom}\,\Sigma \\
-  \chans\,\Sigma &= \{c \mid c^{+} \in \mathrm{dom}\,\Sigma \lor c^{-} \in \mathrm{dom}\,\Sigma\} \qquad
-  \dual{\Sigma} = \{\dual{o} : \dual{S}_{\dual{x}} \mid (o : S_x) \in \Sigma\} \\
-  (C_1, E_1) \cpar{\Sigma} (C_2, E_2) &= (C_1 \cup C_2 \cup \chans\,\Sigma,\ E_1 \uplus E_2) \\
-  \pairs^{\lf{N}}(\Theta_B, C_0) &\iff \mathrm{dom}\,\Theta_B = \ends(C_0) \land \forall c \in C_0.\ \Theta_B(c^{+}) = S_x\lf{^{m,m}} \land \Theta_B(c^{-}) = \dual{S}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
+  \pfree\,\senv &\iff \forall o \in \mathrm{dom}\,\senv.\ \dual{o} \notin \mathrm{dom}\,\senv \\
+  \chans\,\senv &= \{c \mid c^{+} \in \mathrm{dom}\,\senv \lor c^{-} \in \mathrm{dom}\,\senv\} \qquad
+  \dual{\senv} = \{\dual{o} : \dual{\sty}_{\dual{x}} \mid (o : \sty_x) \in \senv\} \\
+  (C_1, E_1) \cpar{\senv} (C_2, E_2) &= (C_1 \cup C_2 \cup \chans\,\senv,\ E_1 \uplus E_2) \\
+  \pairs^{\lf{N}}(\cTheta_B, C_0) &\iff \mathrm{dom}\,\cTheta_B = \ends(C_0) \land \forall c \in C_0.\ \cTheta_B(c^{+}) = \sty_x\lf{^{m,m}} \land \cTheta_B(c^{-}) = \dual{\sty}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
 \end{align*}
 where $\ends(C_0) = \{c^{+}, c^{-} \mid c \in C_0\}$.
 \end{definition}

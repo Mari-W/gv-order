@@ -18,8 +18,8 @@
 \begin{definition}[Deadlock freedom \rocq{deadlock_free}]
 \label{def:df}
 \begin{gather*}
-  \terminated\,p \iff \exists v, E.\ p = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
-  \dfree\,p \iff \forall p'.\ p \to^{*} p' \Rightarrow \terminated\,p' \lor \exists p''.\ p' \to p''
+  \terminated\,\proc \iff \exists v, E.\ \proc = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
+  \dfree\,\proc \iff \forall \proc'.\ \proc \to^{*} \proc' \Rightarrow \terminated\,\proc' \lor \exists \proc''.\ \proc' \to \proc''
 \end{gather*}
 \end{definition}
 % GAP: sem-props shows the deadlocking reversed cycle only in its breaks text, no map example with a listing for a deadlocked process (the scheduler with A_1 reversed is a candidate)

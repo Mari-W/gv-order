@@ -3,41 +3,41 @@
 % left to the convention of sec:types (PLAN.md, presentation).
 \begin{figure}[tbp]
   \small
-  \judghead{Typing terms}{\Gamma ; \Delta \vdash^{F}_{\lf{N}} e : T \eff{\varepsilon}}
+  \judghead{Typing terms}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
   \begin{rules}
     \infer*[lab=E-Abs]
-      {l \preccurlyeq \Delta \\ \tyj{\Gamma}{\Delta\lf{-a}, b : T}{\up{u}}{e}{U}\eff{\varepsilon}}
-      {\tyj{\Gamma}{\Delta}{F}{\tlam{b}{e}}{(T \arr{u}{l}\lf{[\varepsilon]}\, U)\lf{^{a}}}\eff{0}}
+      {l \preccurlyeq \lenv \\ \tyj{\cGamma}{\lenv\lf{-a}, b : \ty}{\up{u}}{\tm}{\tyB}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tlam{b}{\tm}}{(\ty \arr{u}{l}\lf{[\varepsilon]}\, \tyB)\lf{^{a}}}\eff{0}}
     \label{rule:E-Abs}
     \and
     \infer*[lab=E-App]
-      {\tyj{\Gamma}{\Delta_1}{F \held \Delta_2}{e_1}{(T \arr{u}{l}\lf{[\varepsilon]}\, U)\lf{^{a}}}\eff{\varepsilon_1} \\\\
-       \tyj{\Gamma}{\Delta_2\lf{-\varepsilon_1}}{F \held (T \arr{u}{l} U)\lf{^{a}}}{e_2}{T}\eff{\varepsilon_2} \\ u \prec F}
-      {\tyj{\Gamma}{\Delta_1, \Delta_2}{F}{e_1\,e_2}{U}\eff{\varepsilon_1 + \varepsilon_2 + \varepsilon}}
+      {\tyj{\cGamma}{\lenv_1}{F \held \lenv_2}{\tm_1}{(\ty \arr{u}{l}\lf{[\varepsilon]}\, \tyB)\lf{^{a}}}\eff{\varepsilon_1} \\\\
+       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_1}}{F \held (\ty \arr{u}{l} \tyB)\lf{^{a}}}{\tm_2}{\ty}\eff{\varepsilon_2} \\ u \prec F}
+      {\tyj{\cGamma}{\lenv_1, \lenv_2}{F}{\tm_1\,\tm_2}{\tyB}\eff{\varepsilon_1 + \varepsilon_2 + \varepsilon}}
     \label{rule:E-App}
     \and
     \infer*[lab=E-Case]
-      {\tyj{\Gamma}{\Delta_1}{F \held \Delta_2}{e}{T_1 \oplus T_2}\eff{\varepsilon_0} \\
-       \tyj{\Gamma}{\Delta_2\lf{-\varepsilon_0}, a : T_i}{F}{e_i}{T}\eff{\varepsilon_i}\ \ (i \in \{1, 2\})}
-      {\tyj{\Gamma}{\Delta_1, \Delta_2}{F}{\tcasee{e}{a}{e_1}{a}{e_2}}{T}\eff{\varepsilon_0 + \max(\varepsilon_1, \varepsilon_2)}}
+      {\tyj{\cGamma}{\lenv_1}{F \held \lenv_2}{\tm}{\ty_1 \tyoplus \ty_2}\eff{\varepsilon_0} \\
+       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_0}, a : \ty_i}{F}{\tm_i}{\ty}\eff{\varepsilon_i}\ \ (i \in \{1, 2\})}
+      {\tyj{\cGamma}{\lenv_1, \lenv_2}{F}{\tcasee{\tm}{a}{\tm_1}{a}{\tm_2}}{\ty}\eff{\varepsilon_0 + \max(\varepsilon_1, \varepsilon_2)}}
     \label{rule:E-Case}
   \end{rules}
   \begin{rules}
     \infer*[lab=E-Send]
-      {\unfold(S) = \sSend{\bar\iota}{T}.S' \\ x \prec \payload{T}{x} \\ x \prec F \\\\
-       \tyj{\Gamma}{\Delta}{F}{e}{T' \otimes S_x\lf{^{a,m}}}\eff{\varepsilon} \\ T'\lf{-1} \leq \payload{T}{x}}
-      {\tyj{\Gamma}{\Delta}{F}{\tsend\,e}{S'_{\pplus{x}}\lf{^{m,m}}}\eff{\varepsilon + 1}}
+      {\unfold(\sty) = \sSend{\bar\iota}{\ty}.\sty' \\ x \prec \payload{\ty}{x} \\ x \prec F \\\\
+       \tyj{\cGamma}{\lenv}{F}{\tm}{\ty' \tyotimes \sty_x\lf{^{a,m}}}\eff{\varepsilon} \\ \ty'\lf{-1} \leq \payload{\ty}{x}}
+      {\tyj{\cGamma}{\lenv}{F}{\tsend\,\tm}{\sty'_{\pplus{x}}\lf{^{m,m}}}\eff{\varepsilon + 1}}
     \label{rule:E-Send}
     \and
     \infer*[lab=E-Close]
-      {\unfold(S) = \Close \\ x \prec F \\\\ \tyj{\Gamma}{\Delta}{F}{e}{S_x\lf{^{a,m}}}\eff{\varepsilon}}
-      {\tyj{\Gamma}{\Delta}{F}{\tclose\,e}{\ast}\eff{\varepsilon + 1}}
+      {\unfold(\sty) = \Close \\ x \prec F \\\\ \tyj{\cGamma}{\lenv}{F}{\tm}{\sty_x\lf{^{a,m}}}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tclose\,\tm}{\ast}\eff{\varepsilon + 1}}
     \label{rule:E-Close}
     \and
     \infer*[lab=E-Link]
-      {\tyj{\Gamma}{\Delta}{F}{e}{S_x\lf{^{a_1,m_1}} \otimes \dual{S}_{\dual{x}}\lf{^{a_2,m_2}}}\eff{\varepsilon} \\\\
+      {\tyj{\cGamma}{\lenv}{F}{\tm}{\sty_x\lf{^{a_1,m_1}} \tyotimes \dual{\sty}_{\dual{x}}\lf{^{a_2,m_2}}}\eff{\varepsilon} \\\\
        \lf{a_1 + m_2 > N} \\ \lf{a_2 + m_1 > N}}
-      {\tyj{\Gamma}{\Delta}{F}{\tlink\,e}{\ast}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tlink\,\tm}{\ast}\eff{\varepsilon}}
     \label{rule:E-Link}
   \end{rules}
   \figrule

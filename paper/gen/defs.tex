@@ -612,19 +612,19 @@ $\displaystyle e'\ \mathsf{at}\ \Theta'$ & $e'$ is safe holding $\Theta'$, at th
 e \in {E^{W}_{\alpha}\llbracket \Theta \vdash T \rrbracket^{F}} \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{irred}\,e \Rightarrow e \in {V^{W'}_{\alpha}\llbracket \Theta \vdash T \rrbracket}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{irred}\,e \Rightarrow {\mathsf{ready}_{W'}(\Theta \mid F, e)}} \\
-\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}\\[3ex]e'\ \mathsf{at}\ \Theta' \iff \begin{cases} X(W, \Theta', T, F, e') & c = 0 \\ \forall \beta.\ \beta + c \leq \alpha \Rightarrow e' \in {E^{W}_{\beta}\llbracket \Theta' \vdash T \rrbracket^{F}} & c > 0 \end{cases} \qquad c = \lfalt{\kappa_{DF}(\ell)}{\kappa(\ell)}\end{array}}%
 \expandafter\gdef\csname map@blockdf@e-rel\endcsname{\begin{array}{c}\begin{array}{l}
 e \in {E^{W}_{\alpha}\llbracket \Theta \vdash T \rrbracket^{F}} \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{irred}\,e \Rightarrow e \in {V^{W'}_{\alpha}\llbracket \Theta \vdash T \rrbracket}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{irred}\,e \Rightarrow {\mathsf{ready}_{W'}(\Theta \mid F, e)}} \\
-\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}\\[3ex]e'\ \mathsf{at}\ \Theta' \iff \begin{cases} X(W, \Theta', T, F, e') & c = 0 \\ \forall \beta.\ \beta + c \leq \alpha \Rightarrow e' \in {E^{W}_{\beta}\llbracket \Theta' \vdash T \rrbracket^{F}} & c > 0 \end{cases} \qquad c = \kappa_{DF}(\ell)\end{array}}%
 \expandafter\gdef\csname map@blocklf@e-rel\endcsname{\begin{array}{c}\begin{array}{l}
 e \in {E^{W}_{\alpha}\llbracket \Theta \vdash T \rrbracket^{F}} \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{irred}\,e \Rightarrow e \in {V^{W'}_{\alpha}\llbracket \Theta \vdash T \rrbracket}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{irred}\,e \Rightarrow {\mathsf{ready}_{W'}(\Theta \mid F, e)}} \\
-\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ \forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow {\mathsf{Obl}_\ell(e')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}\\[3ex]e'\ \mathsf{at}\ \Theta' \iff \begin{cases} X(W, \Theta', T, F, e') & c = 0 \\ \forall \beta.\ \beta + c \leq \alpha \Rightarrow e' \in {E^{W}_{\beta}\llbracket \Theta' \vdash T \rrbracket^{F}} & c > 0 \end{cases} \qquad c = \lfadd{\kappa(\ell)}\end{array}}%
 \expandafter\gdef\csname map@block@e-obl\endcsname{\begin{array}{c}\begin{array}{c}
 \dfrac{\begin{array}{c}e'\ \mathsf{at}\ \Theta\end{array}}{\mathsf{Obl}_{\beta}(e')}\;\textsf{O-Beta} \qquad \dfrac{\begin{array}{c}\Theta = \Theta_M \mathbin{\uplus} \Theta_r\quad {v \in {V^{W}_{\alpha}\llbracket \Theta_M \vdash \ast \mathrel{\multimap}^{\top}_{\bot} \ast \rrbracket}}\quad {e'\ \mathsf{at}}\ \Theta_r\end{array}}{\mathsf{Obl}_{\mathsf{spawn}\,v}(e')}\;\textsf{O-Spawn} \\[2ex]
@@ -694,21 +694,21 @@ e \in {E^{W}_{\alpha}\llbracket \Theta \vdash T \rrbracket^{F}} \iff {\forall W'
 p \in {P^{W}_{\alpha}\llbracket \Sigma \vdash T \rrbracket},\ \alpha > 0 \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{pirred}\,p \Rightarrow p = (\varnothing, \{v\} \mathbin{\uplus} E) \land v \in {V^{W'}_{\alpha}\llbracket \Sigma \vdash T \rrbracket} \land E \subseteq \{\ast\}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{pirred}\,p \Rightarrow {\mathsf{ready}_{W'}(\Sigma, p)}} \\
-\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}}%
 \expandafter\gdef\csname map@blockdf@p-rel\endcsname{\begin{array}{l}
 \forall p.\ p \in {P^{W}_{0}\llbracket \Sigma \vdash T \rrbracket} \\
 p \in {P^{W}_{\alpha}\llbracket \Sigma \vdash T \rrbracket},\ \alpha > 0 \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{pirred}\,p \Rightarrow p = (\varnothing, \{v\} \mathbin{\uplus} E) \land v \in {V^{W'}_{\alpha}\llbracket \Sigma \vdash T \rrbracket} \land E \subseteq \{\ast\}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{pirred}\,p \Rightarrow {\mathsf{ready}_{W'}(\Sigma, p)}} \\
-\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}}%
 \expandafter\gdef\csname map@blocklf@p-rel\endcsname{\begin{array}{l}
 \forall p.\ p \in {P^{W}_{0}\llbracket \Sigma \vdash T \rrbracket} \\
 p \in {P^{W}_{\alpha}\llbracket \Sigma \vdash T \rrbracket},\ \alpha > 0 \iff {\forall W' \mathrel{\sqsupseteq} W}. \\
 \quad {(\mathsf{stop})\ \mathsf{pirred}\,p \Rightarrow p = (\varnothing, \{v\} \mathbin{\uplus} E) \land v \in {V^{W'}_{\alpha}\llbracket \Sigma \vdash T \rrbracket} \land E \subseteq \{\ast\}} \\
 \quad {(\mathsf{ready})\ \neg\mathsf{pirred}\,p \Rightarrow {\mathsf{ready}_{W'}(\Sigma, p)}} \\
-\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\mathsf{lfp})}
+\quad {(\mathsf{step})\ p \xrightarrow{ev} p' \Rightarrow {\mathsf{Pobl}_{ev}(p')}} \qquad {(\text{least fixed point over steps of cost } 0)}
 \end{array}}%
 \expandafter\gdef\csname map@block@p-obls\endcsname{\begin{array}{c}\begin{array}{c}
 \dfrac{\begin{array}{c}C' \cap {\mathsf{chans}}\,\Sigma = \varnothing\quad p'\ \mathsf{at}_{\lfalt{\kappa_{DF}(ev)}{\kappa(ev)}}\ \Sigma\end{array}}{\mathsf{Pobl}_{ev}(p')}\;\textsf{Q-Tau} \\[2ex]

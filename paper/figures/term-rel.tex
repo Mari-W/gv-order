@@ -4,71 +4,72 @@
 % obligations are in the appendix.
 \begin{figure}[tbp]
   \small
-  \judghead{Terms and the reading of a successor}{e \in \Erel{W}{\alpha}{\Theta}{T}{F} \quad e'\ \mathsf{at}\ \Theta'}
+  \judghead{Terms and the reading of a successor}{\tm \in \Erel{W}{\alpha}{\cTheta}{\ty}{F} \quad \tm'\ \mathsf{at}\ \cTheta'}
   \begin{rules}
     \infer*[lab=E]
       {\forall W' \sqsupseteq W.\ \
-       \big(\irred\,e \Rightarrow e \in \Vrel{W'}{\alpha}{\Theta}{T}\big)
-       \land \big(\neg\irred\,e \Rightarrow \ready_{W'}(\Theta \mid F, e)\big)
-       \land \big(\forall \ell, e'.\ e \xrightarrow{\ell} e' \Rightarrow \Obl^{W'}_{\ell}(e')\big)}
-      {e \in \Erel{W}{\alpha}{\Theta}{T}{F}}
+       \big(\irred\,\tm \Rightarrow \tm \in \Vrel{W'}{\alpha}{\cTheta}{\ty}\big)
+       \land \big(\neg\irred\,\tm \Rightarrow \ready_{W'}(\cTheta \mid F, \tm)\big)
+       \land \big(\forall \ell, \tm'.\ \tm \xrightarrow{\ell} \tm' \Rightarrow \Obl^{W'}_{\ell}(\tm')\big)}
+      {\tm \in \Erel{W}{\alpha}{\cTheta}{\ty}{F}}
     \label{rule:E}
     \and
     \infer*[lab=At-Free]
-      {\kappa(\ell) = 0 \\ e' \in \Erel{W}{\alpha}{\Theta'}{T}{F}}
-      {e'\ \mathsf{at}\ \Theta'}
+      {\kappa(\ell) = 0 \\ \tm' \in \Erel{W}{\alpha}{\cTheta'}{\ty}{F}}
+      {\tm'\ \mathsf{at}\ \cTheta'}
     \and
     \infer*[lab=At-Cost]
-      {\kappa(\ell) > 0 \\ \forall \beta.\ \beta + \kappa(\ell) \leq \alpha \Rightarrow e' \in \Erel{W}{\beta}{\Theta'}{T}{F}}
-      {e'\ \mathsf{at}\ \Theta'}
+      {\kappa(\ell) > 0 \\ \forall \beta.\ \beta + \kappa(\ell) \leq \alpha \Rightarrow \tm' \in \Erel{W}{\beta}{\cTheta'}{\ty}{F}}
+      {\tm'\ \mathsf{at}\ \cTheta'}
   \end{rules}
-  \judghead{Obligations of term steps}{\Obl^{W}_{\ell}(e')}
+  \judghead{Obligations of term steps}{\Obl^{W}_{\ell}(\tm')}
   \begin{rules}
-    \infer*[lab=O-Beta]{e'\ \mathsf{at}\ \Theta}{\Obl^{W}_{\beta}(e')}
+    \infer*[lab=O-Beta]{\tm'\ \mathsf{at}\ \cTheta}{\Obl^{W}_{\beta}(\tm')}
     \label{rule:O-Beta}
     \and
-    \infer*[lab=O-Close]{\Theta(o) \doteq \Close_x \\ e'\ \mathsf{at}\ \Theta \setminus o}{\Obl^{W}_{\tclose\,o}(e')}
+    \infer*[lab=O-Close]{\cTheta(o) \doteq \Close_x \\ \tm'\ \mathsf{at}\ \cTheta \setminus o}{\Obl^{W}_{\tclose\,o}(\tm')}
     \label{rule:O-Close}
     \and
     \infer*[lab=O-Spawn]
-      {\Theta = \Theta_M \uplus \Theta_r \\ v \in \Vrel{W}{\alpha}{\Theta_M}{\ast \arr{\top}{\bot} \ast} \\ e'\ \mathsf{at}\ \Theta_r}
-      {\Obl^{W}_{\tspawn\,v}(e')}
+      {\cTheta = \cTheta_M \uplus \cTheta_r \\ \val \in \Vrel{W}{\alpha}{\cTheta_M}{\ast \arr{\top}{\bot} \ast} \\ \tm'\ \mathsf{at}\ \cTheta_r}
+      {\Obl^{W}_{\tspawn\,\val}(\tm')}
     \label{rule:O-Spawn}
     \and
     \infer*[lab=O-New]
-      {c^{\pm} \notin \mathrm{dom}\,\Theta \\ \exists S, \pi, W' \sqsupseteq W.\ \ e'\ \mathsf{at}_{W'}\ \Theta[c^{+} \mapsto S_{\pi},\ c^{-} \mapsto \dual{S}_{\dual{\pi}}]}
-      {\Obl^{W}_{\tnew\,c}(e')}
+      {c^{\pm} \notin \mathrm{dom}\,\cTheta \\ \exists \sty, \pi, W' \sqsupseteq W.\ \ \tm'\ \mathsf{at}_{W'}\ \cTheta[c^{+} \mapsto \sty_{\pi},\ c^{-} \mapsto \dual{\sty}_{\dual{\pi}}]}
+      {\Obl^{W}_{\tnew\,c}(\tm')}
     \label{rule:O-New}
     \and
     \infer*[lab=O-Send]
-      {\Theta(o) \doteq (\sSend{\bar\iota}{U}.S)_{x} \\ \Theta \setminus o = \Theta_M \uplus \Theta_r \\\\
-       w \in \Vrel{W}{\alpha}{\Theta_M}{\payload{U}{x}} \\ e'\ \mathsf{at}\ \Theta_r[o \mapsto S_{\pplus{x}}]}
-      {\Obl^{W}_{\tsend\,o\,w}(e')}
+      {\cTheta(o) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\ \cTheta \setminus o = \cTheta_M \uplus \cTheta_r \\\\
+       \valB \in \Vrel{W}{\alpha}{\cTheta_M}{\payload{\tyB}{x}} \\ \tm'\ \mathsf{at}\ \cTheta_r[o \mapsto \sty_{\pplus{x}}]}
+      {\Obl^{W}_{\tsend\,o\,\valB}(\tm')}
     \label{rule:O-Send}
     \and
     \infer*[lab=O-Recv]
-      {\Theta(o) \doteq (\sRecvT{\bar\iota}{U}.S)_{x} \\\\
-       \forall \beta < \alpha,\ \Theta_{in},\ w.\ \
-       w \in \Vrel{W}{\beta}{\Theta_{in}}{\payload{U}{x}}
-       \Rightarrow e' \in \Erel{W}{\beta}{\Theta[o \mapsto S_{\pplus{x}}] \cup \Theta_{in}}{T}{F}}
-      {\Obl^{W}_{\trecv\,o\,w}(e')}
+      {\cTheta(o) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
+       \cTheta' = \cTheta[o \mapsto \sty_{\pplus{x}}] \\\\
+       \forall \beta < \alpha.\ \forall \valB, \cTheta_{in}.\\\\
+       \valB \in \Vrel{W}{\beta}{\cTheta_{in}}{\payload{\tyB}{x}}
+       \ \Rightarrow\ \tm' \in \Erel{W}{\beta}{\cTheta' \cup \cTheta_{in}}{\ty}{F}}
+      {\Obl^{W}_{\trecv\,o\,\valB}(\tm')}
     \label{rule:O-Recv}
   \end{rules}
-  \judghead{Processes}{p \in \Prel{W}{\alpha}{\Sigma}{T}}
+  \judghead{Processes}{\proc \in \Prel{W}{\alpha}{\senv}{\ty}}
   \begin{rules}
-    \infer*[lab=P-Zero]{ }{p \in \Prel{W}{0}{\Sigma}{T}}
+    \infer*[lab=P-Zero]{ }{\proc \in \Prel{W}{0}{\senv}{\ty}}
     \and
     \infer*[lab=P]
       {\alpha > 0 \\\\
        \forall W' \sqsupseteq W.\ \
-       \big(\irred\,p \Rightarrow \exists v, E.\ p = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \land v \in \Vrel{W'}{\alpha}{\Sigma}{T}\big) \\\\
-       \land \big(\neg\irred\,p \Rightarrow \ready_{W'}(\Sigma, p)\big)
-       \land \big(\forall ev, p'.\ p \xrightarrow{ev} p' \Rightarrow \mathsf{Pobl}^{W'}_{ev}(p')\big)}
-      {p \in \Prel{W}{\alpha}{\Sigma}{T}}
+       \big(\irred\,\proc \Rightarrow \exists \val, E.\ \proc = (\varnothing, \{\val\} \uplus E) \land E \subseteq \{\ast\} \land \val \in \Vrel{W'}{\alpha}{\senv}{\ty}\big) \\\\
+       \land \big(\neg\irred\,\proc \Rightarrow \ready_{W'}(\senv, \proc)\big)
+       \land \big(\forall ev, \proc'.\ \proc \xrightarrow{ev} \proc' \Rightarrow \mathsf{Pobl}^{W'}_{ev}(\proc')\big)}
+      {\proc \in \Prel{W}{\alpha}{\senv}{\ty}}
     \label{rule:P}
   \end{rules}
   \figrule
   \Description{Inference rules for the term relation, the reading of a successor at a cost, the obligations of term steps and the process relation.}
-  \caption{The term and process relations, least fixed points over steps of cost $0$, under \cref{def:rel-anatomy}. An obligation of a step of $e$ reads $\Theta$, $\alpha$, $T$ and $F$ of $e$, $\kappa = \kappa_{DF}$ charges $1$ for $\beta$, $\tforce$, $\tnew$, $\tspawn$, $\trecv$ and $\tbranch$ and $0$ for $\tsend$, $\tselect$, $\tclose$ and $\tlink$, and O-Select, O-Branch, O-Link and the process obligations $\mathsf{Pobl}$ are in \cref{app:e-obl,app:p-obls}.}
+  \caption{The term and process relations, under \cref{def:rel-anatomy}. At a fixed index $\alpha$ the rules E and P are read inductively, so $E_\alpha$ and $P_\alpha$ are the least relations closed under them and a chain of steps of cost $0$ (At-Free) ends, an obligation reads $\Theta$, $\alpha$, $T$ and $F$ of $e$, $\kappa = \kappa_{DF}$ charges $1$ for $\beta$, $\tforce$, $\tnew$, $\tspawn$, $\trecv$ and $\tbranch$ and $0$ for the other steps, $\mathsf{Pobl}$ is in \cref{fig:proc-obl}, and O-Select, O-Branch and O-Link are in \cref{app:e-obl}.}
   \label{fig:term-rel}
 \end{figure}

@@ -2,21 +2,21 @@
 % Bookkeeping premises are stated in words (PLAN.md, presentation).
 \begin{figure}[tb]
   \small
-  \judghead{Typing processes}{\Sigma \vdash_{W}^{\lf{N,\eta}} p : T}
+  \judghead{Typing processes}{\senv \vdash_{W}^{\lf{N,\eta}} \proc : \ty}
   \begin{rules}
     \infer*[lab=P-Term]
-      {\tfree\,T \\ \pfree\,\Sigma \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\Theta_B, C_0) \\\\
-       \lf{\forall o \in \mathrm{dom}\,\Sigma.\ \tk_\eta(o) \leq N} \\
-       \tyj{\varnothing}{\Sigma\lf{^{\eta}}, \Theta_B}{\varnothing}{t}{T}\eff{\varepsilon}}
-      {\Sigma \vdash_{W}^{\lf{N,\eta}} (C_0, \{t\}) : T}
+      {\tfree\,\ty \\ \pfree\,\senv \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\cTheta_B, C_0) \\\\
+       \lf{\forall o \in \mathrm{dom}\,\senv.\ \tk_\eta(o) \leq N} \\
+       \tyj{\varnothing}{\senv\lf{^{\eta}}, \cTheta_B}{\varnothing}{t}{\ty}\eff{\varepsilon}}
+      {\senv \vdash_{W}^{\lf{N,\eta}} (C_0, \{t\}) : \ty}
     \label{rule:P-Term}
     \and
     \infer*[lab=P-Connect]
-      {\Sigma_1 \cup \Sigma_C \vdash_{W_1}^{\lf{N,\eta}} p_1 : T \\
-       \Sigma_2 \cup \dual{\Sigma_C} \vdash_{W_2}^{\lf{N,\eta}} p_2 : \ast \\\\
-       \lf{\forall o \in \mathrm{dom}\,\Sigma_C.\ \tk_{\eta}(o) + \tk_{\eta}(\dual{o}) \leq N} \\
+      {\senv_1 \cup \senv_C \vdash_{W_1}^{\lf{N,\eta}} \proc_1 : \ty \\
+       \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N,\eta}} \proc_2 : \ast \\\\
+       \lf{\forall o \in \mathrm{dom}\,\senv_C.\ \tk_{\eta}(o) + \tk_{\eta}(\dual{o}) \leq N} \\
        \lfalt{\cons}{\ranked}(W_1 \wjoin W_2)}
-      {\Sigma_1 \cup \Sigma_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} p_1 \cpar{\Sigma_C} p_2 : T}
+      {\senv_1 \cup \senv_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} \proc_1 \cpar{\senv_C} \proc_2 : \ty}
     \label{rule:P-Connect}
   \end{rules}
   \figrule
