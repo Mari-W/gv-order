@@ -79,6 +79,44 @@ se.r0 (simplified, run from r₀ = P), sp.lfsem (P_a ∼ P), tp.msunion
 definition the Rocq states on `proc`. Notes proc.config, proc.erase,
 type.Config are gone.
 
+### Map backport
+
+The presentation changes of revisions 3 to 5 and of "Presentation
+simplifications", checked one by one against docs/explorer/map.json.
+Applied by .claude/notes/map-backport-rev3-5.py (after map-procs-P.py and
+map-procs-P-2.py). Where the map is the detailed reference and the paper
+only moves a formula to the appendix, the map keeps the formula and takes
+the paper's names. Every departure from the Rocq has a deviation.
+
+| change (revision) | map | why |
+|---|---|---|
+| Milner's scheduler leads (r3.1) | applied, ex-milner is the first example | |
+| no words inside rules (r3.2) | already so, no \text words in rule premises. P-Term reads pairs^N(Θ_B, C₀), defined below the rules | |
+| anatomies (r3.3) | not applied | the map's notes give each component, an anatomy table would repeat them |
+| disjointness by one convention (r3.5, D) | applied to P-Term, P-Connect, Q-Tau, Q-Recv. Convention "∪, ⊎", deviationRule kind omitted. Notes P-Term.disj, P-Connect.disj, tp.Sigma removed | the conjuncts inside the definitions of opened and matches stay, they define named predicates |
+| V, E, P, obligations as rules (r3.6) | applied. V, obligations, process obligations were rules. E is now rule E, P the rules P-Zero and P | |
+| "(lfp)" replaced by the inductive reading at a fixed index (C) | applied. Tag gone from e-rel and p-rel, captions and note rel.lfp say it. map2tex.py no longer rewrites the tag | |
+| opened, matches, closed, iface (D) | applied, renamed with deviations on Q-Send.split, Q-Recv.ok, Q-Recv.back, Q-Recv.env | |
+| ech is chan (E) | applied, deviation on end.ech | |
+| α, β, γ letters (G) | already in the map (revision 5) | |
+| futures as sets of points (r4.3) | applied as one sentence in t-contexts. The general form F = X ∪ △v stays the definition | the map is the reference for the general form |
+| η dropped, annotations in Σ (r4.4) | applied. P-Term asks tk(o) ≤ N, P-Connect tk(o) + tk(ō) ≤ N, ⊢^N without η, note tp.tk added, tp.lift removed. Deviation on p-typing (iann, tenv_ofk, ptyped_iann_local, p_connect_iann) | |
+| P-Term premises tfree, pfree, pairs glossed (r4.5) | applied for pairs (named predicate with its definition). tfree and pfree were named already | |
+| acyc, conserv, rankable explained (r4.6) | already. Notes new.acyc, E-Open.cons, new.rank state them in the paper's terms | |
+| E-Abs, E-New-Field, E-Force, E-Open only in captions (r4.7) | not applied | the map shows every rule, the paper only hides them |
+| readiness and process conditions in words (r4.10, r4.11) | not applied | the map keeps the formulas, its captions say the cases in words already |
+| E-App premise ε₂ ≤ a (r5) | already (map-eapp-premise.py) | |
+| lock-free composition asks tk(o) + tk(ō) ≤ N (r4 correction) | applied to th-compose and note th.lf-p-connect | `lf_p_connect` asks `tsum_ok` |
+| interface tickets bounded by Σ (r4 correction) | applied to sp.own, deviation names soup_invk, SoupK, khalf. soup sources list SoupK, soup_invk | |
+| signal and wait (r3 E, map2tex rename) | applied in the example code with deviations. map2tex.py CODE_RENAME dropped, signal and wait stay keywords | |
+| counters and cost wording (r5) | already, checked: no fuel, aging or frame (other than evaluation frames) in the prose | |
+| worlds and points wording (r3 E) | partly. The map's ex-milner still says "the first creation states these 18 facts" | the paper's fig:world-example counts the nine facts of ms_base without shifts. Which count the map should give is left to the author |
+| named variables, ρ constants, select_i, ε₁ + ε₂, contractivity and freshness in conv:implicit, E-Case one premise, value relation by reference (Presentation simplifications) | not applied | presentation devices of the body, the map is the detailed reference and keeps the separate premises |
+
+Checks after the backport: docs/explorer/check.sh 0 errors (one warning,
+bare-word Connect, as before), page-test 15 passed, map-faithfulness.py
+regenerated.
+
 ## Revision 5 (branch paper-rev5)
 
 State. Branch paper-rev5 from main (cde8ae7f). `make -C paper` builds
