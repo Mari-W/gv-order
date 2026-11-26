@@ -3,40 +3,40 @@
 % r-ex. E-Pack is in the appendix.
 \begin{figure}[tbp]
   \small
-  \judghead{Creation, boxes and existentials}{\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}}
+  \judghead{Creation, boxes and existentials}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
   \begin{rules}
     \infer*[lab=E-New]
-      {\unl\,\Delta \\ \acyc_{\rho}(C) \\ \conserv_{\Gamma}(\rho, C) \\\\
-       \lf{N \in \mathbb{N} \Rightarrow \rankable_{\Gamma}(\rho, C)} \\ \lf{m_1 + m_2 \leq N}}
-      {\tyj{\Gamma}{\Delta}{F}{\tnew}{\exists^{\bot}\rho.\ C.\ S_{\rho}\lf{^{m_1,m_1}} \otimes \dual{S}_{\dual{\rho}}\lf{^{m_2,m_2}}}\eff{0}}
+      {\unl\,\lenv \\ \acyc_{\rho}(C) \\ \conserv_{\cGamma}(\rho, C) \\\\
+       \lf{N \in \mathbb{N} \Rightarrow \rankable_{\cGamma}(\rho, C)} \\ \lf{m_1 + m_2 \leq N}}
+      {\tyj{\cGamma}{\lenv}{F}{\tnew}{\tyexists^{\bot}\rho.\ C.\ \sty_{\rho}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{\rho}}\lf{^{m_2,m_2}}}\eff{0}}
     \label{rule:E-New}
     \and
     \infer*[lab=E-New-Field]
-      {\unl\,\Delta \\ \lf{m_1 + m_2 \leq N}}
-      {\tyj{\Gamma}{\Delta}{F}{\tnew}{S_{\fld{x}{\kappa}}\lf{^{m_1,m_1}} \otimes \dual{S}_{\dual{\fld{x}{\kappa}}}\lf{^{m_2,m_2}}}\eff{0}}
+      {\unl\,\lenv \\ \lf{m_1 + m_2 \leq N}}
+      {\tyj{\cGamma}{\lenv}{F}{\tnew}{\sty_{\fld{x}{\kappa}}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{\fld{x}{\kappa}}}\lf{^{m_2,m_2}}}\eff{0}}
     \label{rule:E-New-Field}
   \end{rules}
   \begin{rules}
     \infer*[lab=E-Box]
-      {B = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U) \\ \unl\,\Delta \\\\
-       \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}\ \ \text{for every instance $\bar s$}}
-      {\tyj{\Gamma}{\Delta}{F}{\tbox{f}{e}}{B}\eff{0}}
+      {B = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB) \\ \unl\,\lenv \\\\
+       \forall \bar s \in \Inst.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, f : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tbox{f}{\tm}}{B}\eff{0}}
     \label{rule:E-Box}
     \and
     \infer*[lab=E-Force]
-      {\tyj{\Gamma}{\Delta}{F}{e}{\Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U)}\eff{\varepsilon_0} \\\\
-       \Gamma \vdash C[\bar x] \\ u[\bar x] \prec F}
-      {\tyj{\Gamma}{\Delta}{F}{\tforce\,e}{U[\bar s][\bar x]}\eff{\varepsilon_0 + 1 + \varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB)}\eff{\varepsilon_0} \\\\
+       \cGamma \vdash C[\bar x] \\ u[\bar x] \prec F}
+      {\tyj{\cGamma}{\lenv}{F}{\tforce\,\tm}{\tyB[\bar s][\bar x]}\eff{\varepsilon_0 + 1 + \varepsilon}}
     \label{rule:E-Force}
     \and
     \infer*[lab=E-Open]
-      {\Delta(a) = \exists^{l}\bar\iota.\ C.\ T \\ \text{$T$ is no box type} \\ \conserv_{\Gamma}(\bar\iota, C) \\\\
-       \tyj{\Gamma, C(\bar\iota)}{\Delta[a \mapsto T]}{F}{e}{U}\eff{\varepsilon}}
-      {\tyj{\Gamma}{\Delta}{F}{e}{U}\eff{\varepsilon}}
+      {\lenv(a) = \tyexists^{l}\bar\iota.\ C.\ \ty \\ \neg\,\unl\,\ty \\ \conserv_{\cGamma}(\bar\iota, C) \\\\
+       \tyj{\cGamma, C(\bar\iota)}{\lenv[a \mapsto \ty]}{F}{\tm}{\tyB}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyB}\eff{\varepsilon}}
     \label{rule:E-Open}
   \end{rules}
   \figrule
   \Description{Inference rules E-New, E-New-Field, E-Box, E-Force and E-Open.}
-  \caption{Creation, recursion and existentials, under \cref{conv:implicit}. $\acyc$, $\conserv$ and $\tree$ are in \cref{def:creation}, $\rankable$ in \cref{def:ranked}. E-Pack is in \cref{app:r-ex}.}
+  \caption{Creation, recursion and existentials, under \cref{conv:lf,conv:implicit}. $\acyc$, $\conserv$ and $\rankable$ are defined in \cref{def:creation}, $\Inst$ in \cref{conv:implicit}, and E-Pack is in \cref{app:r-ex}.}
   \label{fig:typing-orders}
 \end{figure}

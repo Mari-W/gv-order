@@ -14,25 +14,25 @@
   \]
   \judghead{Where an end moves, where a payload arrives}{x \mapsto x'}
   \[
-  \begin{array}{@{}l@{\qquad}l@{\qquad}l@{\qquad}l@{}}
-    x \mapsto \pplus{x} & x \mapsto \dual{\fld{x}{i}} & x \mapsto \fld{x}{i} & \fld{x}{j} = \fld{\dual{x}}{j} \\
-    \text{\footnotesize send, receive, close at $x$} & \text{\footnotesize $\tselect_i$ at $x$} & \text{\footnotesize $\tbranch$ at $x$, side $i$} & \text{\footnotesize $j$-th payload end of a message at $x$}
-  \end{array}
+    x \mapsto \pplus{x} \qquad
+    \mathsf{sel}(x, i) = \dual{\fld{x}{i}} \qquad
+    \mathsf{bra}(x, i) = \fld{x}{i} \qquad
+    \mathsf{payload}(x, n) = (\fld{x}{0}, \ldots, \fld{x}{(n{-}1)})
   \]
   \judghead{Worlds}{W}
   \[
-  \begin{array}{@{}l@{\qquad\quad}l@{}}
-    W = (A, {\prec_A}),\ \ {\prec_A} \subseteq \Point_A^2 &
-    {\ordW} = \mathsf{tc}\big({\prec_A} \cup \{x \prec \pplus{x}\} \cup \{x \prec \pplus{\dual{x}}\}\big) \\[3pt]
-    \cons\,W \iff \forall x.\ x \not\ordW x &
+  \begin{array}{@{}r@{\ \ }c@{\ \ }l@{}}
+    W & = & (A, {\prec_A}) \qquad {\prec_A} \subseteq \Point_A \times \Point_A \\[3pt]
+    {\ordW} & = & \mathsf{tc}\big({\prec_A} \cup \{(x, \pplus{x})\} \cup \{(x, \pplus{\dual{x}})\}\big) \qquad
     x \preccurlyeq_W y \iff x = y \lor x \ordW y \\[3pt]
-    W \wext W' \iff A \subseteq A' \land {\ordW} \subseteq {\ordW[W']} &
-    W_1 \wjoin W_2 = (A_1 \cup A_2,\ {\prec_{A_1}} \cup {\prec_{A_2}}) \\[3pt]
-    W \grow{\rho}{C} = (A \cup \{\rho\},\ {\prec_A} \cup C[\rho]) &
+    \cons\,W & \iff & \forall x.\ x \not\ordW x \\[3pt]
+    W \wext W' & \iff & A \subseteq A' \land {\ordW} \subseteq {\ordW[W']} \\[3pt]
+    W_1 \wjoin W_2 & = & (A_1 \cup A_2,\ {\prec_{A_1}} \cup {\prec_{A_2}}) \\[3pt]
+    W \grow{\rho}{C} & = & (A \cup \{\rho\},\ {\prec_A} \cup C[\rho])
   \end{array}
   \]
   \figrule
   \Description{Grammar of points, the moves of an end, and the definitions of worlds, their order, consistency, extension, growth and join.}
-  \caption{Points, moves and worlds. $\Point_A$ is the set of points with a base in $A$, $\mathsf{tc}$ the transitive closure (restriction and the join lemma in \cref{app:w-ext}).}
+  \caption{Points over constant bases $\rho$ and point variables $\iota$, moves and worlds. An action moves its end from $x$ to $\pplus{x}$, a choice to $\mathsf{sel}$ or $\mathsf{bra}$, the payload ends of a message at $x$ arrive at $\mathsf{payload}(x, n)$, $A$ is the set of bases of $W$, $\Point_A$ the set of points with a base in $A$, $\mathsf{tc}$ the transitive closure, and $W \grow{\rho}{C}$ adds the base $\rho$ with the facts $C[\rho]$ of a constraint $C$, a set of facts over a point variable instantiated at $\rho$ (restriction and the join lemma in \cref{app:w-ext}).}
   \label{fig:worlds}
 \end{figure}

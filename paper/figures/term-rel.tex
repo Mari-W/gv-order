@@ -1,0 +1,73 @@
+% The term relation, the reading of a successor at a cost, the obligations
+% of term steps and the process relation. From map blocks e-rel, e-obl,
+% p-rel, deadlock-free reading. O-Select, O-Branch, O-Link and the process
+% obligations are in the appendix.
+\begin{figure}[tbp]
+  \small
+  \judghead{Terms and the reading of a successor}{\tm \in \Erel{W}{\ix}{\cTheta}{\ty}{F} \quad \tm'\ \mathsf{at}\ \cTheta'}
+  \begin{rules}
+    \infer*[lab=E]
+      {\forall W' \sqsupseteq W.\ \ \irred\,\tm \Rightarrow \tm \in \Vrel{W'}{\ix}{\cTheta}{\ty} \\\\
+       \forall W' \sqsupseteq W.\ \ \neg\irred\,\tm \Rightarrow \ready_{W'}(\cTheta \mid F, \tm) \\\\
+       \forall W' \sqsupseteq W,\ \ell, \tm'.\ \ \tm \xrightarrow{\ell} \tm' \Rightarrow \Obl^{W'}_{\ell}(\tm')}
+      {\tm \in \Erel{W}{\ix}{\cTheta}{\ty}{F}}
+    \label{rule:E}
+    \and
+    \infer*[lab=At-Free]
+      {\kappa(\ell) = 0 \\ \tm' \in \Erel{W}{\ix}{\cTheta'}{\ty}{F}}
+      {\tm'\ \mathsf{at}\ \cTheta'}
+    \and
+    \infer*[lab=At-Cost]
+      {\kappa(\ell) > 0 \\ \forall \ixs.\ \ixs + \kappa(\ell) \leq \ix \Rightarrow \tm' \in \Erel{W}{\ixs}{\cTheta'}{\ty}{F}}
+      {\tm'\ \mathsf{at}\ \cTheta'}
+  \end{rules}
+  \judghead{Obligations of term steps}{\Obl^{W}_{\ell}(\tm')}
+  \begin{rules}
+    \infer*[lab=O-Beta]{\tm'\ \mathsf{at}\ \cTheta}{\Obl^{W}_{\beta}(\tm')}
+    \label{rule:O-Beta}
+    \and
+    \infer*[lab=O-Close]{\cTheta(o) \doteq \Close_x \\ \tm'\ \mathsf{at}\ \cTheta \setminus o}{\Obl^{W}_{\tclose\,o}(\tm')}
+    \label{rule:O-Close}
+    \and
+    \infer*[lab=O-Spawn]
+      {\cTheta = \cTheta_M \uplus \cTheta_r \\ \val \in \Vrel{W}{\ix}{\cTheta_M}{\ast \arr{\top}{\bot} \tyunit} \\ \tm'\ \mathsf{at}\ \cTheta_r}
+      {\Obl^{W}_{\tspawn\,\val}(\tm')}
+    \label{rule:O-Spawn}
+    \and
+    \infer*[lab=O-New]
+      {c^{\pm} \notin \mathrm{dom}\,\cTheta \\ \exists \sty, \pi, W' \sqsupseteq W.\ \ \tm'\ \mathsf{at}_{W'}\ \cTheta[c^{+} \mapsto \sty_{\pi},\ c^{-} \mapsto \dual{\sty}_{\dual{\pi}}]}
+      {\Obl^{W}_{\tnew\,c}(\tm')}
+    \label{rule:O-New}
+    \and
+    \infer*[lab=O-Send]
+      {\cTheta(o) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\ \cTheta \setminus o = \cTheta_M \uplus \cTheta_r \\\\
+       \valB \in \Vrel{W}{\ix}{\cTheta_M}{\payload{\tyB}{x}} \\ \tm'\ \mathsf{at}\ \cTheta_r[o \mapsto \sty_{\pplus{x}}]}
+      {\Obl^{W}_{\tsend\,o\,\valB}(\tm')}
+    \label{rule:O-Send}
+    \and
+    \infer*[lab=O-Recv]
+      {\cTheta(o) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
+       \cTheta' = \cTheta[o \mapsto \sty_{\pplus{x}}] \\\\
+       \forall \ixs < \ix.\ \forall \valB, \cTheta_{in}.\\\\
+       \valB \in \Vrel{W}{\ixs}{\cTheta_{in}}{\payload{\tyB}{x}}
+       \ \Rightarrow\ \tm' \in \Erel{W}{\ixs}{\cTheta' \cup \cTheta_{in}}{\ty}{F}}
+      {\Obl^{W}_{\trecv\,o\,\valB}(\tm')}
+    \label{rule:O-Recv}
+  \end{rules}
+  \judghead{Processes}{\proc \in \Prel{W}{\ix}{\senv}{\ty}}
+  \begin{rules}
+    \infer*[lab=P-Zero]{ }{\proc \in \Prel{W}{0}{\senv}{\ty}}
+    \and
+    \infer*[lab=P]
+      {\ix > 0 \\\\
+       \forall W' \sqsupseteq W.\ \ \irred\,\proc \Rightarrow \exists \val, E.\ \proc = (\varnothing, \{\val\} \uplus E) \land E \subseteq \{\tunit\} \land \val \in \Vrel{W'}{\ix}{\senv}{\ty} \\\\
+       \forall W' \sqsupseteq W.\ \ \neg\irred\,\proc \Rightarrow \ready_{W'}(\senv, \proc) \\\\
+       \forall W' \sqsupseteq W,\ ev, \proc'.\ \ \proc \xrightarrow{ev} \proc' \Rightarrow \mathsf{Pobl}^{W'}_{ev}(\proc')}
+      {\proc \in \Prel{W}{\ix}{\senv}{\ty}}
+    \label{rule:P}
+  \end{rules}
+  \figrule
+  \Description{Inference rules for the term relation, the reading of a successor at a cost, the obligations of term steps and the process relation.}
+  \caption{The term and process relations, under \cref{def:rel-anatomy}. At a fixed index $\ix$ the rules E and P are read inductively, so $E_\ix$ and $P_\ix$ are the least relations closed under them and a chain of steps of cost $0$ (At-Free) ends, an obligation reads $\Theta$, $\ix$, $T$ and $F$ of $e$, $\kappa = \kappa_{DF}$ charges $1$ for $\beta$, $\tforce$, $\tnew$, $\tspawn$, $\trecv$ and $\tbranch$ and $0$ for the other steps, $\mathsf{Pobl}$ is in \cref{fig:proc-obl}, and O-Select, O-Branch and O-Link are in \cref{app:e-obl}.}
+  \label{fig:term-rel}
+\end{figure}

@@ -14,16 +14,17 @@
 % Lock-free additions (\inmode{lf} in the map). One scheme for the whole
 % paper: a light shaded background behind the lock-free parts of a formula,
 % with no change of text colour, so that it survives greyscale printing.
-% In running text, where a box cannot break, the lock-free parts keep the
-% accent colour of the shading instead.
+% In running text map2tex.py shades a lock-free part word by word.
 \definecolor{lfbg}{HTML}{E6DDF0}
-\definecolor{lfcolor}{HTML}{6A3D80}
 \makeatletter
 \newcommand{\lf@box}[2]{{\setlength{\fboxsep}{0.6pt}\colorbox{lfbg}{$\m@th#1#2$}}}
-\newcommand{\lfadd}[1]{\ifmmode
+\newcommand{\lfadd}[1]{\relax\ifmmode
     \mathchoice{\lf@box\displaystyle{#1}}{\lf@box\textstyle{#1}}%
                {\lf@box\scriptstyle{#1}}{\lf@box\scriptscriptstyle{#1}}%
-  \else{\color{lfcolor}#1}\fi}
+  \else\lfw{#1}\fi}
+% A lock-free word of running text, shaded like the formulas. Lock-free
+% parts are marked by the shade only, never by a text colour.
+\newcommand{\lfw}[1]{{\setlength{\fboxsep}{0.6pt}\colorbox{lfbg}{\vphantom{Ay}#1}}}
 \makeatother
 % A deadlock-free part that the lock-free instance replaces.
 \newcommand{\lfalt}[2]{#1\,\lfadd{/\,#2}}

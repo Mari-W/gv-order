@@ -3,28 +3,28 @@
 % contractivity and the kinds of types are in the appendix.
 \begin{figure}[tb]
   \small
-  \judghead{Types and session types}{T \quad S}
+  \judghead{Types and session types}{\ty \quad \sty}
   \[
   \begin{array}{@{}r@{\ \ }c@{\ \ }l@{}}
-    T, U & ::= & \ast \mid (T \arr{u}{l}\lf{[c]}\, U)\lf{^{a}} \mid T \otimes U \mid T \oplus U \mid S_x\lf{^{a,m}}
-           \mid \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[c]}\, U) \mid \exists^{l}\bar\iota.\ C.\ T \\[2pt]
-    S & ::= & \Skip \mid S.S \mid \sRecvT{\bar\iota}{T} \mid \sSend{\bar\iota}{T} \mid \oplus(S', S'') \mid \&(S', S'')
-           \mid \Close \mid \mu Z.S \mid Z \mid \dual{Z} \\[2pt]
-    C & \subseteq & \{x \prec y \mid x, y \in \Point\} \qquad \text{a constraint, a finite or infinite set of facts}
+    \ty, \tyB & ::= & \tyunit \mid (\ty \arr{u}{l}\lf{[c]}\, \tyB)\lf{^{a}} \mid \ty \tyotimes \tyB \mid \ty \tyoplus \tyB \mid \sty_x\lf{^{a,m}}
+           \mid \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[c]}\, \tyB) \mid \tyexists^{l}\bar\iota.\ C.\ \ty \\[2pt]
+    \sty & ::= & \Skip \mid \sty.\sty \mid \sRecvT{\bar\iota}{\ty} \mid \sSend{\bar\iota}{\ty} \mid \tyoplus(\sty', \sty'') \mid \&(\sty', \sty'')
+           \mid \Close \mid \tymu \tvar{}.\sty \mid \tvar{} \mid \dual{\tvar{}} \\[2pt]
+    C & \subseteq & \{x \prec y \mid x, y \in \Point\}
   \end{array}
   \]
-  \judghead{Bounds, active points and payload instantiation}{\ap(T) \quad \payload{T}{x}}
+  \judghead{Bounds, active points and payload instantiation}{\ap(\ty) \quad \payload{\ty}{x}}
   \[
   \begin{array}{@{}l@{\qquad\quad}l@{}}
     l, u, v \in \Point \cup \{\bot, \top\} \qquad \bot \prec u \prec \top &
-    \ap(S_x) = \{\dual{x}\} \qquad \ap(T \arr{u}{l} U) = \ap(\exists^{l}\bar\iota.\,C.\,T) = \{l\} \\[2pt]
-    \payload{T}{x} = T[\fld{x}{0}, \ldots, \fld{x}{(n{-}1)} / \iota_0, \ldots, \iota_{n-1}] &
-    \ap(T \otimes U) = \ap(T \oplus U) = \ap(T) \cup \ap(U) \\[2pt]
-    & \ap(\ast) = \ap(\Box(\ldots)) = \varnothing
+    \ap(\sty_x) = \{\dual{x}\} \qquad \ap(\ty \arr{u}{l} \tyB) = \ap(\tyexists^{l}\bar\iota.\,C.\,\ty) = \{l\} \\[2pt]
+    \payload{\ty}{x} = \ty[\fld{x}{0}, \ldots, \fld{x}{(n{-}1)} / \iota_0, \ldots, \iota_{n-1}] &
+    \ap(\ty \tyotimes \tyB) = \ap(\ty \tyoplus \tyB) = \ap(\ty) \cup \ap(\tyB) \\[2pt]
+    & \ap(\tyunit) = \ap(\tyBox(\ldots)) = \varnothing
   \end{array}
   \]
   \figrule
   \Description{Grammar of types and session types, bounds, active points and payload instantiation.}
-  \caption{Types. Shaded parts belong to the lock-free instance (\cref{sec:lf-annotations}). An arrow written without $u$ has $u = \bot$, one without $l$ has $l = \top$. Duality $\dual{S}$, equivalence $S \approx S'$, $\unfold$ and contractivity are standard (\cref{app:ty-dual,app:ty-equiv,app:ty-session}).}
+  \caption{Types, under \cref{conv:lf}. A constraint $C$ is a finite or infinite set of facts, an arrow written without $u$ has $u = \bot$ and one without $l$ has $l = \top$, and duality $\dual{S}$, equivalence $S \approx S'$, $\unfold$ and contractivity are standard (\cref{app:ty-dual,app:ty-equiv,app:ty-session}).}
   \label{fig:types}
 \end{figure}

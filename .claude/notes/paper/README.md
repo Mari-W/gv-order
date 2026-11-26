@@ -1,9 +1,13 @@
 # Paper sources
 
-The LaTeX sources live here; the mechanization lives in `theories/`.
+The LaTeX sources live in `paper/`, the mechanization in `theories/`. This
+folder holds what the build does not need: the generators (`tools/map2tex.py`,
+`rocqrefs.py`, called by `paper/Makefile`), the plan, the previews, the old
+draft and the LNCS files.
 
 ```sh
 make -C paper          # build main.pdf (generates rocqrefs.tex first)
+make -C paper gen      # regenerate paper/gen from docs/explorer/map.json
 make -C paper check    # fail on citations to declarations that no longer exist
 make -C paper clean
 ```
@@ -26,8 +30,8 @@ the Data-Availability Statement and appendices; a revision or the
 camera-ready may run to 25. Check the body length before submitting —
 it currently ends right at the limit.
 
-The LNCS sources this was converted from are still here (`llncs.cls`,
-`splncs04nat.bst`) if we switch back.
+The LNCS files this was converted from (`llncs.cls`, `splncs04nat.bst`)
+are in this folder if we switch back.
 
 The logo in `rocq-logo.pdf` is the Rocq icon from
 [rocq-prover/rocq-prover.org](https://github.com/rocq-prover/rocq-prover.org)

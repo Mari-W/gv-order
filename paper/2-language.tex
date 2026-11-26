@@ -6,50 +6,41 @@
 \subsection{Syntax and Semantics}
 \label{sec:syntax}
 
-% PAR: ends instead of channels, c+ and c-, dual end | example: ex-close | figure/rule: fig:syntax | map: syn-ends
+% PAR: ends instead of channels, c+ and c-, dual end, the scheduler names both ends of its six channels | example: ex-milner | figure/rule: fig:syntax | map: syn-ends
 \input{figures/syntax}
 
 % PAR: constants k e, thirteen term formers, new as a term, select and branch in the core | example: - | figure/rule: fig:syntax | map: syn-prims, syn-terms
 % PAR: labelled semantics standard GV, pointer to appendix | example: - | figure/rule: app:semantics | map: sem-labels, sem-head, sem-ctx, sem-proc
-% PAR: processes (C, E), restricted channels, instrumented configurations for lock freedom | example: - | figure/rule: fig:syntax | map: syn-procs, sem-events
+% PAR: processes (C, E), restricted channels, instrumented configurations for lock freedom, the scheduler after its creations and spawns as a process with six restricted channels and seven threads | example: ex-milner | figure/rule: fig:syntax | map: syn-procs, sem-events
+% PAR: smallest process, two threads close one channel, listing in the appendix | example: ex-close | figure/rule: app:ex-close | map: syn-procs, sem-proc
 
-\begin{example}[Two threads closing one channel \rocq{cl_deadlock_free}]
-\label{ex:close}
-\input{gen/examples/ex-close}
-% PAR: smallest process, two threads, one channel, close synchronises | example: ex-close | figure/rule: fig:syntax | map: syn-procs, sem-proc
-\end{example}
-
-% PAR: terminated, deadlock free, stuck cycle of closes | example: ex-cycle | figure/rule: def:df | map: sem-props
+% PAR: terminated, deadlock free, the scheduler with one agent reversed waits in a ring | example: ex-milner | figure/rule: def:df | map: sem-props
 \begin{definition}[Deadlock freedom \rocq{deadlock_free}]
 \label{def:df}
-A process is terminated when it has no restricted channel, a value in its main thread and $\ast$ in every other thread. It is deadlock free when every process it reaches is terminated or can step.
 \begin{gather*}
-  \terminated\,p \iff p = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
-  \dfree\,p \iff \forall p'.\ p \to^{*} p' \Rightarrow \terminated\,p' \lor \exists p''.\ p' \to p''
+  \terminated\,\proc \iff \exists v, E.\ \proc = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
+  \dfree\,\proc \iff \forall \proc'.\ \proc \to^{*} \proc' \Rightarrow \terminated\,\proc' \lor \exists \proc''.\ \proc' \to \proc''
 \end{gather*}
 \end{definition}
-% GAP: sem-props shows the reversed cycle only in its breaks text, no map example with a listing for the deadlocked process
+% GAP: sem-props shows the deadlocking reversed cycle only in its breaks text, no map example with a listing for a deadlocked process (the scheduler with A_1 reversed is a candidate)
 
 \subsection{Points and Worlds}
 \label{sec:points}
 
-% PAR: point of an end, where it acts next, terms never mention points | example: ex-cycle | figure/rule: fig:points-example | map: syn-points
-\input{figures/worlds}
-
-% PAR: an action moves an end from x to x+, choice to a field, dual point | example: ex-cycle | figure/rule: fig:worlds | map: syn-moves
-% PAR: payload points, the j-th payload end arrives at x.j, both ends compute the same field | example: ex-ring | figure/rule: fig:points-example | map: syn-moves, syn-points, ty-payload
-% PAR: world, bases and facts, order generated with program order | example: ex-cycle | figure/rule: fig:worlds | map: w-world, w-order
-% PAR: consistent world, no cycle | example: ex-cycle | figure/rule: fig:worlds | map: w-wf
-% PAR: extension, growth by a creation, join, restriction | example: ex-cycle | figure/rule: fig:worlds | map: w-ext
-
+% PAR: point of an end, where it acts next, terms never mention points, the points of the scheduler's ends | example: ex-milner | figure/rule: fig:points-example | map: syn-points
 \input{figures/points-example}
 
-\begin{example}[Cycle \rocq{cy_deadlock_free}]
-\label{ex:cycle}
-\input{gen/examples/ex-cycle}
-% PAR: two threads, two channels, same order, two facts from the second new | example: ex-cycle | figure/rule: fig:points-example | map: r-new, t-side
-\end{example}
-
+% PAR: an action moves an end from x to x+, choice to a field, dual point | example: ex-milner | figure/rule: fig:worlds | map: syn-moves
+% PAR: payload points, the j-th payload end arrives at x.j, both ends compute the same field | example: ex-ring | figure/rule: fig:points-example | map: syn-moves, syn-points, ty-payload
 % GAP: no map example in the deadlock-free fragment sends an end and states all its facts. Panel (b) of fig:points-example is schematic, from syn-moves and the shape of ex-ring.
+\input{figures/worlds}
+
+% PAR: world, bases and facts, order generated with program order | example: ex-milner | figure/rule: fig:worlds | map: w-world, w-order
+% PAR: the scheduler's world, nine facts and their shifts, all rise with the field label | example: ex-milner | figure/rule: fig:world-example | map: w-world, r-new
+\input{figures/world-example}
+
+% PAR: consistent world, no cycle, the scheduler's world consistent because the facts rise | example: ex-milner | figure/rule: fig:world-example | map: w-wf
+% PAR: extension, growth by a creation, join, restriction | example: ex-milner | figure/rule: fig:worlds | map: w-ext
+% PAR: mechanization insight, one notion of world in the paper, two in the Rocq (static worlds of typing and worlds of the relation) | example: - | figure/rule: fig:worlds | map: w-world, w-ext
 
 \FloatBarrier
