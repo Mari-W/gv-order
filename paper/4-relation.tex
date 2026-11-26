@@ -10,15 +10,16 @@
 % PAR: exact ownership, a value owns exactly the ends Theta | example: ex-close | figure/rule: V-Sess | map: v-rel
 \begin{definition}[Value relation \rocq{Vrel}]
 \label{def:value-rel}
-$\Vrel{W}{\alpha}{\Theta}{T}$ is the set of values that own exactly the ends of $\Theta$ and are safe at $T$ in the world $W$ at the ordinal index $\alpha$ (\cref{app:sr-ord}). It is defined by recursion on $\alpha$ and $T$. Unit, pairs and injections are related componentwise (\cref{app:v-rel}).
+$\Vrel{W}{\alpha}{\Theta}{T}$ is the set of values that own exactly the ends of $\Theta$ and are safe at $T$ in the world $W$ at the ordinal index $\alpha$ (\cref{app:sr-ord}). It is defined by recursion on $\alpha$ and, at one index, on $T$. $\Theta$ maps each owned end to its end type, so $\ap(\Theta)$ is the set of dual points of these ends. Unit, pairs and injections are related componentwise, and a pair splits $\Theta$ between its components (\cref{app:v-rel}).
 \begin{itemize}
   \item An end. $o \in \Vrel{W}{\alpha}{\{o \mapsto S'_x\}}{S_x}$ when $S' \approx S$.
-  \item A closure. $\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}$ when $\mathrm{dom}\,\Theta = \fends(e)$, the set of ends in $e$, $l \preccurlyeq \ap(\Theta)$, and for each $W' \sqsupseteq W$, $\beta < \alpha$, future $F$ with $W' \vdash u \prec F$ and argument $w \in \Vrel{W'}{\beta}{\Theta'}{T}$ with $\Theta'$ disjoint from $\Theta$,
+  \item A closure. $\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}$ when $\mathrm{dom}\,\Theta = \fends(e)$, the set of ends that occur in $e$, $l \preccurlyeq \ap(\Theta)$, and for each $W' \sqsupseteq W$, $\beta < \alpha$, future $F$ with $u \prec_{W'} F$ and argument $w \in \Vrel{W'}{\beta}{\Theta'}{T}$ with $\Theta'$ disjoint from $\Theta$,
   \[ e[w/b] \in \Erel{W'}{\beta}{\Theta \cup \Theta'}{U}{F}. \]
-  \item A box. $\tbox{f}{e} \in \Vrel{W}{\alpha}{\varnothing}{\Box(\forall\bar\iota\,\bar Z.\,C.\ \ast \multimap^{u} U)}$ when $e$ holds no end, and for each $W' \sqsupseteq W$, points $\bar x$ with $W' \vdash C[\bar x]$, session types $\bar s$, $\beta < \alpha$ and future $F$ with $u[\bar x] \prec F$,
+  \item A box. $\tbox{f}{e} \in \Vrel{W}{\alpha}{\varnothing}{\Box(\forall\bar\iota\,\bar Z.\,C.\ \ast \multimap^{u} U)}$ when no end occurs in $e$, and for each $W' \sqsupseteq W$, points $\bar x$ with $W' \vdash C[\bar x]$, instance $\bar s$, $\beta < \alpha$ and future $F$ with $u[\bar x] \prec_{W'} F$,
   \[ e[\tbox{f}{e}/f] \in \Erel{W'}{\beta}{\varnothing}{U[\bar s][\bar x]}{F}. \]
-  \item An existential. $v \in \Vrel{W}{\alpha}{\Theta}{\exists^{l}\bar\iota.\,C.\,T}$ when $l \preccurlyeq \ap(\Theta)$ and $v \in \Vrel{W}{\alpha}{\Theta}{T[\bar x]}$ for some $\bar x$ with $W \vdash C[\bar x]$.
+  \item An existential. $v \in \Vrel{W}{\alpha}{\Theta}{\exists^{l}\bar\iota.\,C.\,T}$ when $l \preccurlyeq \ap(\Theta)$ and $v \in \Vrel{W}{\alpha}{\Theta}{T[\bar x]}$ for some witness $\bar x$ with $W \vdash C[\bar x]$.
 \end{itemize}
+Here $W \vdash x \prec y$ is $x \ordW y$, and $u \prec_W F$, $l \preccurlyeq \ap(\Theta)$ and $W \vdash C[\bar x]$ read the side conditions of \cref{def:judgment} with the order of $W$ in place of $\Gamma \vdash_W$.
 \end{definition}
 % PAR: V-Arrow, each extension of the world, future F above u | example: - | figure/rule: V-Arrow | map: v-rel
 % PAR: V-Box, every instance of the constraint at every extension | example: ex-cs | figure/rule: V-Box | map: v-rel
@@ -30,10 +31,10 @@ $\Vrel{W}{\alpha}{\Theta}{T}$ is the set of values that own exactly the ends of 
 % PAR: readiness, a stuck term offers only ends whose points lie below the dual points of the rest and F | example: ex-cycle | figure/rule: fig:term-rel | map: rd
 \begin{definition}[Readiness \rocq{ready_t} \rocq{ready_p}]
 \label{def:readiness}
-A term or process is stable when each of its steps is a session action, and it offers the ends on which it can act.
+A term or process is stable when every step it can take is a session action, and it offers the ends on which it can act. Readiness asks nothing of a term or process that is not stable.
 \begin{itemize}
-  \item $\ready_W(\Theta \mid F, t)$ holds when a stable $t$ that offers no end of $\Theta$ is a value, and a stable $t$ is at a link or offers only ends whose points lie below the dual points of the other ends of $\Theta$ and below $F$.
-  \item $\ready_W(\Sigma, p)$ holds when a stable $p$ is at a link, or it is terminated when it offers no end of $\Sigma$ and for each other end of $\Sigma$ some offered end lies below its dual point.
+  \item A stable term $t$ holding $\Theta$ is ready, $\ready_W(\Theta \mid F, t)$, when both hold. If $t$ offers no end of $\Theta$, then $t$ is a value. Either $t$ is at a link, or every offered end of $\Theta$ has its point $x$ below the dual point $\dual{y}$ of every end of $\Theta$ that is not offered, $x \ordW \dual{y}$, and below every point of $F$.
+  \item A stable process $p$ with interface $\Sigma$ is ready, $\ready_W(\Sigma, p)$, when $p$ is at a link, or both hold. If $p$ offers no end of $\Sigma$, then $p$ is terminated. For every end of $\Sigma$ that is not offered, at point $y$, some offered end of $\Sigma$ has its point $x$ with $x \ordW \dual{y}$.
 \end{itemize}
 \end{definition}
 
@@ -46,27 +47,28 @@ $e \in \Erel{W}{\alpha}{\Theta}{T}{F}$ holds when, in each world $W' \sqsupseteq
   \item (ready) a reducible $e$ satisfies $\ready_{W'}(\Theta \mid F, e)$,
   \item (step) each step $e \xrightarrow{\ell} e'$ meets the obligation $\Obl_\ell(e')$ of \cref{def:obligations}.
 \end{itemize}
-An obligation reads the successor $e'$, holding $\Theta'$, in $\Erel{W'}{\beta}{\Theta'}{T}{F}$ for each $\beta$ with $\beta + \kappa(\ell) \leq \alpha$. A step of cost $\kappa(\ell) = 0$ keeps the index, and the relation is the least fixed point of the three clauses for such steps. The costs $\kappa$ are in \cref{app:ct-costs}.
+An obligation reads the successor $e'$, holding $\Theta'$, in $\Erel{W'}{\beta}{\Theta'}{T}{F}$ for each $\beta$ with $\beta + \kappa(\ell) \leq \alpha$. A step of cost $\kappa(\ell) = 0$ keeps the index, and the relation is the least fixed point of the three clauses for such steps. The cost table $\kappa$ charges one for a $\beta$ step, a force, a creation, a spawn and a receive, and nothing for a send, a close, a choice and a link (\cref{app:ct-costs}). $E[\kappa']$ is the same relation under another cost table $\kappa'$.
 \end{definition}
 
 % PAR: obligations per label, O-New grows the world, O-Send splits ownership, O-Recv | example: ex-cycle | figure/rule: O-New, O-Send | map: e-obl
 \begin{definition}[Obligations \rocq{Eobl}]
 \label{def:obligations}
-Let $e$ hold $\Theta$ and let $\Theta(o) = S_x$ with $\unfold(S)$ the action of the step on $o$.
+Let $e$ hold $\Theta$ at the world $W$, and for a step on the end $o$ let $\Theta(o) = S_x$ with $\unfold(S)$ the action the step performs.
 \begin{itemize}
-  \item A $\beta$ step keeps $\Theta$.
-  \item A creation $\tnew\,c$ with $c^{\pm}$ fresh grows the world. For some $S$, point $\pi$ and $W' \sqsupseteq W$ the successor holds $\Theta[c^{+} \mapsto S_{\pi},\ c^{-} \mapsto \dual{S}_{\dual{\pi}}]$ at $W'$.
-  \item A send $o!w$ with $\unfold(S) = \sSend{\bar\iota}{U}.S'$ gives away the payload. The rest of $\Theta$ splits as $\Theta_M \uplus \Theta_r$ with $w \in \Vrel{W}{\alpha}{\Theta_M}{\payload{U}{x}}$, and the successor holds $\Theta_r[o \mapsto S'_{\pplus{x}}]$.
-  \item A receive $o?w$ with $\unfold(S) = \sRecvT{\bar\iota}{U}.S'$ is safe for each value that may arrive. For each $\beta < \alpha$ and $w \in \Vrel{W}{\beta}{\Theta_{in}}{\payload{U}{x}}$ with $\Theta_{in}$ disjoint from $\Theta$, the successor is in $\Erel{W}{\beta}{\Theta[o \mapsto S'_{\pplus{x}}] \cup \Theta_{in}}{T}{F}$.
+  \item A $\beta$ step. The successor holds $\Theta$.
+  \item A creation $\tnew\,c$ with $c^{\pm} \notin \mathrm{dom}\,\Theta$. For some protocol $S$, point $\pi$ and $W' \sqsupseteq W$, the successor holds $\Theta[c^{+} \mapsto S_{\pi},\ c^{-} \mapsto \dual{S}_{\dual{\pi}}]$ at $W'$. The obligation chooses the point and the facts of the new channel, so the semantics reads no type.
+  \item A spawn of the thunk $v$. $\Theta = \Theta_M \uplus \Theta_r$ with $v \in \Vrel{W}{\alpha}{\Theta_M}{\ast \arr{\top}{\bot} \ast}$, and the successor holds $\Theta_r$.
+  \item A send $o!w$ with $\unfold(S) = \sSend{\bar\iota}{U}.S'$. The other ends split as $\Theta \setminus o = \Theta_M \uplus \Theta_r$ with $w \in \Vrel{W}{\alpha}{\Theta_M}{\payload{U}{x}}$, and the successor holds $\Theta_r[o \mapsto S'_{\pplus{x}}]$.
+  \item A receive $o?w$ with $\unfold(S) = \sRecvT{\bar\iota}{U}.S'$. For each $\beta < \alpha$ and $w \in \Vrel{W}{\beta}{\Theta_{in}}{\payload{U}{x}}$ with $\Theta_{in}$ disjoint from $\Theta$, the successor is in $\Erel{W}{\beta}{\Theta[o \mapsto S'_{\pplus{x}}] \cup \Theta_{in}}{T}{F}$. The successor is read at every value that may arrive.
+  \item A close of $o$. The successor holds $\Theta \setminus o$. A choice moves $o$ to the field of its side, and a link removes two dual ends (\cref{app:e-obl}).
 \end{itemize}
-Spawn, close, choice and link are in \cref{app:e-obl}.
 \end{definition}
 % PAR: step costs, free steps keep the index | example: - | figure/rule: fig:term-rel | map: ct-costs
 % PAR: bind lemma, evaluation frames, future F extended by the held rest | example: - | figure/rule: lem:bind | map: e-bind
 
 \begin{lemma}[Bind \rocq{Erel_bind}]
 \label{lem:bind}
-Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}). Let $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and let $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$. Then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
+Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $\Theta_2$. If $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$, then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
 \end{lemma}
 
 \subsection{Processes}
@@ -79,7 +81,7 @@ Every process is in $\Prel{W}{0}{\Sigma}{T}$. For $\alpha > 0$, $p \in \Prel{W}{
 \begin{itemize}
   \item (stop) an irreducible $p$ is $(\varnothing, \{v\} \uplus E)$ with $E \subseteq \{\ast\}$ and $v \in \Vrel{W'}{\alpha}{\Sigma}{T}$,
   \item (ready) a reducible $p$ satisfies $\ready_{W'}(\Sigma, p)$,
-  \item (step) each step $p \xrightarrow{ev} p'$ meets the process obligation of $ev$, which repeats the term obligation with $\Sigma$ in place of $\Theta$ and moves payload ends across the interface (\cref{app:p-obls}).
+  \item (step) each step $p \xrightarrow{ev} p'$ meets the process obligation of the event $ev$. An internal step, a message between two threads of $p$ included, keeps $\Sigma$ and reads $p'$ at each $\beta$ with $\beta + \kappa(ev) \leq \alpha$. A message with the environment repeats the send or receive obligation of \cref{def:obligations} with $\Sigma$ in place of $\Theta$, and the ends of the payload move across the interface (\cref{app:p-obls}).
 \end{itemize}
 \end{definition}
 % PAR: process readiness, some offered point below each other dual point | example: ex-cycle | figure/rule: fig:term-rel | map: rd
@@ -90,8 +92,8 @@ Every process is in $\Prel{W}{0}{\Sigma}{T}$. For $\alpha > 0$, $p \in \Prel{W}{
 \label{def:sem-judgments}
 The judgments quantify over indices and larger worlds.
 \begin{itemize}
-  \item $\Delta \semt^{F}_{W} e : T$ holds when for each $\alpha$ and $W' \sqsupseteq W$, each substitution $\gamma$ of related values for the variables of $\Delta$, and each choice of points for the open part $\up{v}$ of $F$, $\gamma(e) \in \Erel{W'}{\alpha}{\Theta}{T}{F}$, where $\Theta$ holds the ends of $\Delta$ and of $\gamma$ (\cref{app:sj-all}).
-  \item $\Sigma \semt_{W} p : T$ holds when $p \in \Prel{W'}{\alpha}{\Sigma}{T}$ for each $\alpha$ and each consistent $W' \sqsupseteq W$.
+  \item Terms. $\Delta \semt^{F}_{W} e : T$ holds when $\gamma(e) \in \Erel{W'}{\alpha}{\Theta}{T}{F'}$ for each index $\alpha$, each $W' \sqsupseteq W$, each grounding $\gamma$ and each denotation $F'$ of $F$. A grounding $\gamma$ substitutes for each variable of $\Delta$ a value in $V$ at its type, and $\Theta$ collects the ends of $\Delta$ and of these values. A denotation of $F = X \cup \up{v}$ is the set of points in $X$ together with any finite set of points above $v$, or any finite set at all when $\bot \in X$ (\cref{app:sj-all}).
+  \item Processes. $\Sigma \semt_{W} p : T$ holds when $p \in \Prel{W'}{\alpha}{\Sigma}{T}$ for each $\alpha$ and each consistent $W' \sqsupseteq W$.
 \end{itemize}
 \end{definition}
 
@@ -103,8 +105,8 @@ The judgments quantify over indices and larger worlds.
 \label{thm:compose}
 Let $T$ hold no end.
 \begin{enumerate}
-  \item If $\Sigma$, $\Theta_B$ and $C$ meet the interface premises of \ruleref{P-Term} and $t \in \Erel{W}{\alpha}{\Sigma \cup \Theta_B}{T}{\varnothing}$, then $(C, \{t\}) \in \Prel{W}{\alpha}{\Sigma}{T}$.
-  \item If the side conditions of \ruleref{P-Connect} hold, $\Sigma_1 \cup \Sigma_C \semt_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semt_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semt_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$, where $(C_1, E_1) \parallel_{\Sigma_C} (C_2, E_2) = (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C,\ E_1 \uplus E_2)$.
+  \item If $\Sigma$, $\Theta_B$ and $C_0$ meet the premises of \ruleref{P-Term} on the interface, and $t \in \Erel{W}{\alpha}{\Sigma \cup \Theta_B}{T}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\alpha}{\Sigma}{T}$.
+  \item If the channels of $\Sigma_1$, $\Sigma_2$, $\Sigma_C$, $C_1$ and $C_2$ are pairwise disjoint, $\Sigma_1 \cup \Sigma_C \semt_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semt_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semt_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$, where $(C_1, E_1) \parallel_{\Sigma_C} (C_2, E_2) = (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C,\ E_1 \uplus E_2)$.
 \end{enumerate}
 \end{theorem}
 % PAR: semantic P-Connect, components at their own worlds, joined world | example: ex-flag | figure/rule: thm:compose, fig:composition-example | map: th-compose, w-ext

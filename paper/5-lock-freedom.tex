@@ -14,11 +14,17 @@
 % PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: fig:props | map: sem-props
 \begin{definition}[Lock freedom \rocq{lock_free}]
 \label{def:lf}
-A run $(r, l)$ of $p$ is a sequence of configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = p$ and the events $l_i$ between them. A thread is pending when its next step is a session action. The process $p$ is lock free when on each maximal weakly fair run each pending thread takes part in a later event (\cref{app:sem-props}).
-\[
-  \lfree\,p \iff \forall (r, l).\ \mathsf{maximal}\,r\,l \land \mathsf{wfair}\,r\,l \Rightarrow
-  \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
-\]
+A run $(r, l)$ of $p$ is a sequence of configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = p$, where $l_i$ is the event of the step from $r_i$ to $r_{i+1}$, or none when $r_{i+1} = r_i$. A configuration names its threads, and $\mathsf{parts}(l_i)$ is the set of threads that take part in the event.
+\begin{itemize}
+  \item A run is maximal when $r_{i+1} = r_i$ only where $r_i$ has no internal step.
+  \item A run is weakly fair when for each position $i$ and thread $t$ there is a $j \geq i$ at which $t$ takes part or cannot step.
+  \item A thread $t$ is pending at $r_i$ when its next step is a session action.
+  \item $p$ is lock free when on each maximal weakly fair run each pending thread takes part in a later event (\cref{app:sem-props}).
+  \[
+    \lfree\,p \iff \forall (r, l).\ \mathsf{maximal}\,r\,l \land \mathsf{wfair}\,r\,l \Rightarrow
+    \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
+  \]
+\end{itemize}
 \end{definition}
 % PAR: order alone gives only deadlock freedom, a server postpones one end forever | example: rx-postpone | figure/rule: fig:props | map: sem-props, t-agecap
 % PAR: counters alone do not exclude cyclic waits | example: ex-cycle | figure/rule: fig:props | map: t-lf-counters
@@ -52,7 +58,7 @@ A run $(r, l)$ of $p$ is a sequence of configurations $r_0 r_1 \ldots$ with $\ma
 
 \begin{theorem}[Conservativity \rocq{conservative}]
 \label{thm:conserv}
-Let every annotation in $\Delta$ and $T$ be $\infty$. Then $\Gamma ; \Delta \vdash^{F}_{W,\infty} e : T\ !\ \varepsilon$ for some $\varepsilon$ if and only if $\Gamma ; \Delta \vdash^{F}_{W} e : T$.
+Let every credit, cost and ticket in $\Delta$ and $T$ be $\infty$. Then $\Gamma ; \Delta \vdash^{F}_{W,\infty} e : T\ !\ \varepsilon$ for some $\varepsilon$ if and only if $\Gamma ; \Delta \vdash^{F}_{W} e : T$.
 \end{theorem}
 
 \begin{example}[Endless delegation \rocq{rx_delegate_rejected}]
@@ -73,7 +79,12 @@ Let every annotation in $\Delta$ and $T$ be $\infty$. Then $\Gamma ; \Delta \vda
 % PAR: consistent worlds become ranked worlds, ordinal ranks, well-founded | example: - | figure/rule: fig:worlds, fig:ranked | map: w-world, w-wf, t-lf-wf
 \begin{definition}[Ranked worlds \rocq{wranked}]
 \label{def:ranked}
-A world $W$ is ranked when some $\varrho : \Point \to \mathsf{Ord}$ has $\varrho(x) < \varrho(y)$ whenever $x \ordW y$. At a finite bound $N$ the rules \ruleref{P-Term} and \ruleref{P-Connect} and the semantic judgments ask ranked worlds where \cref{sec:typing,sec:relation} ask consistent ones. The premise $\rankable_{\Gamma}(\rho, C)$ of \ruleref{E-New} holds when $\prec^{\rho}_{C}$ is well-founded and $C$ bounds each point of $\tree(\rho)$ by finitely many points of the context, so that each ranked world has ranks for the new tree (\cref{app:r-new}).
+Lock freedom needs worlds whose order admits no infinite descent.
+\begin{itemize}
+  \item A world $W$ is ranked when some rank function $\varrho : \Point \to \mathsf{Ord}$ into the ordinals has $\varrho(x) < \varrho(y)$ whenever $x \ordW y$. A ranked world is consistent, and the two notions differ only on infinite worlds (\cref{app:w-wf}).
+  \item At a finite bound $N$, \ruleref{P-Term}, \ruleref{P-Connect} and the semantic process judgments ask ranked worlds wherever \cref{sec:typing,sec:relation} ask consistent ones.
+  \item The premise $\rankable_{\Gamma}(\rho, C)$ of \ruleref{E-New} holds when $\prec^{\rho}_{C}$ is well-founded and each exit of $C$, a fact from a point of $\tree(\rho)$ down to a context point, is witnessed by a finite set of context points above the tree point, with these sets descending along $\prec^{\rho}_{C}$. Then every ranked world in which the facts of $\Gamma$ hold has ranks for the new tree (\cref{app:r-new}).
+\end{itemize}
 \end{definition}
 % PAR: they differ only on infinite worlds | example: ex-forkjoin | figure/rule: fig:worlds | map: w-wf
 % PAR: new_ok_N, the new tree rankable | example: ex-gennew | figure/rule: E-New | map: r-new
@@ -90,14 +101,14 @@ A world $W$ is ranked when some $\varrho : \Point \to \mathsf{Ord}$ has $\varrho
 % PAR: fuel the only new relation, counters, tickets, no world, no readiness | example: - | figure/rule: fig:fuel | map: fu, fu-vs
 \begin{definition}[Fuel \rocq{FuelE}]
 \label{def:fuel}
-A fuel context $\Phi$ gives each held end its protocol, counter $f$ and tickets $m$, written $S^{f,m}$. The thread $e$ has fuel, $e \in \Fuel{N}{\alpha}{\Phi}{\sigma\ !\ d}$, when it returns at $\sigma$ within $d$ actions in the following sense.
+A fuel context $\Phi$ gives each held end its protocol $S$, counter $f$ and tickets $m$, written $S^{f,m}$. An end is idle when $\unfold(S) = \Skip$. The thread $e$ has fuel, $e \in \Fuel{N}{\alpha}{\Phi}{\sigma\ !\ d}$, when it returns a value of $\sigma$ within $d$ session actions in the following sense. Fuel has no readiness clause, and it reads no point and no world.
 \begin{itemize}
-  \item (stop) A value $e$ has fuel at its counters (\cref{app:fv}).
-  \item (step) Each step $e \xrightarrow{\ell} e'$ changes the held ends as its obligation in \cref{def:obligations}, and the successor has fuel at each $\beta < \alpha$.
-  \item An action on $o$ asks $d \geq 1$ and a positive counter on each other held end that is not idle. It lowers those counters by one and resets the counter of $o$ to its tickets. A force does the same for all held ends.
-  \item A send hands the payload ends on with their counters lowered by one. A creation starts the new ends at tickets $m_1 + m_2 \leq N$. Other steps keep the counters (\cref{app:fu-obls}).
+  \item (stop) A value $e$ has fuel at its counters. An end has a counter at least its credit, a closure keeps the counters of its captured ends that are not idle at least at its credit, and a box holds no end (\cref{app:fv}).
+  \item (step) Each step $e \xrightarrow{\ell} e'$ changes the held ends as its obligation in \cref{def:obligations} does, and the successor has fuel at each $\beta < \alpha$ with the counters, tickets and frame below.
+  \item An action on $o$ asks $d \geq 1$ and a positive counter on each other held end that is not idle. The successor sees the frame $d - 1$, those counters lowered by one and the counter of $o$ reset to its tickets.
+  \item A force asks the same positive counters and $d \geq 1$, and lowers every counter and the frame by one.
+  \item A send hands the ends of its payload on with their counters lowered by one. A creation starts its two ends at tickets $m_1$ and $m_2$ with $m_1 + m_2 \leq N$, each counter at its tickets. A link of two ends with counters $f_1, f_2$ and tickets $m_1, m_2$ asks $f_1 + m_2 > N$ and $f_2 + m_1 > N$. A $\beta$ step, a spawn and a link change no counter (\cref{app:fu-obls}).
 \end{itemize}
-Fuel has no readiness clause and reads no world.
 \end{definition}
 % PAR: fuel obligations, force lowers every counter, act needs positive counters | example: ex-guard-neg | figure/rule: F-Force, F-Send | map: fu-obls
 % PAR: link in fuel, counters fall | example: ex-link | figure/rule: app:fu-obls | map: fu-obls
@@ -106,18 +117,18 @@ Fuel has no readiness clause and reads no world.
 % PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: - | figure/rule: fig:soup | map: soup
 \begin{definition}[Lock-free process relation \rocq{Soup}]
 \label{def:lf-rel}
-An annotated configuration $a = (q, K, W_a)$ has a configuration $q$, an ownership map $K$ with $K(o) = (t, x, f, m)$ for the owner $t$, point $x$, counter $f$ and tickets $m$ of each held end $o$, and the ranked world $W_a$ of the run so far. Then $a \in \LFrel{N,W}{\alpha}{\Sigma}{T}$ holds when $W \sqsubseteq W_a$, $T$ holds no end, $K$ fits $q$ and $\Sigma$ (\cref{app:soup}), and each thread $e = q(t)$ is
+An annotated configuration $a = (q, K, W_a)$ has a configuration $q$, an ownership map $K$ with $K(o) = (t, x, f, m)$ for the owner $t$, point $x$, counter $f$ and tickets $m$ of each held end $o$, and the ranked world $W_a$ of the run so far. Then $a \in \LFrel{N,W}{\alpha}{\Sigma}{T}$ holds when $W \sqsubseteq W_a$, $T$ holds no end, $K$ fits $q$ and $\Sigma$ (\cref{app:soup}), and for some choice of a session type and a protocol per held end each thread $e = q(t)$ is
 \begin{itemize}
-  \item in the relation, $e \in E[\kappa_L]^{W_a}_{\alpha}\llbracket \Theta_t \vdash U_t \rrbracket^{\varnothing}$ for the ends $\Theta_t$ that $t$ owns, at their points, and
-  \item in fuel, $e \in \Fuel{N}{\alpha}{\Phi_t}{\mathsf{thread}\ !\ \infty}$ for the same ends, at their counters and tickets,
+  \item in the relation, $e \in E[\kappa_L]^{W_a}_{\alpha}\llbracket \Theta_t \vdash U_t \rrbracket^{\varnothing}$, with $\Theta_t$ the ends that $K$ gives $t$ at their points, and
+  \item in fuel, $e \in \Fuel{N}{\alpha}{\Phi_t}{\mathsf{thread}\ !\ \infty}$, with $\Phi_t$ the same ends at their counters and tickets,
 \end{itemize}
-where $U_t$ is $T$ for the main thread and $\ast$ otherwise, and $E[\kappa_L]$ is the term relation under the costs $\kappa_L$ of \cref{app:ct-costs}.
+where $U_t$ is $T$ for the main thread and $\ast$ otherwise. $\kappa_L$ is the cost table that charges one for a force and for each session action and nothing for a $\beta$ step, a creation, a spawn or a link (\cref{app:ct-costs}). $K$ fits $q$ and $\Sigma$ when each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\Sigma$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\Sigma$ carries its entry of $\Sigma$ with at most $\lfloor N/2 \rfloor$ tickets.
 \end{definition}
 
 % PAR: lock-free judgment over ranked extensions | example: - | figure/rule: fig:proc-rel | map: sj-all
 \begin{definition}[Lock-free judgment \rocq{lf_sem}]
 \label{def:lf-judgment}
-$\Sigma \semlf^{N}_{W} p : T$ holds when for each ranked $W' \sqsupseteq W$ and each $\alpha$ some annotated configuration of $p$ is in $\LFrel{N,W'}{\alpha}{\Sigma}{T}$.
+$\Sigma \semlf^{N}_{W} p : T$ holds when for each ranked $W' \sqsupseteq W$ and each $\alpha$ some annotated configuration $a = (q, K, W_a)$ with $\mathsf{erase}(q) = p$ is in $\LFrel{N,W'}{\alpha}{\Sigma}{T}$.
 \end{definition}
 
 % PAR: lock-free composition of two components at own worlds | example: ex-cs-split | figure/rule: thm:compose | map: th-compose, w-ext
@@ -125,8 +136,8 @@ $\Sigma \semlf^{N}_{W} p : T$ holds when for each ranked $W' \sqsupseteq W$ and 
 \label{thm:lf-compose}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
-  \item If the premises of \ruleref{P-Term} at $N$ hold apart from those on the world, then $\Sigma \semlf^{N}_{W} (C_0, \{t\}) : T$.
-  \item If the side conditions of \ruleref{P-Connect} hold, $\Sigma_1 \cup \Sigma_C \semlf^{N}_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semlf^{N}_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semlf^{N}_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$.
+  \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\Sigma \semlf^{N}_{W} (C_0, \{t\}) : T$.
+  \item If the channels of $\Sigma_1$, $\Sigma_2$, $\Sigma_C$, $C_1$ and $C_2$ are pairwise disjoint, $\Sigma_1 \cup \Sigma_C \semlf^{N}_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semlf^{N}_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semlf^{N}_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$.
 \end{enumerate}
 \end{theorem}
 
@@ -135,7 +146,7 @@ Let $N \in \mathbb{N}$.
 \label{thm:lf-fundamental}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
-  \item If $\varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon$, then the erasure of this typing holds in the term judgment at $\kappa_L$ for each consistent $W' \sqsupseteq W$.
+  \item If $\varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon$, then $|\Delta| \semt[\kappa_L]^{F}_{W'} t : |T|$ for each consistent $W' \sqsupseteq W$, where $|{\cdot}|$ erases the annotations and $\semt[\kappa_L]$ is the term judgment of \cref{def:sem-judgments} over $E[\kappa_L]$.
   \item If $\Sigma \vdash^{N}_{W} p : T$, then $\Sigma \semlf^{N}_{W} p : T$.
   \item If $W$ is ranked and $\varnothing \semlf^{N}_{W} p : T$, then $p$ is lock free.
 \end{enumerate}
