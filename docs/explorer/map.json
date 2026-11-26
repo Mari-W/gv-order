@@ -66,7 +66,7 @@
     "id": "lf",
     "label": "Lock free",
     "short": "LF",
-    "description": "Deadlock freedom plus credits, ticket needs and fuel.",
+    "description": "Deadlock freedom plus counters, with credits, tickets and costs.",
     "color": {
      "light": "#7b4d8f",
      "dark": "#c6a2dc"
@@ -668,7 +668,7 @@
      "id": "ty-ann",
      "title": "Annotations and tickets",
      "formula": "\\begin{array}{c}\\sym{ann.fuel}{a, c, m, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\sym{ty.tickets}{S_x^{a,m} \\qquad a \\leq m \\qquad m \\in \\mathbb{N} \\cup \\{\\infty\\}} \\\\\n\\sym{ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N}\n\\end{array}\\\\[3ex]\\sym{ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = m = N = \\infty}\\end{array}",
-     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and [[r-base|E-Chan]] and [[t-agecap|aging]] keep $a \\leq m$ on each end of a context. The tickets of the two ends of a channel sum to at most $N$, so the dual end of an end with $m$ tickets has at most $N - m$. With each annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing, which [[th-conserv|conservativity]] states. The [[t-lf-counters|counters block]] says what the two numbers of an end do.",
+     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and [[r-base|E-Chan]] and [[t-agecap|a cost]] keep $a \\leq m$ on each end of a context. The tickets of the two ends of a channel sum to at most $N$, so the dual end of an end with $m$ tickets has at most $N - m$. With each annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing, which [[th-conserv|conservativity]] states. The credit is a static lower bound on the counter of the end, and the tickets are the reset value of the counter. The [[t-lf-counters|counters block]] says what the two numbers do.",
      "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds, so the deadlock-free rules are the lock-free rules read at $N = \\infty$.",
      "modes": [
       "lf"
@@ -709,8 +709,8 @@
      "id": "ty-kinds",
      "title": "Kinds of types",
      "formula": "\\begin{array}{l}\n\\sym{ty.tfree}{\\mathsf{tfree}\\,T \\iff T \\in \\mathcal{T}_{0}, \\qquad \\mathcal{T}_{0} ::= \\ast \\mid \\Box(\\forall\\bar\\iota\\,\\bar \\alpha.\\ C.\\ \\ast \\multimap^{u} U) \\mid \\mathcal{T}_{0} \\otimes \\mathcal{T}_{0} \\mid \\mathcal{T}_{0} \\oplus \\mathcal{T}_{0}} \\\\\n\\sym{ty.unlimited}{\\mathsf{unlimited}\\,T \\iff \\exists \\bar\\iota, \\bar \\alpha, C, u, U.\\ T = \\Box(\\forall\\bar\\iota\\,\\bar \\alpha.\\ C.\\ \\ast \\multimap^{u} U)}\n\\end{array}",
-     "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and [[p-typing|P-Term]] asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped, the box types, which [[t-subs|weakening and contraction]] and the leaves of a derivation read.\\inmode{lf}{ [[t-agecap|Aging]] leaves a $\\mathsf{tfree}$ type unchanged.}",
-     "why": "Process results hold no end, and only unlimited types may be copied or dropped.\\inmode{lf}{ Values without ends do not age.} A box holds no end by the [[v-rel|value relation]], so copying it duplicates no end.",
+     "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and [[p-typing|P-Term]] asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped, the box types, which [[t-subs|weakening and contraction]] and the leaves of a derivation read.\\inmode{lf}{ A [[t-agecap|cost]] leaves a $\\mathsf{tfree}$ type unchanged.}",
+     "why": "Process results hold no end, and only unlimited types may be copied or dropped.\\inmode{lf}{ A cost lowers no credit of a value without ends.} A box holds no end by the [[v-rel|value relation]], so copying it duplicates no end.",
      "source": [
       {
        "file": "types/Types.v",
@@ -921,7 +921,7 @@
      "id": "t-judgment",
      "title": "The typing judgment",
      "formula": "\\begin{array}{l}\\sym{tj.Gamma}{\\Gamma} ; \\sym{tj.Delta}{\\Delta} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{tj.F}{F}}_{\\sym{tj.W}{W}\\inmode{lf}{,\\sym{tj.N}{N}}} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\ \\sym{tj.held}{F \\triangleleft H = F \\cup \\sym{ty.heads}{\\mathsf{ap}}(H)}\\inmode{lf}{\\ \\land\\ \\sym{tj.hage}{\\mathsf{def}(H - c)}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{tj.eff}{\\varepsilon = c \\in \\mathbb{N} \\cup \\{\\infty\\}} \\qquad \\sym{tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = c_1 + c_2}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{tj.zero}{0} \\qquad \\sym{tj.one}{1} \\qquad \\sym{tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
-     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future, each defined in [[t-contexts]]. The type $T$ is one of [[ty-grammar]]. A thread that runs $e$ while it holds the values $H$ waits under $F \\triangleleft H$, which adds the [[ty-heads|active points]] of $H$ to the future. An entry of $H$ at the lower point $\\bot$ adds $\\bot$, below which no point lies, so the thread cannot act while it holds the entry. The rules leave the world $W$ implicit, because it stays fixed for a whole derivation.\\inmode{lf}{ So does the bound $N$.} \\inmode{lf}{In the lock-free mode $\\varepsilon$ is the cost of $e$, an upper bound on its session actions, and [[t-agecap|aging]] subtracts it from what is held.}",
+     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future, each defined in [[t-contexts]]. The type $T$ is one of [[ty-grammar]]. A thread that runs $e$ while it holds the values $H$ waits under $F \\triangleleft H$, which adds the [[ty-heads|active points]] of $H$ to the future. An entry of $H$ at the lower point $\\bot$ adds $\\bot$, below which no point lies, so the thread cannot act while it holds the entry. The rules leave the world $W$ implicit, because it stays fixed for a whole derivation.\\inmode{lf}{ So does the bound $N$.} \\inmode{lf}{In the lock-free mode $\\varepsilon$ is the cost of $e$, an upper bound on its session actions, and the credits of what is held drop by it, as [[t-agecap]] defines.}",
      "why": "Several rules run one subterm while the thread holds the values of others. Writing the future as $F \\triangleleft H$ states once what these rules need, the future of the running subterm extended by the active points of the held values. The future replaces a global order on actions. A term is typed against the points its own context will act at, so one derivation serves each context that acts above these points.",
      "example": "E-App runs $e_1$ while holding $\\Delta_2$, written $\\Gamma ; \\Delta_1 \\vdash^{F \\triangleleft \\Delta_2} e_1 : \\ldots$",
      "source": [
@@ -1106,8 +1106,8 @@
        }
       ]
      },
-     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the dual end of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting end a new dual end. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new dual end has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. An interface end takes its credit and tickets from the annotations $\\eta$ of [[p-typing|P-Term]], and P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
-     "why": "The two bounds serve the two threads of a channel. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of the dual end, so that its wait is finite. One number cannot do both. A lower bound alone says nothing about the dual end, and an upper bound alone cannot be lowered by aging, because aging must keep a true statement true.",
+     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. An action on $o$ resets $f(o)$ to its reset value, and each action of the thread lowers the counters of its other ends by one. Typing gives each end two numbers, those of [[ty-ann]]. The credit $a$ is a static lower bound on $f(o)$. A cost $c$ lowers it to $a - c$ by [[t-agecap]], so the holding thread postpones $o$ only finitely often. The tickets $m$ are the reset value, the value an [[r-act|action]] on $o$ resets the counter to, and so an upper bound on the counter. The two ends of a channel have at most $N$ tickets together, so the dual end of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting end a new dual end. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new dual end has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit, the counter of their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. An interface end takes its credit and tickets from the annotations $\\eta$ of [[p-typing|P-Term]], and P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$. The [[fv|counters of values]] and the [[soup|lock-free process relation]] read these numbers at run time.",
+     "why": "The two bounds serve the two threads of a channel. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of the dual end, so that its wait is finite. One number cannot do both. A lower bound alone says nothing about the dual end, and an upper bound alone cannot be lowered by a cost, because lowering by a cost must keep a true statement true.",
      "example": "At $N = 4$ a new channel gives its ends $3$ and $1$ tickets. A thread waiting on the end with $3$ tickets faces a dual end whose counter is at most $1$, so the thread holding it acts on it after at most one action elsewhere. A link of that dual end with an end at $2$ tickets asks its credit to exceed $2$, which a counter of $1$ cannot meet.",
      "modes": [
       "lf"
@@ -1248,10 +1248,10 @@
     },
     {
      "id": "t-agecap",
-     "title": "Aging",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{age.free}{\\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{age.idle}{\\sym{fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} - c = (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\sym{age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\end{array}",
-     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. Age-Idle applies to an end type held by a variable and to an entry $o : S_x^{a,m}$ of $\\Delta$ for an end the term names directly. A closure at credit $a$ captures its context aged by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] ages what is held, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses. Aging a context of ends also asks $a \\leq m$ of each end before it loses credit, which together with [[r-base|E-Chan]] keeps $a \\leq m$ on each end of a context that types a term.",
-     "why": "An action of the thread postpones the ends the thread holds by one step. Aging records this on the types of held values, and capture records it for the ends a closure takes along. No thread waits for an action on an idle end, so its credit may fall to $0$ without a check, which lets the [[t-lf-counters|counters]] of idle ends stay unbounded across a loop.",
+     "title": "Credits after a cost",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{age.free}{\\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Lower-Free} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}}\\;\\textsf{Lower-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{age.idle}{\\sym{fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}}\\;\\textsf{Lower-Idle} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} - c = (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Lower-Arr} \\\\[2ex] \\sym{age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\end{array}",
+     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by the cost $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. Lower-Idle applies to an end type held by a variable and to an entry $o : S_x^{a,m}$ of $\\Delta$ for an end the term names directly. A closure at credit $a$ captures its context lowered by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] lowers the credits of what is held by the cost of the term that runs, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses. Lowering a context of ends also asks $a \\leq m$ of each end, which together with [[r-base|E-Chan]] keeps $a \\leq m$ on each end of a context that types a term.",
+     "why": "An action of the thread postpones the ends the thread holds by one step. $T - c$ records this on the types of held values, and capture records it for the ends a closure takes along. No thread waits for an action on an idle end, so its credit may fall to $0$ without a check, which lets the [[t-lf-counters|counters]] of idle ends stay unbounded across a loop.",
      "modes": [
       "lf"
      ],
@@ -1275,6 +1275,18 @@
       "t-judgment",
       "r-fun",
       "r-data"
+     ],
+     "deviations": [
+      {
+       "kind": "renamed",
+       "part": "T - c, Lower-Free, Lower-Credit, Lower-Idle, Lower-Arr",
+       "reason": "The Rocq calls $T - c$ aging (`tage`, `lage`, `thage`). The map says that the credits drop by the cost and names the rules Lower-Free, Lower-Credit, Lower-Idle and Lower-Arr.",
+       "names": [
+        "tage",
+        "lage",
+        "thage"
+       ]
+      }
      ]
     },
     {
@@ -1310,7 +1322,7 @@
      "id": "r-fun",
      "title": "Functions",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Abs.lb}{l \\preccurlyeq \\Delta}\\quad \\sym{E-Abs.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T} \\\\ \\sym{E-Abs.body}{\\Gamma ; \\Delta\\inmode{lf}{ \\sym{E-Abs.cap}{- a}}, T \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\sym{E-App.fut2}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U)\\inmode{lf}{^{a}}} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\quad \\sym{E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
-     "caption": "E-Abs types the body of a [[syn-terms|$\\lambda$]] under the future ${\\vartriangle}u$ of [[ty-heads]], everything above the upper point $u$. Under ${\\vartriangle}\\bot$ no action types, and ${\\vartriangle}\\top$ is the empty future. It requires $l$ at or below the active points of the captured entries, using $\\preccurlyeq$ of [[t-side]] and $\\mathsf{ap}$ of [[ty-heads]], which $l = \\bot$ meets always. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, with the future $F \\triangleleft H$ of [[t-judgment]] and the split of $\\Delta$ of [[t-contexts]]. The call requires $u \\prec F$, which $u = \\bot$ meets always and $u = \\top$ only under the empty future. \\inmode{lf}{The closure records the cost of its body. Holding it while $e_2$ runs [[t-agecap|ages]] it by the cost of $e_2$, which needs a credit $a \\geq \\varepsilon_2$, and its [[t-lf-counters|credit]] $a$ ages the captured entries.} The [[v-rel|value relation]] at an arrow is the semantic counterpart.",
+     "caption": "E-Abs types the body of a [[syn-terms|$\\lambda$]] under the future ${\\vartriangle}u$ of [[ty-heads]], everything above the upper point $u$. Under ${\\vartriangle}\\bot$ no action types, and ${\\vartriangle}\\top$ is the empty future. It requires $l$ at or below the active points of the captured entries, using $\\preccurlyeq$ of [[t-side]] and $\\mathsf{ap}$ of [[ty-heads]], which $l = \\bot$ meets always. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, with the future $F \\triangleleft H$ of [[t-judgment]] and the split of $\\Delta$ of [[t-contexts]]. The call requires $u \\prec F$, which $u = \\bot$ meets always and $u = \\top$ only under the empty future. \\inmode{lf}{The closure records the cost of its body. Holding it while $e_2$ runs lowers its credit by the cost of $e_2$ as in [[t-agecap]], which needs a credit $a \\geq \\varepsilon_2$. Its [[t-lf-counters|credit]] $a$ lowers the credits of the captured entries.} The [[v-rel|value relation]] at an arrow is the semantic counterpart.",
      "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future. The body is typed once, for each future above $u$, instead of once per call site.",
      "source": [
       {
@@ -1359,7 +1371,7 @@
      "id": "r-data",
      "title": "Products, sums and let",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{E-Pair.fut2}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} T_1} e_2 : T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\langle e_1, e_2\\rangle : \\inmode{lf}{(}T_1\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_2}}\\inmode{lf}{)} \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-Pair}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1 \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{tp.letp}{\\Gamma ; T_2, T_1, \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\sym{syn.letp}{\\mathsf{in}}\\ e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{tp.letu}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\sym{syn.letu}{\\mathsf{in}}\\ e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetU}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T_i\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{E-Inj.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,(T_1 \\oplus T_2)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e : T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}}\\quad \\sym{E-Case.branches}{\\Gamma ; T_i, \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_0}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_i : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_i}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{tp.max}{\\max}(\\varepsilon_1,\\varepsilon_2)}}\\;\\textsf{E-Case}\\end{array}\\end{array}",
-     "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs, with the future of [[t-judgment]]. \\inmode{lf}{The held value [[t-agecap|ages]] by the cost of $e_2$.} The derived [[syn-let|$\\mathsf{let}$]] is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type and in one world, and the [[r-act|branch]] of a choice is consumed by E-Case. Variables enter $\\Delta$ by E-LetP and E-Case and leave it by [[r-base|E-Var]].",
+     "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs, with the future of [[t-judgment]]. \\inmode{lf}{The credits of the held value drop by the cost of $e_2$, as in [[t-agecap]].} The derived [[syn-let|$\\mathsf{let}$]] is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type and in one world, and the [[r-act|branch]] of a choice is consumed by E-Case. Variables enter $\\Delta$ by E-LetP and E-Case and leave it by [[r-base|E-Var]].",
      "why": "A pair is the simplest place where a thread holds a value while other code runs, and E-Pair checks the order this requires.",
      "source": [
       {
@@ -1391,7 +1403,7 @@
      "id": "r-boxes",
      "title": "Boxes",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar \\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar \\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
-     "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future ${\\vartriangle}u$ of the points above the upper point $u$. Under ${\\vartriangle}\\bot$ no action types. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance. \\inmode{lf}{A force costs one unit of effect, so the enclosing rules age what the thread holds across it by one.}",
+     "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future ${\\vartriangle}u$ of the points above the upper point $u$. Under ${\\vartriangle}\\bot$ no action types. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance. \\inmode{lf}{A force costs one unit of effect, so the enclosing rules lower the credits of what the thread holds across it by one.}",
      "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance, so a loop can order the points of its rounds by one constraint that mentions the round through $\\bar\\iota$.",
      "source": [
       {
@@ -1776,12 +1788,12 @@
   {
    "id": "semantic",
    "title": "Semantic typing",
-   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. Safe means two things. A term that cannot act is a value. A term that waits does so below the dual points of the ends it holds. In a stuck configuration some thread then waits at a minimal point, and the thread holding its dual end can act. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\inmode{lf}{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
+   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. Safe means two things. A term that cannot act is a value. A term that waits does so below the dual points of the ends it holds. In a stuck configuration some thread then waits at a minimal point, and the thread holding its dual end can act. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\inmode{lf}{For lock freedom we read the same relation with other step costs, add counters to each thread, and combine the two in the lock-free process relation.}",
    "blocks": [
     {
      "id": "sr-reading",
      "title": "Reading the relations",
-     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a consistent [[w-world|world]] $W$, whose order they read, and an ordinal index $\\beta$ of [[sr-ord]]. Each world $W' \\sqsupseteq W$ they quantify over is consistent as well\\inmode{lf}{, strict in the deadlock-free relation and ranked in the threads of the lock-free process relation}. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way. They remain safe when their ends are renamed, which the proof that two safe processes compose uses. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. The lock-free process relation requires both of each thread.}",
+     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a consistent [[w-world|world]] $W$, whose order they read, and an ordinal index $\\beta$ of [[sr-ord]]. Each world $W' \\sqsupseteq W$ they quantify over is consistent as well\\inmode{lf}{, strict in the deadlock-free relation and ranked in the threads of the lock-free process relation}. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way. They remain safe when their ends are renamed, which the proof that two safe processes compose uses. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{The counter relation is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions, the cost bound. The lock-free process relation requires both of each thread.}",
      "why": "Each row says in words what one judgment of this section means. The relation proves the typing rules as follows. Each rule becomes a lemma, the compatibility lemma, which says that if the subterms are in $E$ then the term is in $E$. The fundamental theorem is the induction over a derivation that applies these lemmas. Adequacy then reads deadlock freedom off readiness. A premise of a rule is justified exactly when the compatibility lemma of the rule uses the premise.",
      "source": [
       {
@@ -1823,14 +1835,14 @@
        },
        {
         "formula": "\\sym{sr.FE}{e \\in F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}",
-        "text": "the thread $e$, holding $\\Phi$ with counters and tickets, has fuel at index $\\beta$",
+        "text": "the thread $e$, holding $\\Phi$ with counters and tickets, keeps its counters at index $\\beta$",
         "modes": [
          "lf"
         ]
        },
        {
         "formula": "\\sym{th.soup}{a \\in S^{N,W}_{\\beta}\\llbracket \\Sigma \\vdash T \\rrbracket}",
-        "text": "each thread of $a$ is in $E[\\kappa_L]$ and has fuel, under one ownership map",
+        "text": "each thread of $a$ is in $E[\\kappa_L]$ and in the counter relation, under one ownership map",
         "modes": [
          "lf"
         ]
@@ -2018,7 +2030,7 @@
      "id": "rd",
      "title": "Readiness",
      "formula": "\\begin{array}{rcl}\n\\sym{sr.ready}{\\mathsf{ready}_W(\\Theta \\mid F, t)} & \\iff & \\sym{rd.stable}{\\mathsf{stable}\\,t} \\Rightarrow \\sym{rd.value}{(\\Theta|_{\\sym{rd.offered}{\\mathsf{offered}\\,t}} = \\varnothing \\Rightarrow t \\in \\mathsf{Val})} \\land (\\sym{rd.link}{\\mathsf{link}\\,t} \\lor \\sym{rd.below-rest}{\\Theta|_{\\sym{rd.offered}{\\mathsf{offered}\\,t}} \\prec_W \\sym{rd.below-held}{\\overline{\\Theta \\setminus \\sym{rd.offered}{\\mathsf{offered}\\,t}}} \\cup \\sym{rd.below-future}{F}}) \\\\[1.5ex]\n\\sym{sr.readyp}{\\mathsf{ready}_W(\\Sigma, p)} & \\iff & \\sym{rd.p-stable}{\\mathsf{stable}\\,p} \\Rightarrow \\sym{rd.link}{\\mathsf{link}\\,p} \\lor \\big(\\sym{rd.p-term}{(\\Sigma|_{\\sym{rd.offered}{\\mathsf{offered}\\,p}} = \\varnothing \\Rightarrow \\sym{prop.terminated}{\\mathsf{terminated}}\\,p)} \\land \\sym{rd.above-offered}{\\forall y \\in \\overline{\\Sigma \\setminus \\sym{rd.offered}{\\mathsf{offered}\\,p}}.\\ \\exists x \\in \\Sigma|_{\\sym{rd.offered}{\\mathsf{offered}\\,p}}.\\ W \\vdash x \\prec y}\\big)\n\\end{array}",
-     "caption": "A stuck term offers below everything it keeps and below its future. A stuck process has an offer below each end it keeps. $\\mathsf{offered}\\,t$ is the set of ends on which $t$ can act. $\\Theta|_A$ is the set of points of the ends of $\\Theta$ in $A$, $\\Theta \\setminus A$ the set of points of the other ends of $\\Theta$, and the bar takes dual points. $A \\prec_W B$ holds when $W \\vdash x \\prec y$ for each $x \\in A$ and $y \\in B$, in the order of [[w-order]]. Internal channels have no points. The [[e-rel|term relation]] and the [[p-rel|process relation]] ask readiness of each reducible term and process.",
+     "caption": "A term that is not stable is ready. A stable term is ready in three cases. It is a value. It offers an end of $\\Theta$ and is at a link. It offers an end of $\\Theta$, and each end of $\\Theta$ it offers has its point below each point of $F$ and below the dual point of each end of $\\Theta$ it does not offer. A process that is not stable is ready, and a stable one is ready in three cases. It is at a link. It is terminated and $\\Sigma$ is empty. It offers an end of $\\Sigma$, and each end of $\\Sigma$ it does not offer has below its dual point the point of an end of $\\Sigma$ it offers. $\\mathsf{offered}\\,t$ is the set of ends on which $t$ can act. $\\Theta|_A$ is the set of points of the ends of $\\Theta$ in $A$, $\\Theta \\setminus A$ the set of points of the other ends of $\\Theta$, and the bar takes dual points. $A \\prec_W B$ holds when $W \\vdash x \\prec y$ for each $x \\in A$ and $y \\in B$, in the order of [[w-order]]. Internal channels have no points. The [[e-rel|term relation]] and the [[p-rel|process relation]] ask readiness of each reducible term and process.",
      "why": "In a strict order some stuck thread waits at a minimal point, and the thread holding the dual end can act with that thread. Adequacy uses this argument to derive deadlock freedom from readiness. This is the semantic form of the [[t-side|side conditions]] of typing.",
      "source": [
       {
@@ -2106,9 +2118,9 @@
     },
     {
      "id": "fu-vs",
-     "title": "Relation and fuel side by side",
-     "caption": "Fuel has the clauses $(\\mathsf{stop})$ and $(\\mathsf{step})$ of the relation and one obligation per step label, each with the same change of held ends as its counterpart. It has no $(\\mathsf{ready})$, reads no world and no point, adds counters, tickets and a frame, and lowers the index at each step. The relation gives each end a point, $S_x$, and [[fu|fuel]] gives it a counter and tickets, $S^{f,m}$. The [[soup|lock-free process relation]] asks both of each thread. The Rocq keeps the two as separate predicates, and the map does too, because one judgment with a fuel component is a different fixed point.",
-     "why": "The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first. Lock freedom needs both.",
+     "title": "The relation and the counters side by side",
+     "caption": "The counter relation has the clauses $(\\mathsf{stop})$ and $(\\mathsf{step})$ of the relation and one obligation per step label, each with the same change of held ends as its counterpart. It has no $(\\mathsf{ready})$, reads no world and no point, adds counters, tickets and a cost bound, and lowers the index at each step. The relation gives each end a point, $S_x$, and the [[fu|counter relation]] gives it a counter and tickets, $S^{f,m}$. The [[soup|lock-free process relation]] asks both of each thread. The Rocq keeps the two as separate predicates, and the map does too, because one judgment with a counter component is a different fixed point.",
+     "why": "The relation makes a stuck thread ready, and the counters bound how often the thread holding a dual end acts on other ends first. Lock freedom needs both.",
      "modes": [
       "lf"
      ],
@@ -2140,7 +2152,7 @@
       "header": [
        "",
        "the relation",
-       "fuel"
+       "counters"
       ],
       "rows": [
        {
@@ -2229,10 +2241,10 @@
     },
     {
      "id": "fu",
-     "title": "Fuel",
+     "title": "Counters of a term",
      "formula": "\\begin{array}{l}\ne \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.Phi}{\\Phi} \\vdash \\sym{fu.rty}{\\sigma}\\ !\\ \\sym{fu.frame}{d} \\rrbracket} \\iff \\\\\n\\quad \\sym{fu.val}{(\\mathsf{stop})\\ e \\in \\mathsf{Val} \\Rightarrow e \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\sym{fu.step}{(\\mathsf{step})\\ \\forall \\ell, e'.\\ e \\xrightarrow{\\ell} e' \\Rightarrow \\sym{sr.fobl}{\\mathsf{Fobl}_{\\ell}(e')}} \\\\[6pt]\n\\sym{fu.at}{e'\\ \\mathsf{at}\\ \\Phi'\\ !\\ d' \\iff \\forall \\gamma < \\beta.\\ e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\Phi' \\vdash \\sigma\\ !\\ d' \\rrbracket}} \\\\\n\\sym{fu.Phi}{\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N},\\quad \\Phi(o) = S^{f,m}} \\\\[6pt]\n\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\forall \\beta.\\ e \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}}\n\\end{array}",
-     "caption": "Fuel is a predicate on one thread with the clauses $(\\mathsf{stop})$ and $(\\mathsf{step})$ of the [[e-rel|term relation]] and without $(\\mathsf{ready})$. $e \\in F^N_\\beta\\llbracket \\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$ says that the thread $e$, which holds the ends $\\Phi$ with their counters and tickets, returns at $\\sigma$ within $d$ actions. A value is in $FV$ of [[fv]]. Each step meets its [[fu-obls|fuel obligation]], which reads the successor at each $\\gamma < \\beta$, so each step lowers the index. [[fu-vs]] sets fuel beside the relation.",
-     "why": "Fuel bounds how often a thread acts on other ends before it acts on an end it holds. Lock-free adequacy measures waits with these counters and tickets. Fuel reads no point and no world. It is the run-time form of the [[t-lf-counters|counters]] of typing.",
+     "caption": "The counter relation is a predicate on one thread with the clauses $(\\mathsf{stop})$ and $(\\mathsf{step})$ of the [[e-rel|term relation]] and without $(\\mathsf{ready})$. $e \\in F^N_\\beta\\llbracket \\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$ says that the thread $e$, which holds the ends $\\Phi$ with their counters and tickets, returns at $\\sigma$ within $d$ actions. The cost bound $d$ is the cost of the [[t-judgment|judgment]] at run time. A value is in $FV$ of [[fv]]. Each step meets its [[fu-obls|counter obligation]], which reads the successor at each $\\gamma < \\beta$, so each step lowers the index. [[fu-vs]] sets the counter relation beside the relation.",
+     "why": "The counters bound how often a thread acts on other ends before it acts on an end it holds. Lock-free adequacy measures waits with these counters and tickets. The counter relation reads no point and no world. It is the run-time form of the [[t-lf-counters|counters]] of typing.",
      "modes": [
       "lf"
      ],
@@ -2270,14 +2282,24 @@
        "names": [
         "Fobl"
        ]
+      },
+      {
+       "kind": "renamed",
+       "part": "F, FV, d",
+       "reason": "The Rocq calls $F$ and $FV$ fuel (`FuelE`, `Vfuel`, `fsem`) and the argument $d$ the frame. The map calls $F$ the counter relation, $FV$ the counters of values and $d$ the cost bound, because $d$ bounds the actions of the term as its cost does.",
+       "names": [
+        "FuelE",
+        "Vfuel",
+        "fsem"
+       ]
       }
      ]
     },
     {
      "id": "fu-obls",
-     "title": "Fuel obligations",
+     "title": "Counter obligations",
      "formula": "\\begin{array}{c}\n\\begin{array}{rcl}\n\\sym{sr.act}{\\mathsf{act}}\\,o & \\iff & \\sym{F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\sym{fu.idle}{\\mathsf{idle}}\\,S} \\land \\sym{F-Tick}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o) \\land \\sym{F-Tick.frame}{1 \\leq d}} \\\\\n\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\sym{fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\sym{fu.tick}{\\Phi{\\downarrow}} & = & \\sym{fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1,\\,m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\sym{fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.skip}{\\mathsf{Skip}}\n\\end{array} \\\\[2.5ex]\n\\dfrac{\\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\Phi\\ !\\ d}{\\sym{F-Beta}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\beta}(e')}}}\\;\\textsf{F-Beta} \\\\[2.5ex]\n\\dfrac{\\begin{array}{c}\\sym{F-Spawn.held}{\\Phi = \\Phi_M \\uplus \\Phi_r,\\ \\mathrm{dom}\\,\\Phi_M = \\sym{syn.fends}{\\mathsf{fends}}(v)} \\\\ \\sym{F-Spawn.child}{\\forall \\gamma < \\beta.\\ v\\,\\ast \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\Phi_M \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\Phi_r\\ !\\ d\\end{array}}{\\sym{F-Spawn}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{F-Spawn} \\\\[2.5ex]\n\\dfrac{\\begin{array}{c}\\sym{F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\\\ \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N,\\ \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1},\\ c^{-} \\mapsto \\overline{S}^{m_2,m_2}]}\\ !\\ d\\end{array}}{\\sym{F-New}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{F-New} \\\\[2.5ex]\n\\dfrac{\\sym{F-Force.spare}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) \\land 1 \\leq d}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{fu.tick}{\\Phi{\\downarrow}}\\ !\\ d \\mathbin{\\dot-} 1}{\\sym{F-Force}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{force}}(e')}}}\\;\\textsf{F-Force} \\\\[2.5ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\sym{fu.head}{\\Phi(o) \\doteq (\\sym{sty.send}{!(\\bar\\iota.\\ T)}.S)^{f,m}}\\quad \\sym{F-Send.notsubj}{\\Phi \\setminus o = \\Phi_M \\uplus \\Phi_r,\\ \\mathrm{dom}\\,\\Phi_M = \\sym{syn.fends}{\\mathsf{fends}}(w)} \\\\ \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi_M)\\quad \\sym{F-Send.payload}{\\forall \\gamma < \\beta.\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi_M{\\downarrow}} \\vdash T \\rrbracket}}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{fu.tick}{\\Phi_r{\\downarrow}}[o \\mapsto S^{m,m}]\\ !\\ d \\mathbin{\\dot-} 1\\end{array}}{\\sym{F-Send}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{F-Send} \\\\[2.5ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\sym{fu.head}{\\Phi(o) \\doteq (\\sym{sty.recv}{?(\\bar\\iota.\\ T)}.S)^{f,m}} \\\\ \\sym{F-Recv.forall}{\\forall \\gamma, \\Phi_{in}.\\ \\gamma < \\beta,\\ \\Phi_{in} \\mathbin{\\#} \\Phi,\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_{in} \\vdash T \\rrbracket}} \\ \\Longrightarrow\\ e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S^{m,m}] \\cup \\Phi_{in} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Recv}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{F-Recv} \\\\[2.5ex]\n\\dfrac{\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\sym{fu.head}{\\Phi(o) \\doteq \\sym{sty.close}{\\mathsf{Close}}^{f,m}}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{fu.tick}{(\\Phi \\setminus o){\\downarrow}}\\ !\\ d \\mathbin{\\dot-} 1}{\\sym{F-Close}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{F-Close} \\\\[2.5ex]\n\\dfrac{\\begin{array}{c}\\sym{F-Link.plink}{o_1 \\neq o_2,\\ \\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} \\overline{S'}} \\\\ \\sym{F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\Phi \\setminus \\{o_1, o_2\\}\\ !\\ d\\end{array}}{\\sym{F-Link}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{F-Link} \\\\[2.5ex]\n\\dfrac{\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\sym{fu.head}{\\Phi(o) \\doteq \\sym{sty.plus}{\\oplus(S',S'')}^{f,m}}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}]\\ !\\ d \\mathbin{\\dot-} 1}{\\sym{F-Select}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{F-Select} \\\\[2.5ex]\n\\dfrac{\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\sym{fu.head}{\\Phi(o) \\doteq \\sym{sty.with}{\\&(S',S'')}^{f,m}}\\quad \\sym{fu.at}{e'\\ \\mathsf{at}}\\ \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}]\\ !\\ d \\mathbin{\\dot-} 1}{\\sym{F-Branch}{\\sym{sr.fobl}{\\mathsf{Fobl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{F-Branch}\n\\end{array}",
-     "caption": "Each rule has the name and the shape of the obligation of [[e-obl]] with O in place of F, and it changes the held ends in the same way. Counters, tickets and the frame are the only addition. An action on $o$ asks $\\mathsf{act}\\,o$, uses one unit of the frame, lowers the other counters by $\\Phi{\\downarrow}$ and resets the counter of $o$ to its tickets $m$. A force keeps the ends, as a $\\beta$ step does, and lowers each counter and the frame. A $\\beta$ step, a spawn, a creation and a link lower no counter. A creation starts each new end at its tickets. A send hands the ends of its payload on with their counters minus one, read in [[fv]]. A link asks the counter of each linked end to exceed $N$ minus the tickets of the other. [[fu]] asks these obligations at each step.",
+     "caption": "Each rule has the name and the shape of the obligation of [[e-obl]] with O in place of F, and it changes the held ends in the same way. Counters, tickets and the cost bound are the only addition. An action on $o$ asks $\\mathsf{act}\\,o$, uses one unit of the cost bound, lowers the other counters by $\\Phi{\\downarrow}$ and resets the counter of $o$ to its tickets $m$. A force keeps the ends, as a $\\beta$ step does, and lowers each counter and the cost bound. A $\\beta$ step, a spawn, a creation and a link lower no counter. A creation starts each new end at its tickets. A send hands the ends of its payload on with their counters minus one, read in [[fv]]. A link asks the counter of each linked end to exceed $N$ minus the tickets of the other. [[fu]] asks these obligations at each step.",
      "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each index. The rules of the [[t-lf-counters|counters block]] are their static images, credit for the counter and the same resets, decrements and link condition.",
      "modes": [
       "lf"
@@ -2328,10 +2350,10 @@
     },
     {
      "id": "fv",
-     "title": "Values with fuel",
+     "title": "Counters of values",
      "formula": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S\\quad \\sym{FV-Sess.counter}{a \\leq f}\\end{array}}{\\sym{FV-Sess}{o \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\sym{FV-Thread}{v \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Arrow.exact}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\sym{FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\sym{fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\gamma < \\beta,\\ \\sym{FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\sym{FV-Arrow.body}{e[u] \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Arrow}{\\lambda e \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi \\vdash (T \\mathrel{\\sym{ty.arrow}{\\multimap}}[c]\\, U)\\inmode{lf}{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\gamma < \\beta,\\ \\bar s \\in \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\sym{FV-Box.body}{e[!e] \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Box}{!e \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar \\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\sym{sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
-     "caption": "Values with fuel by recursion on the type. The counter of an end is at least its [[t-lf-counters|credit]]. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force. The [[fu-obls|fuel obligations]] read $FV$ at payloads and thunks.",
-     "why": "Values with fuel connect credits in types with counters at run time.",
+     "caption": "The counters of a value, by recursion on the type. The counter of an end is at least its [[t-lf-counters|credit]]. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body is in the counter relation at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body is in the counter relation at each force. The [[fu-obls|counter obligations]] read $FV$ at payloads and thunks.",
+     "why": "The counters of values connect credits in types with counters at run time.",
      "modes": [
       "lf"
      ],
@@ -2351,8 +2373,8 @@
     {
      "id": "soup",
      "title": "The lock-free process relation",
-     "caption": "An annotated configuration $a = (q, K, W_a)$ is in the lock-free process relation at the ordinal index $\\beta$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has [[fu|fuel]] at their counters. These are the two columns of [[fu-vs]]. $K$ gives each held end its owner, point, counter and tickets, and $W_a$ is the ranked world of the run so far. The annotations $\\Delta$ add to each end of $K$ a session type for the relation and a protocol for fuel. $\\mathsf{wa}$ asks them to fit $q$ and $\\Sigma$, and it bounds the tickets by $N$ of the [[t-lf-counters|counters block]]. Fuel occurs only in this definition.",
-     "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the bound on tickets makes the measure fall at a link.",
+     "caption": "An annotated configuration $a = (q, K, W_a)$ is in the lock-free process relation at the ordinal index $\\beta$ when each thread is in $E[\\kappa_L]$ at the ends it owns and in the [[fu|counter relation]] at their counters. These are the two columns of [[fu-vs]]. $K$ gives each held end its owner, point, counter and tickets, and $W_a$ is the ranked world of the run so far. The annotations $\\Delta$ add to each end of $K$ a session type for the relation and a protocol for the counter relation. $\\mathsf{wa}$ asks them to fit $q$ and $\\Sigma$, and it bounds the tickets by $N$ of the [[t-lf-counters|counters block]]. The counter relation occurs only in this definition.",
+     "why": "The lock-free process relation combines the relation and the counters of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the bound on tickets makes the measure fall at a link.",
      "modes": [
       "lf"
      ],
@@ -2434,7 +2456,7 @@
           "formula": "\\quad {}\\land \\sym{sp.fuel}{e \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Delta^{F}_t \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}}"
          },
          {
-          "text": "fuel at their counters"
+          "text": "the counter relation at their counters"
          }
         ]
        },
@@ -2473,7 +2495,7 @@
       {
        "kind": "merged",
        "part": "\\Delta : K",
-       "reason": "The Rocq chooses an environment `A` of the relation and a protocol map `Π` of fuel per index, and reads counters and tickets off `K` by `ctrs`. The map writes them as one map $\\Delta$. `sp_pts` and `sp_dom` make this exact, because they give `A` the points of `K` and give `A`, `Π` and `K` one domain.",
+       "reason": "The Rocq chooses an environment `A` of the relation and a protocol map `Π` of the counter relation per index, and reads counters and tickets off `K` by `ctrs`. The map writes them as one map $\\Delta$. `sp_pts` and `sp_dom` make this exact, because they give `A` the points of `K` and give `A`, `Π` and `K` one domain.",
        "names": [
         "sp_pts",
         "sp_dom",
@@ -2711,7 +2733,7 @@
      "id": "th-terms",
      "title": "Fundamental theorem for terms",
      "formula": "\\begin{array}{l}\\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\inmode{lf}{ \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'} \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\end{array}",
-     "caption": "A typed term is in the semantic term judgment of [[sj-all]] at each consistent extension of its world. The proof is one induction on the derivation. \\inmode{lf}{A term typed at a finite bound is in the judgment at $\\kappa_L$, and it has [[fu|fuel]] under the annotations of [[ty-ann]].}",
+     "caption": "A typed term is in the semantic term judgment of [[sj-all]] at each consistent extension of its world. The proof is one induction on the derivation. \\inmode{lf}{A term typed at a finite bound is in the judgment at $\\kappa_L$, and it is in the [[fu|counter relation]] under the annotations of [[ty-ann]].}",
      "why": "The case of P-Term in the fundamental theorem for processes is this theorem.",
      "source": [
       {
@@ -2770,7 +2792,7 @@
      "title": "Algorithmic judgments",
      "formula": "\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\qquad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\[2ex]\\sym{alg.split}{\\Delta{\\restriction}t = \\{\\, z : T \\in \\Delta \\mid z \\in |t| \\lor \\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T \\,\\}} \\qquad \\sym{alg.split}{\\Delta{\\setminus}t = \\{\\, z : T \\in \\Delta \\mid z \\notin |t| \\lor \\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T \\,\\}}\\end{array}",
      "caption": "Synthesis $\\Rightarrow$ computes the type\\inmode{lf}{ and the cost} from $\\Gamma$, $\\Delta$, $F$ and $t$. Checking $\\Leftarrow$ takes the type as input\\inmode{lf}{ and computes the cost}. A binary rule splits $\\Delta$ by occurrence. The first premise receives the entries that its term mentions, the second the rest, and both receive the [[ty-kinds|unlimited]] entries. The future of the first premise is then known before it runs, as in [[t-judgment]].",
-     "why": "The declarative split of [[t-contexts]] is a choice, and the future of the first premise reads its second half. A linear entry occurs in exactly the subterm that uses it, so the occurrences fix the split. An unlimited entry is a box, which has no active point and ages to itself, so handing it to both sides changes neither future nor aging.",
+     "why": "The declarative split of [[t-contexts]] is a choice, and the future of the first premise reads its second half. A linear entry occurs in exactly the subterm that uses it, so the occurrences fix the split. An unlimited entry is a box, which has no active point and no credit that a cost lowers, so handing it to both sides changes neither future nor credits.",
      "source": [
       {
        "file": "algorithmic/Algo.v",
@@ -2823,7 +2845,7 @@
      "id": "alg-elim",
      "title": "Application, pairs and let",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\sym{E-App.ub}{u \\prec F} \\\\ \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U)\\inmode{lf}{^{a}}} t_2 \\mathrel{\\sym{alg.chk}{\\Leftarrow}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\varepsilon_2 \\leq a}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_1\\,t_2 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{Syn-App}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_1\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} T_1} t_2 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\langle t_1, t_2\\rangle \\mathrel{\\sym{alg.syn}{\\Rightarrow}} \\inmode{lf}{(}T_1\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_2}}\\inmode{lf}{)} \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Syn-Pair}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.chk}{\\Leftarrow}} \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = t_1\\ \\sym{syn.letu}{\\mathsf{in}}\\ t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Alg-LetU}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\sym{alg.split}{\\Delta{\\restriction}t_1} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\sym{alg.split}{\\Delta{\\setminus}t_1}} t_1 \\mathrel{\\sym{alg.syn}{\\Rightarrow}} T_1 \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}\\quad \\Gamma ; T_2, T_1, \\sym{alg.split}{\\Delta{\\setminus}t_1}\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = t_1\\ \\sym{syn.letp}{\\mathsf{in}}\\ t_2 \\mathrel{\\sym{alg.mode}{d}} T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{Alg-LetP}\\end{array}",
-     "caption": "The function of an application synthesizes its arrow, which gives the argument type to check against. A pair synthesizes both components. A let checks or synthesizes its body in the mode $d \\in \\{\\Rightarrow, \\Leftarrow\\}$ of the conclusion. The futures and the aging are those of [[r-fun]] and [[r-data]], with the split of [[alg-judgment]].",
+     "caption": "The function of an application synthesizes its arrow, which gives the argument type to check against. A pair synthesizes both components. A let checks or synthesizes its body in the mode $d \\in \\{\\Rightarrow, \\Leftarrow\\}$ of the conclusion. The futures and the costs are those of [[r-fun]] and [[r-data]], with the split of [[alg-judgment]].",
      "why": "The arrow has the upper point $u$ and the lower point $l$. Once synthesized, it fixes the premise $u \\prec F$ and the future of the argument.",
      "source": [
       {
@@ -3568,7 +3590,7 @@
   "prim.link": {
    "title": "$\\mathsf{link}$",
    "meaning": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames each thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
-   "why": "A link forwards a conversation without relaying messages. \\inmode{lf}{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it lowers no counter.}",
+   "why": "A link forwards a conversation without relaying messages. \\inmode{lf}{It acts on no protocol, so it costs $0$ in both cost tables, and it lowers no counter.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "signature": "\\mathsf{link} : S_x \\otimes \\overline{S}_{\\overline{x}} \\multimap \\ast",
@@ -4529,7 +4551,7 @@
   "lbl.send": {
    "title": "Send label $o!v$",
    "meaning": "An offer to send the value $v$ on the end $o$.",
-   "why": "\\inmode{lf}{The relation, the fuel layer and scope extrusion read the ends that leave as $\\mathsf{fends}(v)$.} For $v$ in $V$ at $\\Theta_v$ this set is $\\mathrm{dom}\\,\\Theta_v$.",
+   "why": "\\inmode{lf}{The relation, the counter relation and scope extrusion read the ends that leave as $\\mathsf{fends}(v)$.} For $v$ in $V$ at $\\Theta_v$ this set is $\\mathrm{dom}\\,\\Theta_v$.",
    "breaks": "Nothing. It is a definition.",
    "example": "Sending the end $a$ on $o$ has the label $o!a$.",
    "signature": "o!v \\in \\mathsf{SLabel}",
@@ -5904,7 +5926,7 @@
   "ty.arrow.cost": {
    "title": "Arrow cost $c$",
    "meaning": "A call performs at most $c \\in \\mathbb{N} \\cup \\{\\infty\\}$ channel actions before it returns.",
-   "why": "A thread that holds an end $o$ while a call runs delays $o$ by at most $c$ actions. Aging subtracts $c$ from the credit of $o$.",
+   "why": "A thread that holds an end $o$ while a call runs delays $o$ by at most $c$ actions. The credit of $o$ drops by $c$.",
    "breaks": "A thread that holds an end across a call that never returns keeps the thread holding the dual end waiting forever. With $c = \\infty$ the held end has credit $a - \\infty$, which fails $c \\leq a$ at finite counter bound.",
    "example": "A loop body that never returns has $c = \\infty$.",
    "signature": "c \\in \\mathbb{N} \\cup \\{\\infty\\}",
@@ -6177,7 +6199,7 @@
   "sty.skip": {
    "title": "$\\mathsf{Skip}$",
    "meaning": "The empty protocol, and an end at $S$ with $\\mathsf{unfold}(S) = \\mathsf{Skip}$ is idle.",
-   "why": "No thread waits for an action on an idle end. \\inmode{lf}{The fuel layer drops for idle ends the checks that counters are at least $1$, so they may be held indefinitely.}",
+   "why": "No thread waits for an action on an idle end. \\inmode{lf}{The counter relation drops for idle ends the checks that counters are at least $1$, so they may be held indefinitely.}",
    "breaks": "Nothing. It is a definition.",
    "example": "A control end that is passed around and never used is at $\\mathsf{Skip}$.",
    "signature": "\\mathsf{Skip} \\in \\mathsf{STy}",
@@ -6247,7 +6269,7 @@
   },
   "sty.send": {
    "title": "Send",
-   "meaning": "$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. \\inmode{lf}{The ends of $T$ have their credits, and the sender ages the payload by one transfer.}",
+   "meaning": "$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. \\inmode{lf}{The ends of $T$ have their credits, and the sender lowers the credits of the payload by one.}",
    "why": "A plain protocol action, $\\mathsf{dual}$ of receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$!\\ast.\\mathsf{Close}$.",
@@ -6735,7 +6757,7 @@
    "meaning": "Credits, costs, counters, tickets and the bound $N$ range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
    "why": "Deadlock-free typing sets each annotation to $\\infty$. Then a held end remains arbitrarily many actions, and the checks on credits hold.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A credit $\\infty$ aged by $3$ stays $\\infty$.",
+   "example": "A credit $\\infty$ lowered by $3$ stays $\\infty$.",
    "signature": "\\mathbb{N} \\cup \\{\\infty\\}",
    "source": [
     {
@@ -6748,7 +6770,7 @@
   },
   "ty.tickets": {
    "title": "Tickets $m$",
-   "meaning": "$m \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $S_x\\inmode{lf}{^{a,m}}$ bounds the counter of the end from above, and the credit satisfies $a \\leq m$. An action on the end sets its counter back to $m$, and the tickets stay with the end, also in a payload.",
+   "meaning": "$m \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $S_x\\inmode{lf}{^{a,m}}$ is the reset value of the counter of the end and bounds the counter from above, and the credit satisfies $a \\leq m$. An action on the end sets its counter back to $m$, and the tickets stay with the end, also in a payload.",
    "why": "The thread holding the dual end of an end acts on other ends at most as often as the counter of the dual end allows, and the tickets of the dual end bound that counter. A link compares the credit of one end with this bound, so the new dual end a waiting thread faces has a lower counter than the old one.",
    "breaks": "Without tickets a link can give a waiting thread a new dual end with a full counter in each round, and the wait never ends.",
    "example": "A new channel at $N = 4$ may give its ends $3$ and $1$ tickets.",
@@ -6861,7 +6883,7 @@
   "ty.tfree": {
    "title": "$\\mathsf{tfree}$",
    "meaning": "$\\mathsf{tfree}\\,T$ iff $T$ is built from $\\ast$, boxes, $\\otimes$ and $\\oplus$. A value of such a type holds no end, because $V$ at a box asks $\\Theta = \\varnothing$.",
-   "why": "\\inmode{lf}{Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. }P-Term asks it of the result, so no thread waits on an end in the result of a process.",
+   "why": "\\inmode{lf}{A cost and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. }P-Term asks it of the result, so no thread waits on an end in the result of a process.",
    "breaks": "A main thread that returns an end holds the end forever, and the thread holding the dual end waits forever.",
    "example": "$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.",
    "signature": "\\mathsf{tfree} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
@@ -7974,8 +7996,8 @@
    ]
   },
   "tj.hage": {
-   "title": "$\\mathsf{def}(H - c)$, aging what is held",
-   "meaning": "$H - c$ ages each entry of $H$ by the cost $c$ of $e$. It is defined when each end and closure in $H$ that is not idle has credit at least $c$, and on a context of ends when each end has credit at most its tickets.",
+   "title": "$\\mathsf{def}(H - c)$, the credits of what is held after a cost",
+   "meaning": "$H - c$ lowers the credit of each entry of $H$ by the cost $c$ of $e$. It is defined when each end and closure in $H$ that is not idle has credit at least $c$, and on a context of ends when each end has credit at most its tickets.",
    "why": "The thread holds $H$ while $e$ runs, and each of the up to $c$ actions of $e$ lowers the counters of the held ends by $1$.",
    "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the thread holding the dual end waits without bound.",
    "example": "$S_x^{2} - 1 = S_x^{1}$ is defined, $S_x\\inmode{lf}{^{0}} - 1$ is not.",
@@ -8002,7 +8024,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{def}(H - c)$ stands for the Rocq relations `thage` and `lage`, which age the ends and the closures of $H$ by $c$.",
+     "reason": "$\\mathsf{def}(H - c)$ stands for the Rocq relations `thage` and `lage`, which lower the credits of the ends and the closures of $H$ by $c$ and which the Rocq calls aging.",
      "names": [
       "thage",
       "lage"
@@ -8011,9 +8033,9 @@
    ]
   },
   "lfi.credit": {
-   "title": "Credits, a lower bound on the counter",
+   "title": "Credits, a static lower bound on the counter",
    "meaning": "The credit $a$ in $S_x\\inmode{lf}{^{a,m}}$ is a lower bound on the counter of the end, known statically. A closure has a credit too, because the ends it captured are invisible in its type.",
-   "why": "Each action of the holding thread on another end lowers the counter, and aging lowers the credit by the same amount. The credit stays at or above zero, so the holding thread postpones the end only finitely often.",
+   "why": "Each action of the holding thread on another end lowers the counter, and the cost lowers the credit by the same amount. The credit stays at or above zero, so the holding thread postpones the end only finitely often.",
    "breaks": "[[rx-postpone|Postponement]] holds $b$ across a loop that never returns, so $\\mathsf{close}\\,b^{\\prime}$ waits forever. The loop has cost $\\infty$, and no credit is large enough.",
    "example": "$S_x\\inmode{lf}{^{3,m}}$ may be held across three actions on other ends.",
    "signature": "S_x\\inmode{lf}{^{a}},\\ (T \\multimap U)\\inmode{lf}{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}",
@@ -8040,11 +8062,11 @@
    ]
   },
   "lfi.cost": {
-   "title": "Cost, aging and tickets, the counting",
-   "meaning": "The cost $c$ of a term bounds its actions before it returns. Each rule that runs a subterm while holding $\\Delta$ ages $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to be at least the cost. An action on an end resets its counter to its tickets $m$, so the end returns as $S_{x^{+}}\\inmode{lf}{^{m,m}}$. Idle ends, $\\mathsf{Skip}$, age without the check, because no thread waits on an idle end.",
-   "why": "Credits bound postponement only if the holding thread's actions lower the credits. The cost says how much, aging applies it to everything held, and the reset starts the count again after the holding thread acted on the end.",
+   "title": "Cost, credits and tickets, the counting",
+   "meaning": "The cost $c$ of a term bounds its actions before it returns. Each rule that runs a subterm while holding $\\Delta$ lowers the credits of $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to be at least the cost. An action on an end resets its counter to its tickets $m$, so the end returns as $S_{x^{+}}\\inmode{lf}{^{m,m}}$. Idle ends, $\\mathsf{Skip}$, lose credit without the check, because no thread waits on an idle end.",
+   "why": "Credits bound postponement only if the holding thread's actions lower the credits. The cost says how much, $\\Delta - c$ applies it to everything held, and the reset starts the count again after the holding thread acted on the end.",
    "breaks": "Without the reset a long-running protocol would run out of credit after $m$ actions.",
-   "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ ages $c$ by $1$ while the send on $d$ runs.",
+   "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ lowers the credit of $c$ by $1$ while the send on $d$ runs.",
    "signature": "e : T\\ !\\ c,\\ \\Delta - c,\\ S_{x^{+}}\\inmode{lf}{^{m,m}}",
    "args": [
     {
@@ -8095,7 +8117,7 @@
    ]
   },
   "lfi.tickets": {
-   "title": "Tickets, an upper bound on the counter",
+   "title": "Tickets, the reset value of the counter",
    "meaning": "An end of type $S_x\\inmode{lf}{^{a,m}}$ has tickets $m \\geq a$. An action on the end resets its counter to $m$, so the counter never exceeds $m$. The two ends of a channel have at most $N$ tickets together, so the dual end of an end with $m$ tickets has a counter of at most $N - m$.",
    "why": "A thread waiting on an end needs a bound on the counter of the dual end, the number of actions elsewhere before the thread holding the dual end acts on that end. The tickets of the dual end give that bound, which the type of the waiting end determines.",
    "breaks": "Without an upper bound a link could give a waiting thread a new dual end with a counter as large as it likes in each round, and the wait never ends.",
@@ -8242,7 +8264,7 @@
   "tj.eff": {
    "title": "Effect $\\varepsilon$",
    "meaning": "$\\varepsilon = c$ is the cost of a term, an upper bound on its channel actions before it returns.",
-   "why": "Aging reads the cost. With tickets on ends the effect has no second component.",
+   "why": "$\\Delta - c$ reads the cost. With tickets on ends the effect has no second component.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send has effect $\\varepsilon \\cdot 1$, one more action than its argument.",
    "signature": "\\varepsilon = c \\in \\mathsf{Eff} = \\mathbb{N} \\cup \\{\\infty\\}",
@@ -8664,7 +8686,7 @@
   "act.refill": {
    "title": "Credit $m$ after an action",
    "meaning": "An end returned by an action, or created fresh, has credit equal to its tickets $m$.",
-   "why": "The fuel layer sets the counter of an end to its tickets at each action on the end, and the static credit is a lower bound on that counter.",
+   "why": "The counter relation sets the counter of an end to its tickets at each action on the end, and the static credit is a lower bound on that counter.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}$ returns $S_{x^{+}}\\inmode{lf}{^{m,m}}$.",
    "signature": "S_x\\inmode{lf}{^{m,m}}",
@@ -8807,11 +8829,11 @@
    ]
   },
   "age.free": {
-   "title": "Aging a type without ends",
+   "title": "Lowering a type without ends",
    "meaning": "$T - c = T$ when $\\mathsf{tfree}\\,T$.",
-   "why": "A type without ends has no counter that could fall, so aging changes nothing.",
+   "why": "A type without ends has no counter that could fall, so a cost changes nothing.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A box variable never ages.",
+   "example": "A box variable keeps its type under each cost.",
    "signature": "\\mathsf{tfree}\\,T \\Rightarrow T - c = T",
    "args": [
     {
@@ -8833,7 +8855,7 @@
    ]
   },
   "age.credit": {
-   "title": "Aging an end or a closure",
+   "title": "Lowering an end or a closure",
    "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}$ and $(T \\multimap U)\\inmode{lf}{^{a}} - c = (T \\multimap U)^{a - c}$, defined when $c \\leq a$.",
    "why": "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of each held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.",
    "breaks": "Without $c \\leq a$ a server holds its client end while it runs a callback of cost $\\infty$ at finite $N$, and the client waits without bound.",
@@ -8863,7 +8885,7 @@
    ]
   },
   "age.idle": {
-   "title": "Aging an idle end",
+   "title": "Lowering an idle end",
    "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$, for an end type held by a variable and for an entry $o : S_x^{a,m}$ of a context of ends alike.",
    "why": "No thread acts on an idle end, so no action counter bounds an idle end. Truncation keeps its credit at or below its counter, which decrements and truncates at $0$ in the same way.",
    "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit each round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.",
@@ -8901,9 +8923,9 @@
    ]
   },
   "age.agg": {
-   "title": "Aging a product, sum or existential",
-   "meaning": "Aging goes into the parts. $(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)$, likewise for $\\oplus$, and $\\exists^{l}\\bar\\iota.\\,C.\\,T$ ages its body.",
-   "why": "Only ends and closures have credits, so a compound type ages by aging the ends and closures it contains.",
+   "title": "Lowering a product, sum or existential",
+   "meaning": "A cost goes into the parts. $(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)$, likewise for $\\oplus$, and $\\exists^{l}\\bar\\iota.\\,C.\\,T$ lowers its body.",
+   "why": "Only ends and closures have credits, so a cost lowers a compound type by lowering the ends and closures it contains.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S_x^{2} \\otimes \\ast) - 1 = S_x^{1} \\otimes \\ast$.",
    "signature": "(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)",
@@ -8929,10 +8951,10 @@
    ]
   },
   "age.ctx": {
-   "title": "Aging what is held",
-   "meaning": "$\\Delta - \\varepsilon$ ages each entry of $\\Delta$ by the cost $\\varepsilon$.",
+   "title": "The credits of what is held after a cost",
+   "meaning": "$\\Delta - \\varepsilon$ lowers the credit of each entry of $\\Delta$ by the cost $\\varepsilon$.",
    "why": "The entries are held while the subterm with effect $\\varepsilon$ runs, and each of its actions lowers their counters by $1$.",
-   "breaks": "Without aging a thread holds an end across unboundedly many actions on other ends, and the thread holding the dual end waits without bound.",
+   "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the thread holding the dual end waits without bound.",
    "example": "In the [[ex-cycle|cycle]] main loses $1$ of the credit of $d$ while it closes $c$.",
    "signature": "\\Delta - \\varepsilon",
    "args": [
@@ -8942,7 +8964,7 @@
     },
     {
      "name": "\\varepsilon",
-     "meaning": "the effect of that subterm, its cost, which ages each entry"
+     "meaning": "the effect of that subterm, its cost, which lowers the credit of each entry"
     }
    ],
    "source": [
@@ -8985,7 +9007,7 @@
    "title": "Credits may fall",
    "meaning": "$a' \\leq a$ for the credits of an end.",
    "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and each action return an end with credit equal to its tickets, and a parameter or a payload asks a fixed credit.",
-   "breaks": "Without it a fresh end at credit $N$ fits only a parameter at credit exactly $N$, and no loop that ages an end before its recursive call types.",
+   "breaks": "Without it a fresh end at credit $N$ fits only a parameter at credit exactly $N$, and no loop that lowers the credit of an end before its recursive call types.",
    "example": "$S_x^{3} \\leq S_x^{2}$.",
    "signature": "a' \\leq a",
    "args": [
@@ -9240,7 +9262,7 @@
    ]
   },
   "E-Abs.cap": {
-   "title": "Capture as aging",
+   "title": "Capture lowers the credits",
    "meaning": "\\inmode{lf}{The body of a closure\\inmode{lf}{ at credit $a$} is typed under $\\Delta - a$, each captured end and closure at its own credit minus $a$.}",
    "why": "The thread holding the closure performs up to $a$ actions before the call. \\inmode{lf}{The body may therefore assume each captured credit minus $a$.} \\inmode{lf}{Each end keeps its own credit, so an end at $N$ captured next to an end at $1$ stays at $N - a$.}",
    "breaks": "\\inmode{lf}{A single shared credit puts an end at $N$ captured next to an end at $1$ at $0$, and a child that acts on the second end while it holds the first has no typing.}",
@@ -9326,7 +9348,7 @@
   },
   "E-Abs.body": {
    "title": "Body of a $\\lambda$",
-   "meaning": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future ${\\vartriangle}u$, everything above $u$. \\inmode{lf}{In the lock-free mode the captured entries are aged by the credit $a$.}",
+   "meaning": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future ${\\vartriangle}u$, everything above $u$. \\inmode{lf}{In the lock-free mode the credits of the captured entries drop by the credit $a$.}",
    "why": "The body runs at a later call. It may rely only on its captured entries, its argument and the points above $u$, and E-App establishes $u \\prec F$ at each call. For $u = \\top$ the future is empty, so a closure at $\\top$ is the last code of its thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop with argument $S_{\\iota} \\otimes {S'}_{\\kappa}$, and $\\lambda e : \\ast \\multimap^{\\top}_{\\bot} \\ast$ for a thunk that is spawned.",
@@ -9430,7 +9452,7 @@
   },
   "E-App.fut2": {
    "title": "The argument runs while the closure is held",
-   "meaning": "$e_2$ is typed while the thread holds the closure, so its future is $F \\cup \\{l\\}$ with $l$ the lower point of the closure. \\inmode{lf}{In the lock-free mode the closure ages by the cost of $e_2$, which needs that much credit.}",
+   "meaning": "$e_2$ is typed while the thread holds the closure, so its future is $F \\cup \\{l\\}$ with $l$ the lower point of the closure. \\inmode{lf}{In the lock-free mode the credit of the closure drops by the cost of $e_2$, which needs that much credit.}",
    "why": "The closure is held while $e_2$ runs, and $l$ bounds the dual points of its ends from below.",
    "breaks": "Nothing. It is a definition.",
    "example": "$f\\,(\\mathsf{close}\\,c)$ with $f$ capturing $d$.",
@@ -9459,7 +9481,7 @@
   },
   "E-Pair.fut2": {
    "title": "The second component runs while the first is held",
-   "meaning": "$e_2$ is typed while the thread holds the value of $e_1$, so its future is $F \\cup \\mathsf{ap}(T_1)$. \\inmode{lf}{In the lock-free mode $T_1$ ages by the cost of $e_2$.}",
+   "meaning": "$e_2$ is typed while the thread holds the value of $e_1$, so its future is $F \\cup \\mathsf{ap}(T_1)$. \\inmode{lf}{In the lock-free mode the credits of $T_1$ drop by the cost of $e_2$.}",
    "why": "The value of $e_1$ is held while $e_2$ runs.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\langle c, \\mathsf{close}\\,d\\rangle$ needs $x_d \\prec \\overline{x_c}$.",
@@ -9481,7 +9503,7 @@
   },
   "tp.letp": {
    "title": "Body of a pair elimination",
-   "meaning": "$e_2$ is typed under $\\Delta_2$\\inmode{lf}{, aged by $e_1$ in the lock-free mode,} extended by $T_2$ at index $0$ and $T_1$ at index $1$, under $F$.",
+   "meaning": "$e_2$ is typed under $\\Delta_2$\\inmode{lf}{, lowered by the cost of $e_1$ in the lock-free mode,} extended by $T_2$ at index $0$ and $T_1$ at index $1$, under $F$.",
    "why": "Both components become variables of $e_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle v, c\\rangle = \\mathsf{recv}\\,c\\ \\mathsf{in}\\ e$ binds the received value and the continuation end.",
@@ -9503,7 +9525,7 @@
   },
   "tp.letu": {
    "title": "Body of a unit elimination",
-   "meaning": "$e_2$ is typed under $\\Delta_2$\\inmode{lf}{, aged by $e_1$ in the lock-free mode,} under $F$, after $e_1$ returned $\\ast$.",
+   "meaning": "$e_2$ is typed under $\\Delta_2$\\inmode{lf}{, lowered by the cost of $e_1$ in the lock-free mode,} under $F$, after $e_1$ returned $\\ast$.",
    "why": "$\\ast$ holds no end, so nothing is bound. The rule sequences $e_1$ before $e_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$.",
@@ -9511,7 +9533,7 @@
    "args": [
     {
      "name": "\\Delta_2\\inmode{lf}{ - \\varepsilon_1}",
-     "meaning": "the context of $e_2$\\inmode{lf}{ aged by the cost of $e_1$}"
+     "meaning": "the context of $e_2$\\inmode{lf}{ lowered by the cost of $e_1$}"
     }
    ],
    "source": [
@@ -9948,7 +9970,7 @@
   },
   "E-Send.floor": {
    "title": "The sent value fits the payload type",
-   "meaning": "$T'\\inmode{lf}{ - 1} \\leq T[x\\cdot i]$. The type $T'$ of the sent value\\inmode{lf}{, aged by one transfer,} is a subtype of the payload type at the fields of $x$. \\inmode{lf}{The payload value aged by one transfer still has the credits the protocol guarantees.}",
+   "meaning": "$T'\\inmode{lf}{ - 1} \\leq T[x\\cdot i]$. The type $T'$ of the sent value\\inmode{lf}{, lowered by one,} is a subtype of the payload type at the fields of $x$. \\inmode{lf}{The payload value lowered by one still has the credits the protocol guarantees.}",
    "why": "The receiver reads the payload at the type the protocol states, so the sent value must fit that type. \\inmode{lf}{A transferred end loses $1$ of its counter at the send. Asking the promised credits after the loss bounds how often one end may be transferred.}",
    "breaks": "\\inmode{lf}{Without the loss of $1$, an end is transferred forever, and the thread holding its dual end waits forever.}",
    "example": "A value of type $\\exists^{\\bot}\\iota.\\,C.\\,S_\\iota$ fits a payload $!(\\iota.\\,S_\\iota)$ at $x$ only through the field $x\\cdot 0$, so a created channel to be sent is placed at that field. \\inmode{lf}{An end at credit $3$ fits a payload that asks credit $2$.}",
@@ -10141,7 +10163,7 @@
   "E-Chan.crtk": {
    "title": "Credit at most tickets, $a \\leq m$",
    "meaning": "The end that E-Chan reads has credit at most its tickets.",
-   "why": "Each end of a context is typed by E-Chan or aged, and both ask $a \\leq m$. So each context that types a term has $a \\leq m$ on each end, and [[th-terms|fuel from cost typing]] may start each end at its tickets.",
+   "why": "Each end of a context is typed by E-Chan or lowered by a cost, and both ask $a \\leq m$. So each context that types a term has $a \\leq m$ on each end, and [[th-terms|the counters read off typing]] may start each end at its tickets.",
    "breaks": "Without it $o : S_x^{5,2} \\vdash o : S_x^{5,2}$ types, and no counter lies between the credit $5$ and the tickets $2$.",
    "example": "$o : S_x^{2,3} \\vdash o : S_x^{2,3}$.",
    "signature": "a \\leq m",
@@ -10286,7 +10308,7 @@
   "E-New.dual": {
    "title": "Dual pair",
    "meaning": "$c^{+}$ has type $S_{p}\\inmode{lf}{^{m_1,m_1}}$ and $c^{-}$ type $\\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}$ for the position $p$, the fresh base or the field. \\inmode{lf}{Each end starts at credit equal to its tickets.}",
-   "why": "\\inmode{lf}{Fuel starts each counter of a new channel at the tickets of its end\\inmode{lf}{, and the credits} are lower bounds on these counters.}",
+   "why": "\\inmode{lf}{The counter relation starts each counter of a new channel at the tickets of its end\\inmode{lf}{, and the credits} are lower bounds on these counters.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_{\\rho}\\inmode{lf}{^{3,3}} \\otimes \\overline{S}_{\\overline{\\rho}}\\inmode{lf}{^{1,1}}$\\inmode{lf}{ at $N = 4$}.",
    "signature": "S_{p}\\inmode{lf}{^{m_1,m_1}} \\otimes \\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}",
@@ -12048,7 +12070,7 @@
   "V-Sess": {
    "title": "$V$ at $S_x$",
    "meaning": "$v \\in V\\llbracket\\Theta \\vdash S_x\\rrbracket \\iff \\exists o, S'.\\ v = o \\land \\Theta = \\{o \\mapsto {S'}_x\\} \\land S' \\approx S$.",
-   "why": "\\inmode{lf}{$\\Theta$ keeps its annotations for the fuel layer, and $V$ compares session types erased.}",
+   "why": "\\inmode{lf}{$\\Theta$ keeps its annotations for the counter relation, and $V$ compares session types erased.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} \\in V\\llbracket\\{c^{+} \\mapsto {S'}_{\\rho}\\} \\vdash S_{\\rho}\\rrbracket$ for $S' \\approx S$.",
    "signature": "v \\in V\\inmode{lf}{[\\kappa]}^{W}_{\\beta}\\llbracket \\Theta \\vdash T \\rrbracket",
@@ -12427,7 +12449,7 @@
   "FV-Arrow.call": {
    "title": "$\\Phi' \\geq \\Phi - a$",
    "meaning": "At the call each captured end has the protocol it had at creation and a counter at least its counter at creation minus $a$.",
-   "why": "Aging a closure by $c \\leq a$ lowers $a$ and the counters by $c$ together, so the difference stays, and the body was typed at each credit minus $a$.",
+   "why": "Lowering a closure by $c \\leq a$ lowers $a$ and the counters by $c$ together, so the difference stays, and the body was typed at each credit minus $a$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A closure at credit $1$ created with counter $3$ on $o$ is called with counter $2$ or more on $o$.",
    "signature": "\\forall o.\\ \\Phi(o) = S^{f} \\Rightarrow \\Phi'(o) = S^{f'} \\land f' \\geq f - a",
@@ -12686,7 +12708,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "The Rocq builds the levels with `osfix` in `RelA` and measures types with `tsize`, written $\\mathsf{size}$. `Vtop` unfolds `Vbody` with the fuel $\\mathsf{size}\\,T + 1$, which is the recursion on the size within a level.",
+     "reason": "The Rocq builds the levels with `osfix` in `RelA` and measures types with `tsize`, written $\\mathsf{size}$. `Vtop` unfolds `Vbody` with the bound $\\mathsf{size}\\,T + 1$, which is the recursion on the size within a level.",
      "names": [
       "tsize",
       "Vtop",
@@ -14757,11 +14779,11 @@
    ]
   },
   "fu.frame": {
-   "title": "Frame $d$",
+   "title": "Cost bound $d$",
    "meaning": "$d \\in \\mathbb{N} \\cup \\{\\infty\\}$ bounds the channel actions the term performs before it returns.",
-   "why": "Each action asks $1 \\leq d$ and lowers $d$ by one, so the frame bounds how often the context decrements its own ends during the term.",
+   "why": "Each action asks $1 \\leq d$ and lowers $d$ by one, so $d$ bounds how often the context lowers its own counters during the term.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A thread has frame $\\infty$.",
+   "example": "A thread has cost bound $\\infty$.",
    "signature": "d \\in \\mathbb{N} \\cup \\{\\infty\\}",
    "source": [
     {
@@ -14775,7 +14797,7 @@
   "fu.Phi": {
    "title": "Held ends $\\Phi$",
    "meaning": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, its counter $f$ and its tickets $m$, written $o \\mapsto S^{f,m}$.",
-   "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and an action sets it back to $m$. The protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter and tickets.",
+   "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and an action sets it back to $m$. The protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, the counter relation gives it a counter and tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi = \\{a \\mapsto S^{3,3}\\}$.",
    "signature": "\\Phi : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}",
@@ -14837,7 +14859,7 @@
   "fu.val": {
    "title": "$(\\mathsf{stop})$",
    "meaning": "$e \\in \\mathsf{Val} \\Rightarrow e \\in FV^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\rrbracket$.",
-   "why": "A returning term gives its context a value whose counters meet its credits, which the bind lemma of fuel consumes.",
+   "why": "A returning term gives its context a value whose counters meet its credits, which the bind lemma of the counter relation consumes.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast$ returns at $\\Phi = \\varnothing$.",
    "signature": "e \\in \\mathsf{Val} \\Rightarrow e \\in FV^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma \\rrbracket",
@@ -14953,15 +14975,15 @@
   },
   "F-Tick.frame": {
    "title": "$1 \\leq d$",
-   "meaning": "The frame has a unit for the action.",
-   "why": "The frame bounds the decrements of the context's ends during the term.",
+   "meaning": "The cost bound has a unit for the action.",
+   "why": "The cost bound limits the decrements of the counters of the context during the term.",
    "breaks": "Nothing. It is a definition.",
    "example": "$1 \\leq d$.",
    "signature": "1 \\leq d",
    "args": [
     {
      "name": "d",
-     "meaning": "the frame"
+     "meaning": "the cost bound"
     }
    ],
    "source": [
@@ -14976,7 +14998,7 @@
   "fu.idle": {
    "title": "$\\mathsf{idle}$",
    "meaning": "$\\mathsf{idle}\\,S \\iff \\mathsf{unfold}\\,S = \\mathsf{Skip}$.",
-   "why": "Idleness removes the checks $\\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that decrement down to $0$.",
+   "why": "Idleness removes the checks $\\geq 1$ and never changes how a counter evolves, so counters stay index-free. Typing lowers the credit of an idle end with truncation at $0$, matching counters that decrement down to $0$.",
    "breaks": "An idle end whose credit stayed fixed while its counter decrements would exceed its counter.",
    "example": "$\\mathsf{idle}\\,\\mathsf{Skip}$.",
    "signature": "\\mathsf{idle} : \\sym{type.STy}{\\mathsf{STy}} \\to \\mathsf{Prop}",
@@ -15027,7 +15049,7 @@
     },
     {
      "name": "d",
-     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the cost bound, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "e",
@@ -15049,7 +15071,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{Fobl}_\\beta$ is the clause `f_beta` of the fuel obligation.",
+     "reason": "$\\mathsf{Fobl}_\\beta$ is the clause `f_beta` of the counter obligation.",
      "names": [
       "f_beta"
      ]
@@ -15243,7 +15265,7 @@
   "F-Spawn.child": {
    "title": "The child",
    "meaning": "$v\\,\\ast \\in F^N_\\gamma\\llbracket\\Phi_M \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ at each $\\gamma < \\beta$.",
-   "why": "The child is a new thread of the lock-free process relation, so it must have thread fuel at exactly the ends and counters the lock-free process relation moves to the child.",
+   "why": "The child is a new thread of the lock-free process relation. So it must be in the counter relation as a thread at exactly the ends and counters the lock-free process relation moves to the child.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
    "signature": "\\forall \\gamma < \\beta.\\ v\\,\\ast \\in F^{N}_{\\gamma}\\llbracket \\Phi_M \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
@@ -15416,8 +15438,8 @@
   },
   "F-Close": {
    "title": "F-Close",
-   "meaning": "A close drops $o$, lowers the other counters and uses one unit of the frame.",
-   "why": "It is the fuel form of O-Close, and it is an action, so F-Count applies.",
+   "meaning": "A close drops $o$, lowers the other counters and uses one unit of the cost bound.",
+   "why": "It is the counter form of O-Close, and it is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
    "signature": "\\mathsf{f\\_close} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
@@ -15517,7 +15539,7 @@
   "FV-Sess": {
    "title": "$FV$ at $S_x$",
    "meaning": "An end with protocol $S' \\sqsubseteq S$, counter $f \\geq a$ and the tickets $m$ of its type.",
-   "why": "Credits are lower bounds on counters, and the tickets of the type are those fuel resets the counter to. The protocol held at run time lies below the type by $\\sqsubseteq$, so Sub-Sess keeps a value in $FV$.",
+   "why": "Credits are lower bounds on counters, and the tickets of the type are those the counter relation resets the counter to. The protocol held at run time lies below the type by $\\sqsubseteq$, so Sub-Sess keeps a value in $FV$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$o \\mapsto S^{3,3}$ at $S_x\\inmode{lf}{^{2,3}}$.",
    "signature": "o \\in FV^{N}_{\\beta}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket",
@@ -15549,7 +15571,7 @@
    "title": "$a \\leq f$",
    "meaning": "The counter meets the credit.",
    "why": "Typing reasons with credits and the lock-free process relation with counters, and this inequality transfers each credit bound of typing to the counters.",
-   "breaks": "Without it, a context could age an end below its actual counter and F-Count would fail on an end whose credit typing treats as positive.",
+   "breaks": "Without it the credit of an end could exceed its counter, and F-Count would fail on an end whose credit typing treats as positive.",
    "example": "$2 \\leq 3$.",
    "signature": "a \\leq f",
    "args": [
@@ -15577,7 +15599,7 @@
   },
   "FV-Arrow": {
    "title": "$FV$ at an arrow",
-   "meaning": "A closure whose body has fuel at each lower level, counters at or above the counters at creation minus its credit and argument in $FV$.",
+   "meaning": "A closure whose body is in the counter relation at each lower level, with counters at or above the counters at creation minus its credit and argument in $FV$.",
    "why": "The clause reads costs and credits, the data typing attaches to arrows.",
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
@@ -15608,7 +15630,7 @@
   "FV-Arrow.exact": {
    "title": "$\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi$",
    "meaning": "The closure holds exactly the ends it mentions.",
-   "why": "It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.",
+   "why": "It mirrors exactness of $V$, and the cost fundamental theorem needs it to read the counters off typing.",
    "breaks": "A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving that closure could not spawn the closure.",
    "example": "$\\lambda\\_.\\,\\mathsf{close}\\,a$ holds $\\{a\\}$.",
    "signature": "\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi",
@@ -15659,9 +15681,9 @@
    ]
   },
   "FV-Arrow.body": {
-   "title": "Body fuel",
+   "title": "Counters of the body",
    "meaning": "$e[u] \\in F^{N}_{\\gamma}\\llbracket\\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c\\rrbracket$.",
-   "why": "The caller supplies an argument and counters lowered by at most $a$ by its own actions, and the body guarantees fuel with frame $c$.",
+   "why": "The caller supplies an argument and counters lowered by at most $a$ by its own actions, and the body is in the counter relation with cost bound $c$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A call of a closure of cost $1$.",
    "signature": "e[u] \\in F^{N}_{\\gamma}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket",
@@ -15680,7 +15702,7 @@
     },
     {
      "name": "c",
-     "meaning": "the frame, the cost of the arrow"
+     "meaning": "the cost bound, the cost of the arrow"
     }
    ],
    "source": [
@@ -15695,7 +15717,7 @@
   },
   "FV-Box": {
    "title": "$FV$ at a box",
-   "meaning": "A box with no ends whose body has fuel per force at each lower level and session instance in $\\mathsf{sinsts}\\,N$.",
+   "meaning": "A box with no ends whose body is in the counter relation per force at each lower level and session instance in $\\mathsf{sinsts}\\,N$.",
    "why": "A box is unlimited, so it holds no counters and works at each use.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ at $N = 4$.",
@@ -15757,7 +15779,7 @@
     },
     {
      "name": "c",
-     "meaning": "the frame, the cost of one force"
+     "meaning": "the cost bound, the cost of one force"
     }
    ],
    "source": [
@@ -15795,7 +15817,7 @@
   "fu.fsem": {
    "title": "$\\mathsf{fsem}$",
    "meaning": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e$ iff $e \\in F^N_\\beta\\llbracket\\Phi \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ for each ordinal $\\beta$.",
-   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at each index.",
+   "why": "It is the counter relation of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one statement about counters that holds at each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2,2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
    "signature": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
@@ -16048,7 +16070,7 @@
    ]
   },
   "sp.fuel": {
-   "title": "Each thread has fuel",
+   "title": "Each thread keeps its counters",
    "meaning": "$\\forall t.\\ q(t) = e \\Rightarrow e \\in F^N_\\beta\\llbracket \\Delta^{F}_t \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$, where $\\Delta^{F}_t$ maps the ends that $K$ gives $t$ to their protocols, counters and tickets.",
    "why": "The counters and tickets of $\\Delta^{F}_t$ are those recorded in $K$.",
    "breaks": "Nothing. It is a definition.",
@@ -16243,8 +16265,8 @@
    ]
   },
   "sr.FE": {
-   "title": "Fuel $F^N_\\beta\\llbracket\\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$",
-   "meaning": "The thread holds the ends $\\Phi$, each with counter and tickets, and has fuel at the ordinal index $\\beta$ to return at $\\sigma$ within $d$ actions.",
+   "title": "Counter relation $F^N_\\beta\\llbracket\\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$",
+   "meaning": "The thread holds the ends $\\Phi$, each with counter and tickets, and at the ordinal index $\\beta$ it returns at $\\sigma$ within $d$ actions.",
    "why": "It bounds postponement per thread, independent of points. It is indexed by $\\beta$, as $E$ is, so it is written as membership and not as a judgment.",
    "breaks": "Nothing. It is a definition.",
    "example": "$F^{4}_\\beta\\llbracket\\{a \\mapsto S^{3,3}\\} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
@@ -16268,7 +16290,7 @@
     },
     {
      "name": "d",
-     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the cost bound, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "e",
@@ -16298,7 +16320,7 @@
    ]
   },
   "sr.FV": {
-   "title": "Values with fuel, $FV^N_{\\beta}\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
+   "title": "Counters of values, $FV^N_{\\beta}\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
    "meaning": "The value holds exactly the ends $\\Phi$, and their counters meet the credits of $\\sigma$.",
    "why": "Values have the protocols and counters of their ends.",
    "breaks": "Nothing. It is a definition.",
@@ -16338,7 +16360,7 @@
   },
   "sr.act": {
    "title": "$\\mathsf{act}\\,o$",
-   "meaning": "$\\mathsf{act}\\,o$ is the shared premise of each action on $o$. The end is held and not idle, each other end that is not idle has a counter of at least $1$, and so has the frame.",
+   "meaning": "$\\mathsf{act}\\,o$ is the shared premise of each action on $o$. The end is held and not idle, each other end that is not idle has a counter of at least $1$, and so has the cost bound.",
    "why": "Send, receive, close, select and branch share this premise, F-Wait and F-Count together.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{act}\\,a$ holds at $\\Phi = \\{a \\mapsto S^{0,2}, b \\mapsto S'^{1,2}\\}$ and $d = 1$.",
@@ -16354,7 +16376,7 @@
     },
     {
      "name": "d",
-     "meaning": "the frame"
+     "meaning": "the cost bound"
     }
    ],
    "source": [
@@ -16550,8 +16572,8 @@
   },
   "sr.fobl": {
    "title": "$\\mathsf{Fobl}_\\ell(e')$",
-   "meaning": "The fuel obligation of the step label $\\ell$, one rule of [[fu-obls]] per label.",
-   "why": "Each label has its own fuel update.",
+   "meaning": "The counter obligation of the step label $\\ell$, one rule of [[fu-obls]] per label.",
+   "why": "Each label has its own counter update.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Fobl}$ of a send is F-Send.",
    "signature": "\\mathsf{Fobl} : \\sym{type.TLabel}{\\mathsf{TLabel}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
@@ -16732,7 +16754,7 @@
   "th.lf-fundamental": {
    "title": "Lock-free fundamental theorem",
    "meaning": "$\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$ at a finite $N$ implies $\\Sigma \\Vvdash^{N}_{W} p : T$, the lock-free judgment at each ranked extension of $W$.",
-   "why": "The fuel of each thread comes from its cost typing at finite $N$, and its relation at $\\kappa_L$ from its typing, read at ranked worlds. Excluded middle enters through the creations under $\\mathsf{gen\\_new}$, which choose the largest of finitely many ranks.",
+   "why": "The counters of each thread come from its typing at finite $N$, and its relation at $\\kappa_L$ from its typing, read at ranked worlds. Excluded middle enters through the creations under $\\mathsf{gen\\_new}$, which choose the largest of finitely many ranks.",
    "breaks": "Nothing. It is a theorem.",
    "example": "The [[ex-cycle|cycle]].",
    "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T \\land N \\in \\mathbb{N} \\Rightarrow \\Sigma \\Vvdash^{N}_{W} p : T",
@@ -17172,7 +17194,7 @@
   },
   "th.soup": {
    "title": "The lock-free process relation $S^{N,W}_{\\beta}$",
-   "meaning": "$a \\in S^{N,W}_{\\beta}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\beta$. Ownership, points, counters and tickets are those that $a$ records.",
+   "meaning": "$a \\in S^{N,W}_{\\beta}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and in the counter relation at the ordinal index $\\beta$. Ownership, points, counters and tickets are those that $a$ records.",
    "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
@@ -17658,7 +17680,7 @@
   },
   "F-Force": {
    "title": "F-Force",
-   "meaning": "A force needs a positive counter on each held end that is not idle and a positive frame, and continues with each counter and the frame one lower.",
+   "meaning": "A force needs a positive counter on each held end that is not idle and a positive cost bound, and continues with each counter and the cost bound one lower.",
    "why": "A loop goes through a force. A thread that loops while it holds a non-idle end exhausts the counter of that end, so the thread holding the dual end waits a finite time.",
    "breaks": "With a free force, a thread could loop forever while the thread holding its dual end waits, and lock-free adequacy would fail.",
    "example": "$\\mathsf{force}\\,f$ holding $d$ at counter $2$ continues with $d$ at counter $1$.",
@@ -17674,8 +17696,8 @@
   },
   "F-Force.spare": {
    "title": "$\\mathsf{positive}(\\Phi) \\land 1 \\leq d$",
-   "meaning": "Each held end that is not idle has a counter at least $1$, and so has the frame $d$.",
-   "why": "The force decrements each counter, so each must be positive. Typing guarantees it, because [[r-boxes|E-Force]] charges one unit of effect, which ages the held context.",
+   "meaning": "Each held end that is not idle has a counter at least $1$, and so has the cost bound $d$.",
+   "why": "The force decrements each counter, so each must be positive. Typing guarantees it, because [[r-boxes|E-Force]] charges one unit of effect, which lowers the credits of the held context.",
    "breaks": "A force at counter $0$ under truncation would leave the counter at $0$ and could repeat forever.",
    "example": "$\\mathsf{positive}(\\{d \\mapsto S^{1,2}\\})$.",
    "signature": "\\mathsf{positive}(\\Phi) \\land 1 \\leq d",
@@ -17692,9 +17714,9 @@
   "E-Force.one": {
    "title": "The force costs $1$",
    "meaning": "E-Force has effect $\\varepsilon_0 \\cdot 1 \\cdot \\varepsilon$, the effect of $e$, one unit for the force and the effect of the body.",
-   "why": "The unit accounts for the counter decrement of [[fu-obls|F-Force]]. The rule that holds an end across the force ages the end by the effect, so a loop that holds a non-idle end has effect $\\infty$ and fails the aging check at a finite bound.",
+   "why": "The unit accounts for the counter decrement of [[fu-obls|F-Force]]. The rule that holds an end across the force lowers the credit of the end by the effect. So a loop that holds a non-idle end has effect $\\infty$ and fails the check $c \\leq a$ at a finite bound.",
    "breaks": "Without it a loop could hold a non-idle end forever, and the thread holding its dual end would wait without bound.",
-   "example": "$(\\mathsf{force}\\,f)\\,\\langle a, b\\rangle$ ages $\\langle a, b\\rangle$ by one before the call.",
+   "example": "$(\\mathsf{force}\\,f)\\,\\langle a, b\\rangle$ lowers the credits of $\\langle a, b\\rangle$ by one before the call.",
    "signature": "\\varepsilon_0 \\cdot 1 \\cdot \\varepsilon",
    "args": [
     {
@@ -18176,8 +18198,8 @@
   },
   "sp.delta": {
    "title": "Annotations $\\Delta : K$",
-   "meaning": "$\\Delta$ gives each end $o$ with $K(o) = (t, x, f, m)$ a session type $S$ at the point $x$ for the relation and a protocol $P$ at the counter $f$ and tickets $m$ for fuel, $\\Delta(o) = (S_x, P^{f,m})$. $\\Delta^{E}_t$ and $\\Delta^{F}_t$ are its two parts on the ends that $K$ gives $t$.",
-   "why": "The relation and fuel read the same held ends, the relation with points and fuel with counters. O-New and F-New choose the session type of a new channel in separate existentials, so $S$ and $P$ are two entries.",
+   "meaning": "$\\Delta$ gives each end $o$ with $K(o) = (t, x, f, m)$ a session type $S$ at the point $x$ for the relation and a protocol $P$ at the counter $f$ and tickets $m$ for the counter relation, $\\Delta(o) = (S_x, P^{f,m})$. $\\Delta^{E}_t$ and $\\Delta^{F}_t$ are its two parts on the ends that $K$ gives $t$.",
+   "why": "The relation and the counter relation read the same held ends, the first with points and the second with counters. O-New and F-New choose the session type of a new channel in separate existentials, so $S$ and $P$ are two entries.",
    "breaks": "Nothing. It is a definition.",
    "example": "$K(c^{+}) = (0, x, 2, 3)$ and $\\Delta(c^{+}) = (\\mathsf{Close}_x, \\mathsf{Close}^{2,3})$.",
    "signature": "\\Delta : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup (\\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}) \\times (\\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N})",
@@ -18212,7 +18234,7 @@
    "deviations": [
     {
      "kind": "merged",
-     "reason": "The Rocq keeps an environment `A` of the relation and a protocol map `Π` of fuel, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\\Delta$ states the three maps.",
+     "reason": "The Rocq keeps an environment `A` of the relation and a protocol map `Π` of the counter relation, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\\Delta$ states the three maps.",
      "names": [
       "sp_pts",
       "sp_dom"
@@ -18222,8 +18244,8 @@
   },
   "fu.at": {
    "title": "$e'\\ \\mathsf{at}\\ \\Phi'\\ !\\ d'$",
-   "meaning": "The successor $e'$ has fuel at the held ends $\\Phi'$ and the frame $d'$ at each index $\\gamma < \\beta$, at the result $\\sigma$ of the thread.",
-   "why": "Each step of fuel lowers the index, whatever its kind. The counterpart $e'\\ \\mathsf{at}\\ \\Theta'$ of the relation reads the cost of the step instead.",
+   "meaning": "The successor $e'$ is in the counter relation at the held ends $\\Phi'$ and the cost bound $d'$ at each index $\\gamma < \\beta$, at the result $\\sigma$ of the thread.",
+   "why": "Each step of the counter relation lowers the index, whatever its kind. The counterpart $e'\\ \\mathsf{at}\\ \\Theta'$ of the relation reads the cost of the step instead.",
    "breaks": "Nothing. It is a definition.",
    "example": "F-Close reads $e'\\ \\mathsf{at}\\ (\\Phi \\setminus o){\\downarrow}\\ !\\ d \\mathbin{\\dot-} 1$.",
    "signature": "e'\\ \\mathsf{at}\\ \\Phi'\\ !\\ d' \\iff \\forall \\gamma < \\beta.\\ e' \\in F^{N}_{\\gamma}\\llbracket \\Phi' \\vdash \\sigma\\ !\\ d' \\rrbracket",
@@ -18238,7 +18260,7 @@
     },
     {
      "name": "d'",
-     "meaning": "the frame after the step"
+     "meaning": "the cost bound after the step"
     }
    ],
    "source": [
@@ -18295,8 +18317,8 @@
   },
   "F-Select": {
    "title": "F-Select",
-   "meaning": "A select on $o$ advances the protocol of $o$ to the chosen continuation, resets its counter to its tickets $m$, lowers the other counters and uses one unit of the frame.",
-   "why": "It is the fuel form of O-Select, and it is an action, so F-Count applies.",
+   "meaning": "A select on $o$ advances the protocol of $o$ to the chosen continuation, resets its counter to its tickets $m$, lowers the other counters and uses one unit of the cost bound.",
+   "why": "It is the counter form of O-Select, and it is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{0}\\,c^{+}$ at $\\Phi(c^{+}) \\doteq \\oplus(S', S'')^{1,2}$ continues at $S'^{2,2}$.",
    "signature": "\\mathsf{f\\_select} : \\sym{type.End}{\\mathsf{End}} \\to \\mathbb{B} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
@@ -18322,8 +18344,8 @@
   },
   "F-Branch": {
    "title": "F-Branch",
-   "meaning": "A branch on $o$ advances the protocol of $o$ to the chosen continuation, resets its counter to its tickets $m$, lowers the other counters and uses one unit of the frame.",
-   "why": "It is the fuel form of O-Branch, and it is an action, so F-Count applies.",
+   "meaning": "A branch on $o$ advances the protocol of $o$ to the chosen continuation, resets its counter to its tickets $m$, lowers the other counters and uses one unit of the cost bound.",
+   "why": "It is the counter form of O-Branch, and it is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}_{0}\\,c^{+}$ at $\\Phi(c^{+}) \\doteq \\&(S', S'')^{1,2}$ continues at $S'^{2,2}$.",
    "signature": "\\mathsf{f\\_branch} : \\sym{type.End}{\\mathsf{End}} \\to \\mathbb{B} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
@@ -18947,7 +18969,7 @@
    "title": "Loops that hold no end",
    "lead": "A loop that holds no end types in the lock-free judgment. Each round is charged one force, and no held end has a counter to lower.",
    "code": "div_box     = !(f = force f)                         -- loops on forces\npn_fix      = !(f = λx. (force f) x)                  -- fix λx.x\ncx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning",
-   "meaning": "Each box uses its own variable before a session action. A force costs one level and one unit of effect, so each box types as a box of cost $\\infty$. None of the boxes holds an end, so the aging of [[t-agecap]] asks nothing, and the [[v-rel|box clause]] reads the body one force below the level. These loops serve no other thread, and lock freedom does not ask them to, because no thread waits on a loop without ends.",
+   "meaning": "Each box uses its own variable before a session action. A force costs one level and one unit of effect, so each box types as a box of cost $\\infty$. None of the boxes holds an end, so the cost of [[t-agecap]] asks nothing, and the [[v-rel|box clause]] reads the body one force below the level. These loops serve no other thread, and lock freedom does not ask them to, because no thread waits on a loop without ends.",
    "modes": [
     "lf"
    ],
@@ -18974,9 +18996,9 @@
   {
    "id": "ex-guard-pos",
    "title": "A loop that holds an end",
-   "lead": "A loop that holds a non-idle end across its force is rejected by aging.",
+   "lead": "A loop that holds a non-idle end across its force is rejected, because each force lowers the credit of the end.",
    "code": "spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever\nmain        = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in\n              (force spawn_loop) a",
-   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] ages the type of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The program $\\mathsf{main}$ passes the loop the end $a$ of a new channel and closes the other end $a'$ in a second thread. So the protocol of $a$ is not idle and its tickets are finite, and $\\mathsf{main}$ types at no finite bound $N$.",
+   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] lowers the credit of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The program $\\mathsf{main}$ passes the loop the end $a$ of a new channel and closes the other end $a'$ in a second thread. So the protocol of $a$ is not idle and its tickets are finite, and $\\mathsf{main}$ types at no finite bound $N$.",
    "modes": [
     "lf"
    ],
@@ -18999,7 +19021,7 @@
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "aging",
+     "part": "credits after a cost",
      "rocq": "guard_pos_rejected, guard_pos_proc_rejected, with the aging step spawn_loop_rejected"
     }
    }
@@ -19007,9 +19029,9 @@
   {
    "id": "ex-forwarder",
    "title": "The spawn forwarder",
-   "lead": "A thread that receives closures and spawns them types in the lock-free judgment and has fuel at each counter bound. A received closure owns the ends it mentions, by the exactness of the [[v-rel|value relation]] and of [[fv|values with fuel]].",
+   "lead": "A thread that receives closures and spawns them types in the lock-free judgment and is in the counter relation at each bound on its counters. A received closure owns the ends it mentions, by the exactness of the [[v-rel|value relation]] and of [[fv|counters of values]].",
    "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?((∗ ⊸ ∗)^2).Close\ndead_thunk q = λ_. let ∗ = Ω in close q",
-   "meaning": "The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a value in $FV$ and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ has fuel at each counter bound.",
+   "meaning": "The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a value in $FV$ and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ is in the counter relation at each bound on its counters.",
    "modes": [
     "lf"
    ],
@@ -19032,7 +19054,7 @@
     "lf": {
      "ok": true,
      "N": "every",
-     "part": "typing and fuel of the open thread, no closed program",
+     "part": "typing and counters of the open thread, no closed program",
      "rocq": "fw_ptyped, fw_fsem, dead_thunk_rejected",
      "claim": "typed"
     }
@@ -19041,9 +19063,9 @@
   {
    "id": "ex-controller",
    "title": "The controller",
-   "lead": "An end that no thread ever acts on may be held across a loop of unbounded length, because [[t-agecap|aging]] truncates the credit of an idle end instead of rejecting the loop.",
+   "lead": "An end that no thread ever acts on may be held across a loop of unbounded length, because a [[t-agecap|cost]] truncates the credit of an idle end instead of rejecting the loop.",
    "code": "main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0\n       let ⟨c, c′⟩ = new in                              -- c at ρ·2\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in\n                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in\n                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
-   "meaning": "The client sends on $a$ and receives on $b$ in each round, and holds the end $k$ at $\\mathsf{Skip}_{\\chi}$ throughout. Aging requires $c \\leq a$ only of ends that are not idle. The idle end $k$ therefore has credit $0$ across rounds of unbounded cost.",
+   "meaning": "The client sends on $a$ and receives on $b$ in each round, and holds the end $k$ at $\\mathsf{Skip}_{\\chi}$ throughout. A cost requires $c \\leq a$ only of ends that are not idle. The idle end $k$ therefore has credit $0$ across rounds of unbounded cost.",
    "modes": [
     "lf"
    ],
@@ -19543,9 +19565,9 @@
   {
    "id": "rx-postpone",
    "title": "Postponement, a holding thread that never serves",
-   "lead": "A deadlock-free program in which one thread waits forever, because the thread holding its dual end never acts on that end. [[t-agecap|Aging]] rejects the program, and the rejection is proved.",
+   "lead": "A deadlock-free program in which one thread waits forever, because the thread holding its dual end never acts on that end. The [[t-agecap|credits after a cost]] reject the program, and the rejection is proved.",
    "code": "chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)\nloop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)\nmain = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in\n       let ∗ = spawn (λ_. (force chat) a′) in\n       let ∗ = spawn (λ_. close b′) in\n       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever",
-   "meaning": "Main holds $b$ across a loop that never returns, and the thread with $b'$ waits forever while other threads step. The thread of $\\mathsf{close}\\,b'$ makes the session of $b$ not idle. Each round receives on $a$ while it holds $b$, so aging asks the cost of the receive, at least $1$, below the credit of $b$ and lowers that credit by the cost. The recursive call passes $b$ where the parameter asks the old credit. That credit is finite, because $b$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
+   "meaning": "Main holds $b$ across a loop that never returns, and the thread with $b'$ waits forever while other threads step. The thread of $\\mathsf{close}\\,b'$ makes the session of $b$ not idle. Each round receives on $a$ while it holds $b$, so typing asks the cost of the receive, at least $1$, below the credit of $b$ and lowers that credit by the cost. The recursive call passes $b$ where the parameter asks the old credit. That credit is finite, because $b$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
    "modes": [
     "lf"
    ],
@@ -19557,7 +19579,7 @@
     },
     "lf": {
      "ok": false,
-     "part": "aging",
+     "part": "credits after a cost",
      "rocq": "rx_postpone_rejected"
     }
    },
@@ -19584,7 +19606,7 @@
    "title": "Endless delegation, an end that travels forever",
    "lead": "A deadlock-free program in which an end is sent back and forth forever while the thread holding its dual end waits. The payload premise of [[r-act|E-Send]] rejects the program, and the rejection is proved.",
    "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in\n               (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in\n               (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
-   "meaning": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. The thread of $\\mathsf{close}\\,e'$ makes the session of $e$ not idle. E-Send ages the payload by $1$, so $\\mathsf{pass}$ sends $e$ on $x$ at a payload credit $p_x$ below the credit $b$ that its parameter gives $e$. The thread $\\mathsf{back}$ sends the received $e$ on $y'$ at a payload credit $p_y < p_x$. The two ends of a channel have the same payloads, so $\\mathsf{pass}$ receives $e$ at credit $p_y$ and passes it where its parameter asks $b$. Then $b \\leq p_y < p_x < b$, and $b$ is finite because $e$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
+   "meaning": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. The thread of $\\mathsf{close}\\,e'$ makes the session of $e$ not idle. E-Send lowers the credit of the payload by $1$, so $\\mathsf{pass}$ sends $e$ on $x$ at a payload credit $p_x$ below the credit $b$ that its parameter gives $e$. The thread $\\mathsf{back}$ sends the received $e$ on $y'$ at a payload credit $p_y < p_x$. The two ends of a channel have the same payloads, so $\\mathsf{pass}$ receives $e$ at credit $p_y$ and passes it where its parameter asks $b$. Then $b \\leq p_y < p_x < b$, and $b$ is finite because $e$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
    "modes": [
     "lf"
    ],
