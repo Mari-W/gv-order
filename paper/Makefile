@@ -6,11 +6,15 @@ NOTES := ../.claude/notes/paper
 MAP2TEX := $(NOTES)/tools/map2tex.py
 ROCQREFS := $(NOTES)/rocqrefs.py
 
-all: main.pdf
+all: main.pdf supplement.pdf
 
 # The citation table must exist before LaTeX runs.
 main.pdf: rocqrefs.tex gen/defs.tex $(wildcard *.tex) $(wildcard figures/*.tex) $(wildcard *.sty) main.bib
 	latexmk -pdf -interaction=nonstopmode main.tex
+
+# The supplement: the example programs and the map blocks the paper does not need.
+supplement.pdf: rocqrefs.tex gen/defs.tex supplement.tex mapmacros.tex notation.tex preamble.tex $(wildcard gen/examples/*.tex)
+	latexmk -pdf -interaction=nonstopmode supplement.tex
 
 # The figures, rules, examples and the appendix come from the proof map.
 gen/defs.tex: $(MAP2TEX) ../docs/explorer/map.json
