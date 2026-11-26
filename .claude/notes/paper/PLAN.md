@@ -9,6 +9,87 @@ figures against the changed blocks by hand. Paragraph slots are `% PAR:`
 comments, gaps are `% GAP:`. This plan and the previews live in
 .claude/notes/paper/ (paper/ holds only build inputs).
 
+## Revision 5 (branch paper-rev5)
+
+State. Branch paper-rev5 from main (cde8ae7f). `make -C paper` builds
+main.pdf and supplement.pdf, no undefined references, `make -C paper check`
+passes. main.pdf has 29 pages (40 before): body pages 1 to 16, references
+16 to 17, appendix 18 to 29 (12 pages). supplement.pdf has 7 pages.
+Previews of pages 2 to 16 in .claude/notes/paper/preview/. Where older
+sections disagree with this one, this one holds.
+
+### Lock freedom in two styles (task 1)
+
+The body counts in two ways only. Counters: each held end o has a counter
+f(o) at run time, an action on o resets it to its reset value, every action
+lowers the counters of the other held ends by one, a send lowers the
+counters of the sent ends by one. The credit a of S_x^{a,m} is a static
+lower bound on f(o), the tickets m are the reset value, N bounds the tickets
+of a channel, the credit of a closure bounds the counters of its captured
+ends that are not idle. Cost: ε of a term, [c] on arrows, and Δ − ε is Δ
+with each credit lowered by ε (one line in def:lf-ann). §5 now opens with
+the three ways to wait forever (ex:postpone, ex:delegate, rx-relink in the
+supplement) and fig:lf-failures says which counter rule excludes each, then
+def:lf-ann, ex:cycle with fig:lf-example, ranked worlds, def:counters, the
+lock-free relation, the theorems. E-App shows the premise ε₂ ≤ a.
+
+| body now | Rocq and map | kind |
+|---|---|---|
+| credit, a static lower bound on the counter | credit (`TSess`, `fle a f` in `Vty`) | renamed (gloss only) |
+| tickets, the reset value of the counter | tickets, `refill` | renamed (gloss only) |
+| def:counters "a term keeps its counters", F^N_β⟦Φ ⊢ σ ! d⟧ | fuel, `FuelE`, `Vfuel`, `fsem`, map block fu (now titled "Counters of a term") | renamed |
+| cost bound d | frame (argument `c` of `FuelE`) | renamed, merged with the notion of cost in the text |
+| "the counters" of a thread in def:lf-rel, E[κ_L] together with the counters | `SoupK` conjuncts `Erel` and `FuelE` | merged in the wording, two predicates in the formula |
+| Δ − ε, "each credit lowered by ε" | aging, `tage`, `lage`, `thage`, rules Age-* | renamed, rules now Lower-Free, Lower-Credit, Lower-Idle, Lower-Arr |
+| counter obligations, counters of values | `Fobl` (fuel obligations), `Vty` (values with fuel) | renamed |
+| a spawn lowers no counter | `f_spawn` (the header comment of Fuel.v says minus one, the definition does not) | body follows the definition |
+| E-App asks ε₂ ≤ a | `e_app` `fle c2 a1` | was missing in body and map, added |
+
+Kept as they were, because a simpler form would be false or would hide a
+second fixed point. The counters stay a predicate of their own beside E (the
+map's fu-vs explains why one judgment with a counter component is a
+different fixed point). Their steps lower the index at every step, while E
+at κ_L keeps it at free steps. The symbol F of the counter relation is the
+map's and clashes with the future F, it stays so that body and appendix
+agree. tk(o) keeps its name.
+
+### Colour (task 2)
+
+map2tex.py colours every generated formula as notation.tex does: term
+keywords \kw, Close and Skip \tyc, e v w in cTm, T U S in cTy (not in sub-
+or superscripts, not the S of S^{N,W}), Γ Δ Σ Θ Φ as \cGamma \lenv \senv
+\cTheta \cPhi, ⊗ ⊕ ⊸ □ ∃^l ∀ μ as \tyotimes … \tymu, α as \tvar, λ and
+⟨ ⟩ in cTm. Words in \text, \textsf, \mathsf (other than keywords) and the
+like are copied. Lock-free parts keep only their shade. Body figures: the
+variables a, b, f, u, the ends o (\eo, new in notation.tex), channels c
+(\ch) and constants k (\cst) are in cTm.
+
+### Appendix and supplement (task 3)
+
+The appendix keeps only the map blocks the body refers to and does not
+state itself (APPENDIX in map2tex.py), each a numbered Definition or Figure
+(rule groups) with its label app:<id> and Rocq links, no source lines. Left
+out as duplicates of the body: syn-ends, syn-prims, syn-terms, syn-let,
+syn-values, syn-labels, syn-points, syn-moves, ty-grammar, ty-heads, ty-ann,
+w-world, w-order, t-judgment, t-lf-counters, t-lf-wf, v-rel, e-rel, e-bind,
+p-rel, all theorems (th-*), alg-oracles, alg-thms. Moved to the supplement
+(paper/supplement.tex, SUPPLEMENT in map2tex.py): every example listing and
+the unreferenced blocks t-consts, t-lemmas, sr-reading, fu-vs, ty-kinds.
+Every appendix item is referenced from the body (checked by script). The
+cref names are Definition and Figure.
+
+### The map follows the paper
+
+docs/explorer/map.json: letters of the paper (type variables α, ordinals β
+and γ, a β step keeps its letter, a thread label is ℓ), the lock-free blocks
+and notes in the two styles (titles Counters of a term, Counter obligations,
+Counters of values, Credits after a cost, The relation and the counters side
+by side, rules Lower-*), renamed deviations with the Rocq names on fu and
+t-agecap, readiness caption in the three cases of def:readiness, E-App with
+ε₂ ≤ a. Scripts in .claude/notes/map-letters-paper.py, map-counters-cost.py,
+map-counters-cost-2.py, map-readiness-wording.py, map-eapp-premise.py.
+check.sh 0 errors, page-test 15 passed.
+
 ## Revision 4 (branch paper-rev4)
 
 State. Branch paper-rev4 from main (ae11fd2b). `make -C paper` passes, no
