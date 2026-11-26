@@ -1,0 +1,15 @@
+% Common TikZ styles of the paper's pictures: threads as boxes, ends as dots
+% labelled with their points, facts as arrows in the keyword colour,
+% channels as dotted lines.
+\tikzset{
+  thread/.style={draw=black!45, fill=black!4, rounded corners=3pt, inner sep=6pt},
+  threadlabel/.style={font=\scriptsize\scshape, text=black!70},
+  enddot/.style={circle, fill=black, inner sep=0pt, minimum size=3.6pt},
+  ghostdot/.style={circle, draw=black, fill=white, inner sep=0pt, minimum size=3.6pt},
+  endlabel/.style={font=\small},
+  fact/.style={-{Stealth[length=5pt]}, thick, kwcolor},
+  deadfact/.style={-{Stealth[length=5pt]}, thick, kwcolor, densely dashed},
+  chan/.style={black!45, densely dotted, thick},
+  msg/.style={-{Stealth[length=5pt]}, thick, black!70, rounded corners=4pt},
+  factlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
+}

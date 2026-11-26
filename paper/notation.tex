@@ -1,0 +1,101 @@
+% Notation of the body of the paper. The figures in figures/*.tex and the
+% definitions in the sections use these macros. The appendix keeps the
+% TeX of the proof map (gen/*.tex, mapmacros.tex).
+
+\RequirePackage{placeins}
+
+% ------------------------------------------------------------------ colour
+% Term keywords carry one quiet colour (kwcolor, from mapmacros.tex). Types,
+% points and judgments stay black. Lock-free parts are shaded (\lf).
+\DeclareRobustCommand{\lf}[1]{\lfadd{#1}}
+\DeclareRobustCommand{\kw}[1]{\mathord{{\color{kwcolor}\mathsf{#1}}}}
+\DeclareRobustCommand{\tyc}[1]{\mathord{\mathsf{#1}}}
+
+% ------------------------------------------------------------------ terms
+\DeclareRobustCommand{\tsend}{\kw{send}}
+\DeclareRobustCommand{\trecv}{\kw{recv}}
+\DeclareRobustCommand{\tclose}{\kw{close}}
+\DeclareRobustCommand{\tselect}{\kw{select}}
+\DeclareRobustCommand{\tbranch}{\kw{branch}}
+\DeclareRobustCommand{\tlink}{\kw{link}}
+\DeclareRobustCommand{\tspawn}{\kw{spawn}}
+\DeclareRobustCommand{\tforce}{\kw{force}}
+\DeclareRobustCommand{\tnew}{\kw{new}}
+\DeclareRobustCommand{\tlet}{\kw{let}}
+\DeclareRobustCommand{\tin}{\kw{in}}
+\DeclareRobustCommand{\tcase}{\kw{case}}
+\DeclareRobustCommand{\tinj}{\kw{inj}}
+\DeclareRobustCommand{\tunit}{\ast}
+\DeclareRobustCommand{\tlam}[2]{\lambda #1.\,#2}
+\DeclareRobustCommand{\tpair}[2]{\langle #1, #2\rangle}
+\DeclareRobustCommand{\tbox}[2]{{!}(#1 = #2)}
+\DeclareRobustCommand{\tletp}[4]{\tlet\ \tpair{#1}{#2} = #3\ \tin\ #4}
+\DeclareRobustCommand{\tletu}[2]{\tlet\ \ast = #1\ \tin\ #2}
+\DeclareRobustCommand{\tletv}[3]{\tlet\ #1 = #2\ \tin\ #3}
+\DeclareRobustCommand{\tcasee}[5]{\tcase\ #1\,(#2.\,#3)\,(#4.\,#5)}
+
+% ------------------------------------------------------------------ ends, points, worlds
+\DeclareRobustCommand{\dual}[1]{\overline{#1}}
+\DeclareRobustCommand{\pplus}[1]{#1^{+}}
+\DeclareRobustCommand{\fld}[2]{#1\cdot #2}
+\DeclareRobustCommand{\base}{\mathsf{base}}
+\DeclareRobustCommand{\Point}{\mathsf{Point}}
+\DeclareRobustCommand{\cons}{\mathsf{cons}}
+\DeclareRobustCommand{\ranked}{\mathsf{ranked}}
+\DeclareRobustCommand{\po}{\mathsf{po}}
+\DeclareRobustCommand{\ordW}[1][W]{\prec_{#1}}
+\DeclareRobustCommand{\wext}{\sqsubseteq}
+\DeclareRobustCommand{\wjoin}{\sqcup}
+\DeclareRobustCommand{\grow}[2]{\oplus_{#1} #2}
+\DeclareRobustCommand{\tree}{\mathsf{tree}}
+\DeclareRobustCommand{\ech}{\mathsf{ech}}
+\DeclareRobustCommand{\fends}{\mathsf{fends}}
+
+% ------------------------------------------------------------------ types
+\DeclareRobustCommand{\Close}{\tyc{Close}}
+\DeclareRobustCommand{\Skip}{\tyc{Skip}}
+\DeclareRobustCommand{\unfold}{\mathsf{unfold}}
+\DeclareRobustCommand{\sSend}[2]{{!}(#1.\,#2)}
+\DeclareRobustCommand{\sRecvT}[2]{{?}(#1.\,#2)}
+\DeclareRobustCommand{\arr}[2]{\multimap^{#1}_{#2}}
+\DeclareRobustCommand{\ap}{\mathsf{ap}}
+\DeclareRobustCommand{\up}[1]{{\vartriangle}#1}
+\DeclareRobustCommand{\payload}[2]{#1[#2\cdot\bar\jmath]}
+\DeclareRobustCommand{\unl}{\mathsf{unl}}
+\DeclareRobustCommand{\acyc}{\mathsf{acyc}}
+\DeclareRobustCommand{\conserv}{\mathsf{conserv}}
+\DeclareRobustCommand{\rankable}{\mathsf{rankable}}
+
+% the typing judgment, its effect and the held values
+\DeclareRobustCommand{\tyj}[5]{#1 ; #2 \vdash^{#3} #4 : #5}
+\DeclareRobustCommand{\eff}[1]{\lf{\ !\ #1}}
+\DeclareRobustCommand{\held}{\triangleleft}
+\DeclareRobustCommand{\pj}[4]{#1 \vdash_{#2} #3 : #4}
+
+% ------------------------------------------------------------------ relations
+\DeclareRobustCommand{\Vrel}[4]{V^{#1}_{#2}\llbracket #3 \vdash #4 \rrbracket}
+\DeclareRobustCommand{\Erel}[5]{E^{#1}_{#2}\llbracket #3 \vdash #4 \rrbracket^{#5}}
+\DeclareRobustCommand{\Prel}[4]{P^{#1}_{#2}\llbracket #3 \vdash #4 \rrbracket}
+\DeclareRobustCommand{\Fuel}[4]{F^{#1}_{#2}\llbracket #3 \vdash #4 \rrbracket}
+\DeclareRobustCommand{\LFrel}[4]{L^{#1}_{#2}\llbracket #3 \vdash #4 \rrbracket}
+\DeclareRobustCommand{\ready}{\mathsf{ready}}
+\DeclareRobustCommand{\offered}{\mathsf{offered}}
+\DeclareRobustCommand{\irred}{\mathsf{irred}}
+\DeclareRobustCommand{\Obl}{\mathsf{Obl}}
+\DeclareRobustCommand{\semt}{\vDash}
+\DeclareRobustCommand{\semlf}{\Vvdash}
+\DeclareRobustCommand{\terminated}{\mathsf{terminated}}
+\DeclareRobustCommand{\dfree}{\mathsf{deadlock\text{-}free}}
+\DeclareRobustCommand{\lfree}{\mathsf{lock\text{-}free}}
+
+% ------------------------------------------------------------------ figure layout
+% A judgment header in a rule figure: its name, a rule, the boxed form.
+\DeclareRobustCommand{\judghead}[2]{%
+  \par\noindent\makebox[\linewidth]{%
+    {\small\textsc{#1}}\ \ {\color{black!35}\leaders\hrule height 0.6ex depth -0.55ex\hfill}\ \ %
+    \fbox{\ensuremath{#2}}}\par\nopagebreak}
+% Rules of one judgment form, centred, at one size.
+\newenvironment{rules}{\begin{proofrules}}{\end{proofrules}}
+\DeclareRobustCommand{\figrule}{{\color{black!35}\hrule}}
+% A rule name as a link to its figure.
+\DeclareRobustCommand{\ruleref}[1]{\ref{rule:#1}}

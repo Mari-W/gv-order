@@ -1,0 +1,41 @@
+% Creation, boxes, existentials. From map blocks r-new (one rule there with
+% a triple, two constructors e_new and e_new_fld in the Rocq), r-boxes,
+% r-ex. E-Pack is in the appendix.
+\begin{figure}[tb]
+  \small
+  \judghead{Creation, boxes and existentials}{\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}}
+  \begin{rules}
+    \infer*[lab=E-New]
+      {\unl\,\Delta \\ \acyc_{\rho}(C) \\ \conserv_{\Gamma}(\rho, C) \\\\
+       \lf{N \in \mathbb{N} \Rightarrow \rankable_{\Gamma}(\rho, C)} \\ \lf{m_1 + m_2 \leq N}}
+      {\tyj{\Gamma}{\Delta}{F}{\tnew}{\exists^{\bot}\rho.\ C.\ S_{\rho}\lf{^{m_1,m_1}} \otimes \dual{S}_{\dual{\rho}}\lf{^{m_2,m_2}}}\eff{0}}
+    \label{rule:E-New}
+    \and
+    \infer*[lab=E-New-Field]
+      {\unl\,\Delta \\ \lf{m_1 + m_2 \leq N}}
+      {\tyj{\Gamma}{\Delta}{F}{\tnew}{S_{\fld{x}{\kappa}}\lf{^{m_1,m_1}} \otimes \dual{S}_{\dual{\fld{x}{\kappa}}}\lf{^{m_2,m_2}}}\eff{0}}
+    \label{rule:E-New-Field}
+  \end{rules}
+  \begin{rules}
+    \infer*[lab=E-Box]
+      {B = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U) \\ \unl\,\Delta \\\\
+       \forall \bar s.\ \ \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}}
+      {\tyj{\Gamma}{\Delta}{F}{\tbox{f}{e}}{B}\eff{0}}
+    \label{rule:E-Box}
+    \and
+    \infer*[lab=E-Force]
+      {\tyj{\Gamma}{\Delta}{F}{e}{\Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U)}\eff{\varepsilon_0} \\\\
+       \Gamma \vdash C[\bar x] \\ u[\bar x] \prec F}
+      {\tyj{\Gamma}{\Delta}{F}{\tforce\,e}{U[\bar s][\bar x]}\eff{\varepsilon_0 + 1 + \varepsilon}}
+    \label{rule:E-Force}
+    \and
+    \infer*[lab=E-Open]
+      {\Delta(a) = \exists^{l}\bar\iota.\ C.\ T \\ \conserv_{\Gamma}(\bar\iota, C) \\\\
+       \tyj{\Gamma, C(\bar\iota)}{\Delta[a \mapsto T]}{F}{e}{U}\eff{\varepsilon}}
+      {\tyj{\Gamma}{\Delta}{F}{e}{U}\eff{\varepsilon}}
+    \label{rule:E-Open}
+  \end{rules}
+  \figrule
+  \caption{Typing rules for creation, recursion and existentials}
+  \label{fig:typing-orders}
+\end{figure}

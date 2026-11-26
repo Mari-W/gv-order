@@ -1,0 +1,27 @@
+% Process typing. From map block p-typing. P-Connect^n is in the appendix.
+% Bookkeeping premises are stated in words (PLAN.md, presentation).
+\begin{figure}[tb]
+  \small
+  \judghead{Typing processes}{\Sigma \vdash_{W}^{\lf{N,\eta}} p : T}
+  \begin{rules}
+    \infer*[lab=P-Term]
+      {\text{$T$ holds no end} \\ \text{$\Sigma$ holds no two dual ends} \\ \cons\,W \\\\
+       \text{$\Theta_B$ types the two ends of each $c \in C_0$ at dual types and points}
+       \ \ \lf{\text{with } \mathsf{tk}(c^{+}) + \mathsf{tk}(c^{-}) \leq N} \\\\
+       \tyj{\varnothing}{\Sigma\lf{^{\eta}}, \Theta_B}{\varnothing}{t}{T}\eff{c}}
+      {\Sigma \vdash_{W}^{\lf{N,\eta}} (C_0, \{t\}) : T}
+    \label{rule:P-Term}
+    \and
+    \infer*[lab=P-Connect]
+      {\Sigma_1 \cup \Sigma_C \vdash_{W_1}^{\lf{N,\eta}} (C_1, E_1) : T \\
+       \Sigma_2 \cup \dual{\Sigma_C} \vdash_{W_2}^{\lf{N,\eta}} (C_2, E_2) : \ast \\\\
+       \text{the channels of $\Sigma_1$, $\Sigma_2$, $\Sigma_C$, $C_1$, $C_2$ are disjoint} \\
+       \lf{\mathsf{tk}_{\eta}(o) + \mathsf{tk}_{\eta}(\dual{o}) \leq N \text{ for } o \in \Sigma_C} \\
+       \cons(W_1 \wjoin W_2)}
+      {\Sigma_1 \cup \Sigma_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C,\ E_1 \uplus E_2) : T}
+    \label{rule:P-Connect}
+  \end{rules}
+  \figrule
+  \caption{Process typing}
+  \label{fig:process-typing}
+\end{figure}

@@ -1,0 +1,22 @@
+% Syntax of GV-prec. From map blocks syn-ends, syn-prims, syn-terms,
+% syn-values, syn-let, syn-procs. Named variables in place of de Bruijn
+% indices (PLAN.md, presentation).
+\begin{figure}[tb]
+  \small
+  \judghead{Ends, constants, terms and values}{e}
+  \[
+  \begin{array}{@{}r@{\ \ }c@{\ \ }l@{\qquad}r@{}}
+    o & ::= & c^{+} \mid c^{-} & \text{ends, } \dual{c^{\pm}} = c^{\mp}\\[2pt]
+    k & ::= & \tsend \mid \trecv \mid \tclose \mid \tselect_i \mid \tbranch \mid \tlink \mid \tspawn \mid \tforce & \text{constants}\\[2pt]
+    e & ::= & a \mid \ast \mid o \mid \tlam{a}{e} \mid e_1\,e_2 \mid \tpair{e_1}{e_2}
+              \mid \tletu{e_1}{e_2} \mid \tletp{a}{b}{e_1}{e_2} & \text{terms}\\
+      & \mid & \tinj_i\,e \mid \tcasee{e}{a}{e_1}{a}{e_2} \mid \tbox{f}{e} \mid \tnew \mid k\,e & \\[2pt]
+    v & ::= & \ast \mid o \mid \tlam{a}{e} \mid \tbox{f}{e} \mid \tpair{v_1}{v_2} \mid \tinj_i\,v & \text{values}\\[2pt]
+    p & ::= & (C, E) & \text{processes}
+  \end{array}
+  \]
+  \[ \tletv{a}{e_1}{e_2} \;\triangleq\; \tletp{a}{u}{\tpair{e_1}{\ast}}{\tletu{u}{e_2}} \qquad (u \text{ fresh}) \]
+  \figrule
+  \caption{Syntax of \OurLang\ (semantics in \cref{app:sem-head,app:sem-proc})}
+  \label{fig:syntax}
+\end{figure}

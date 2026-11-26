@@ -18,11 +18,15 @@
 
 \input{preamble}
 \input{mapmacros}
+\input{notation}
+\input{figures/tikzstyle}
 \input{gen/defs}
 
 \usepackage[capitalise,noabbrev]{cleveref}
 
 \crefname{rule}{rule}{rules}
+\crefname{mapblk}{Appendix}{Appendices}
+\Crefname{mapblk}{Appendix}{Appendices}
 \Crefname{rule}{Rule}{Rules}
 
 \AddToHook{env/theorem/begin}{\crefalias{theorem}{theorem}}
@@ -36,6 +40,9 @@
 \usepackage[comments]{comments}
 
 \def\OurLang{\texorpdfstring{GV\ensuremath{^{\prec}}}{GV-prec}\xspace}
+
+% Skeleton only. Remove once the paragraphs fill the pages.
+\raggedbottom
 
 \begin{document}
 

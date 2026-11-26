@@ -1,0 +1,36 @@
+% Points, moves, worlds. From map blocks syn-labels, syn-points, syn-moves,
+% w-world, w-order, w-wf, w-ext. Restriction and the join lemma (w-ext) are
+% in the appendix. Point constants are written rho (map: a).
+\begin{figure}[tb]
+  \small
+  \judghead{Points}{x}
+  \[
+  \begin{array}{@{}c@{}}
+    b ::= \rho \mid \iota \qquad
+    x, y, z ::= b \mid \pplus{x} \mid \fld{x}{\kappa} \mid \dual{x} \qquad (\kappa \in \mathbb{N})
+    \qquad\quad
+    \dual{\dual{x}} = x \qquad \fld{\dual{x}}{\kappa} = \fld{x}{\kappa} \qquad \dual{\pplus{x}} = \pplus{\dual{x}}
+  \end{array}
+  \]
+  \judghead{Where an end moves}{x \mapsto x'}
+  \[
+  \begin{array}{@{}l@{\qquad}l@{\qquad}l@{\qquad}l@{}}
+    x \mapsto \pplus{x} & x \mapsto \dual{\fld{x}{i}} & x \mapsto \fld{x}{i} & \fld{x}{j} \\
+    \text{\footnotesize send, receive, close} & \text{\footnotesize $\tselect_i$} & \text{\footnotesize $\tbranch$, side $i$} & \text{\footnotesize $j$-th payload end of a message at $x$}
+  \end{array}
+  \]
+  \judghead{Worlds}{W}
+  \[
+  \begin{array}{@{}l@{\qquad\quad}l@{}}
+    W = (A, {\prec_A}),\ \ {\prec_A} \subseteq \Point_A^2 &
+    {\ordW} = \mathsf{tc}\big({\prec_A} \cup \{x \prec \pplus{x}\} \cup \{x \prec \pplus{\dual{x}}\}\big) \\[3pt]
+    \cons\,W \iff \forall x.\ x \not\ordW x &
+    W \wext W' \iff A \subseteq A' \land {\ordW} \subseteq {\ordW[W']} \\[3pt]
+    W \grow{\rho}{C} = (A \cup \{\rho\},\ {\prec_A} \cup C[\rho]) &
+    W_1 \wjoin W_2 = (A_1 \cup A_2,\ {\prec_{A_1}} \cup {\prec_{A_2}})
+  \end{array}
+  \]
+  \figrule
+  \caption{Points, moves and worlds (restriction and joins in \cref{app:w-ext})}
+  \label{fig:worlds}
+\end{figure}

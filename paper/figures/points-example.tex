@@ -1,0 +1,44 @@
+% (a) the points and facts of map example ex-cycle (its code comments).
+% (b) where a payload end arrives, from syn-moves and E-Send/E-Recv, with
+% the shape of ex-ring (a created at the field x.0 and sent on y at x).
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[b]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[x=1cm, y=1cm]
+      \node[enddot, label={[endlabel]left:$c : \rho$}] (c) at (0, 0.7) {};
+      \node[enddot, label={[endlabel]left:$d : \fld{\rho}{0}$}] (d) at (0, -0.7) {};
+      \node[enddot, label={[endlabel]right:$c' : \dual{\rho}$}] (c') at (3.4, 0.7) {};
+      \node[enddot, label={[endlabel]right:$d' : \dual{\fld{\rho}{0}}$}] (d') at (3.4, -0.7) {};
+      \begin{scope}[on background layer]
+        \node[thread, fit=(c)(d), minimum width=1.9cm, xshift=-0.55cm, label={[threadlabel]above:main}] {};
+        \node[thread, fit=(c')(d'), minimum width=1.9cm, xshift=0.55cm, label={[threadlabel]above:spawned}] {};
+      \end{scope}
+      \draw[chan] (c) -- (c');
+      \draw[chan] (d) -- (d');
+      \draw[fact] (c) -- node[factlabel, pos=0.22, above, sloped] {$\rho \prec \dual{\fld{\rho}{0}}$} (d');
+      \draw[fact] (c') -- node[factlabel, pos=0.22, above, sloped] {$\dual{\rho} \prec \fld{\rho}{0}$} (d);
+    \end{tikzpicture}
+    \caption{Cycle (\cref{ex:cycle})}
+    \label{fig:points-example:cycle}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.47\linewidth}
+    \centering
+    \begin{tikzpicture}[x=1cm, y=1cm]
+      \node[enddot, label={[endlabel]left:$y : x$}] (y) at (0, 0.7) {};
+      \node[enddot, label={[endlabel]left:$a : \fld{x}{0}$}] (a) at (0, -0.7) {};
+      \node[enddot, label={[endlabel]right:$\dual{y} : \dual{x}$}] (yb) at (2.7, 0.7) {};
+      \node[ghostdot, label={[endlabel]right:$a : \fld{x}{0}$}] (a2) at (2.7, -0.7) {};
+      \begin{scope}[on background layer]
+        \node[thread, fit=(y)(a), minimum width=1.9cm, xshift=-0.55cm, label={[threadlabel]above:sender}] {};
+        \node[thread, fit=(yb)(a2), minimum width=1.9cm, xshift=0.55cm, label={[threadlabel]above:receiver}] {};
+      \end{scope}
+      \draw[chan] (y) -- (yb);
+      \draw[msg] (a) to[bend right=18] node[factlabel, below] {$\tsend\,\tpair{a}{y}$ at $x$} (a2);
+    \end{tikzpicture}
+    \caption{A payload end arrives at $\fld{x}{0} = \fld{\dual{x}}{0}$}
+    \label{fig:points-example:payload}
+  \end{subfigure}
+  \caption{Points of ends and facts of a world}
+  \label{fig:points-example}
+\end{figure}

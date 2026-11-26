@@ -1,0 +1,22 @@
+% The facts of map example ex-flag (meaning and code comments). Optional
+% figure (PLAN.md).
+\begin{figure}[tb]
+  \centering
+  \begin{tikzpicture}[x=1cm, y=1cm]
+    \node[enddot, label={[endlabel]left:$c : x$}] (c) at (0, 0.7) {};
+    \node[enddot, label={[endlabel]left:$d : y$}] (d) at (0, -0.7) {};
+    \node[enddot, label={[endlabel]right:$\dual{c} : \dual{x}$}] (cb) at (5.2, 0.7) {};
+    \node[enddot, label={[endlabel]right:$\dual{d} : \dual{y}$}] (db) at (5.2, -0.7) {};
+    \begin{scope}[on background layer]
+      \node[thread, fit=(c)(d), minimum width=2.2cm, xshift=-0.7cm, label={[threadlabel]above:thread, world $W_1$}] {};
+      \node[thread, fit=(cb)(db), minimum width=2.2cm, xshift=0.7cm, label={[threadlabel]above:other, world $W_2$}] {};
+    \end{scope}
+    \draw[chan] (c) -- (cb);
+    \draw[chan] (d) -- (db);
+    \draw[fact] (c) -- node[factlabel, pos=0.2, above, sloped] {$x \prec \dual{y}$} (db);
+    \draw[fact] (cb) to[bend left=12] node[factlabel, pos=0.8, above, sloped] {$\dual{x} \prec y$} (d);
+    \draw[deadfact] (d) to[bend right=12] node[factlabel, pos=0.8, below, sloped] {$y \prec \dual{x}$, arm that never runs} (cb);
+  \end{tikzpicture}
+  \caption{The joined world $W_1 \wjoin W_2$ of the flag (\cref{ex:flag})}
+  \label{fig:composition-example}
+\end{figure}

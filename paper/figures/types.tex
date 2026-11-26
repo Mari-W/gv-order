@@ -1,0 +1,28 @@
+% Types, session types, bounds and active points. From map blocks
+% ty-grammar, ty-session, ty-heads, ty-payload. Duality, equivalence,
+% contractivity and the kinds of types are in the appendix.
+\begin{figure}[tb]
+  \small
+  \judghead{Types and session types}{T \quad S}
+  \[
+  \begin{array}{@{}r@{\ \ }c@{\ \ }l@{}}
+    T, U & ::= & \ast \mid (T \arr{u}{l}\lf{[c]}\, U)\lf{^{a}} \mid T \otimes U \mid T \oplus U \mid S_x\lf{^{a,m}}
+           \mid \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[c]}\, U) \mid \exists^{l}\bar\iota.\ C.\ T \\[2pt]
+    S & ::= & \Skip \mid S.S \mid \sRecvT{\bar\iota}{T} \mid \sSend{\bar\iota}{T} \mid \oplus(S', S'') \mid \&(S', S'')
+           \mid \Close \mid \mu Z.S \mid Z \mid \dual{Z} \\[2pt]
+    C & ::= & \{x_1 \prec y_1, \ldots, x_n \prec y_n, \ldots\}
+  \end{array}
+  \]
+  \judghead{Bounds and active points}{\ap(T)}
+  \[
+  \begin{array}{@{}l@{\qquad}l@{}}
+    l, u, v \in \Point \cup \{\bot, \top\},\quad \bot \prec u \prec \top &
+    \ap(S_x) = \{\dual{x}\} \qquad \ap(T \arr{u}{l} U) = \ap(\exists^{l}\bar\iota.\,C.\,T) = \{l\} \\[2pt]
+    \payload{T}{x} = T[\fld{x}{0}, \ldots, \fld{x}{(m{-}1)} / \iota_0, \ldots, \iota_{m-1}] &
+    \ap(T \otimes U) = \ap(T \oplus U) = \ap(T) \cup \ap(U) \qquad \ap(\ast) = \ap(\Box\ldots) = \varnothing
+  \end{array}
+  \]
+  \figrule
+  \caption{Types. Shaded parts are lock-free (\cref{sec:lf-annotations}). Duality, equivalence and contractivity in \cref{app:ty-dual,app:ty-equiv,app:ty-session}.}
+  \label{fig:types}
+\end{figure}
