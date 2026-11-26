@@ -1,12 +1,205 @@
 # Paper plan, GV≺ skeleton
 
-Branch paper-draft. The body figures are set by hand in paper/figures/*.tex
-from the content of docs/explorer/map.json. The definitions and theorems of
-the body are restated in paper form in the section files. The appendix, the
-example listings and the rule macros come from the map through
-paper/tools/map2tex.py. Rerun `make -C paper gen` after a map change, then
-check the body figures against the changed blocks by hand. Paragraph slots are
-`% PAR:` comments, gaps are `% GAP:`.
+The body figures are set by hand in paper/figures/*.tex from the content of
+docs/explorer/map.json. The definitions and theorems of the body are restated
+in paper form in the section files. The appendix, the example listings and the
+rule macros come from the map through .claude/notes/paper/tools/map2tex.py
+(`make -C paper gen`). Rerun it after a map change, then check the body
+figures against the changed blocks by hand. Paragraph slots are `% PAR:`
+comments, gaps are `% GAP:`. This plan and the previews live in
+.claude/notes/paper/ (paper/ holds only build inputs).
+
+## Revision 3 (branch paper-rev3)
+
+State. `make -C paper` passes, no undefined references, no overfull boxes,
+`make -C paper check` passes. 41 pages, body pages 1 to 16 (the references
+start on page 16), appendix from page 18. Previews of pages 2 to 16 in
+.claude/notes/paper/preview/. Where the older sections below disagree with
+this section, this section holds.
+
+### What changed, per feedback item
+
+1. Running example. Milner's scheduler (ex-milner, `ms_deadlock_free`,
+   `ms_dftyped`) is Example 1.1 in the introduction. §2 draws it in
+   fig:points-example (a) (threads, ends, points, the order in which each
+   agent acts) and fig:world-example (the nine facts of `ms_base`, columns
+   by field label, so the facts visibly rise). §3 has ex:milner-typed (the
+   protocol S_m = !∗.Close, the type of the first new and the constraint
+   C_m of `ms_L`, by agent). PAR slots in §2 to §6 name the scheduler. The
+   flag moved to §4.4 as the showcase (ex:flag, fig:composition-example,
+   lem:two-closes, prop:flag-rejected, prop:flag-semantic, cor:flag-df).
+   The brief named SemFlag.v theorems `sf_underivable_top`, `sf_sem_typed`,
+   `sf_deadlock_free`. SemFlag.v exists only in the old development. The
+   v2 theorems for the same program (the map's ex-flag) are `sbv_rejected`,
+   `sbv_thread_E` and `sbv_deadlock_free` in examples/SemBranch.v, and the
+   body cites those. ex-cycle moved to §5 as the lock-free worked example
+   (LFCycle.v). ex-close moved to the appendix (slot in §2).
+2. No words in rules. E-Box: `∀ s̄ ∈ Inst`, Inst defined in
+   conv:implicit. E-Open: `¬ unl T`. P-Term: `tfree T`, `pfree Σ`,
+   `pairs^N(Θ_B, C_0)`, `∀ o ∈ dom Σ. tk_η(o) ≤ N`. P-Connect: the tickets
+   premise as a formula, the conclusion `p_1 ∥_{Σ_C} p_2`. The moves of
+   fig:worlds as `sel`, `bra`, `payload`. All predicates are defined in
+   def:side, def:proc-judgment, def:creation and def:proc-conds.
+3. Anatomies. def:judgment (typing), def:proc-judgment (processes),
+   def:rel-anatomy (V, E, P), def:fuel (fuel), def:lf-rel (annotated
+   configurations), def:algo (algorithmic judgments), def:lf-ann (lock-free
+   annotations), each a displayed form and a table of components.
+4. Nothing undefined. See the symbol audit below. `rankable` is defined in
+   def:creation (one phrase plus reference) before fig:typing-orders
+   uses it, with the full reading in def:ranked.
+5. Disjointness. conv:implicit says "Contexts combined in one rule are
+   disjoint". Removed from P-Connect, thm:compose, thm:lf-compose, V-Arrow,
+   O-Recv, O-New keeps its freshness premise. Simplification recorded below.
+6. V and E as rules. fig:value-rel (V-Unit, V-Sess, V-Prod, V-Sum,
+   V-Arrow, V-Box, V-Ex), fig:term-rel (E, At-Free, At-Cost, O-Beta,
+   O-Close, O-Spawn, O-New, O-Send, O-Recv, P-Zero, P), fig:proc-obl
+   (Q-Tau, Q-Send, Q-Recv). Readiness, fuel and the lock-free relation stay
+   itemized.
+7. Diagrams. Redrawn and checked in renders. fig:points-example (scheduler
+   ring plus payload panel), fig:world-example (new), fig:composition-example
+   (flag, with legend), fig:lf-example (new worked table). Each has a
+   legend or a caption that says what boxes, dots, dotted lines, arrows,
+   dash styles and grey names mean. fig:worlds is formulas only.
+8. Lock-free annotations. def:lf-ann gives the anatomy (counter, credit,
+   tickets, latent cost, cost, aging, N, η). ex:cycle with fig:lf-example
+   is the worked example at N = 4 (tickets 2 per end from `e_new'` and
+   `e_new_at'` of examples/LFTools.v, close c ages d from credit 2 to 1,
+   the fuel counter of d falls from 2 to 1). fig:aging and fig:lf-counters
+   are gone, aging is the gloss "subtracts the credits used" in conv:lf
+   and def:lf-ann with a pointer to the appendix.
+9. Mechanization section removed (7-mechanization.tex deleted). Its slots
+   moved: one world per arm (§3.3, E-Case), point reuse (§3.4),
+   contractivity (§3.1), two fixed points (§5.4), one notion of world
+   (§2.2), transfinite indices (§4 intro), assumptions (thm:df and thm:lf
+   footnote slots, conclusion). Contributions and outline no longer cite it.
+10. Limitations. §8 "Limitations" (sec:limitations) with two slots, the
+    second for the author's reason why tree structure is not subsumed.
+    Contribution 4 now reads "comparison with priority systems by example
+    ... what it does not cover", no subsumption claim. The section title
+    "How GV≺ Subsumes Other Systems" became "Related Work".
+11. Lock freedom. thm:lf in its own subsection §5.5, with EM and FC in the
+    statement and a footnote slot, mirrored by thm:df in §4.5 (no axiom,
+    footnote slot).
+12. Algorithmic. §6 has def:algo, def:oracles (six oracles, one phrase
+    each), thm:algo-sound (`algo_sound`), thm:algo-complete
+    (`algo_complete`, `algo_iff`), thm:algo-dec (`syn_dec`, `chk_dec`,
+    `alg_sound`, `alg_complete`). The map dump figure fig:algorithmic is gone.
+13. Cleanup. W dropped from the rule-figure headers, judgment and process
+    anatomies before first use, long displays split (pairs, readiness, E, P,
+    V-Arrow, V-Box, O-Recv, Q-Recv), figures inside their sections.
+
+Additional feedback from the coordinator.
+
+- A. Shade only behind lock-free material, neutral grey (lfbg = black!11),
+  in body and appendix.
+- B. Syntax colouring of the first paper: `\kw`, `\tlam`, `\tpair`,
+  `\tunit`, `\tbox` in cTm; `\tyc` (Close, Skip), `\sSend`, `\sRecvT`,
+  `\arr`, `\tyotimes`, `\tyoplus`, `\tymultimap`, `\tyBox`, `\tyexists`,
+  `\tyforall`, `\tymu`, `\tyunit` in cTy; metavariables through lrlight's
+  `\ty`, `\tyB`, `\sty`, `\tm`, `\proc`, `\val`, `\valB`, `\lenv`, `\senv`
+  and new `\cGamma`, `\cTheta`, `\cPhi`. Listing keywords use kwcolor = cTm.
+  Fact arrows use factcolor = cTy. Points, worlds and relations stay black.
+- C. "(lfp)" gone. The caption of fig:term-rel says that at a fixed index
+  the rules E and P are read inductively. map2tex.py replaces the map's
+  `(\mathsf{lfp})` by "(least fixed point over steps of cost 0)".
+- D. Receive rules split over lines (O-Recv, Q-Recv). The process
+  obligations are in the body (fig:proc-obl) with def:proc-conds naming
+  `opened` (send_split), `matches` (recv_ok), `closed` (recv_back) and
+  `iface` (recv_env), one bullet each. The disjointness parts
+  (`ech[dom Θ₂] ∩ C = ∅`, first conjuncts of send_split and recv_ok,
+  `C' ∩ chans Σ = ∅`) are left to the convention.
+- E. Reader pass. Fixes. Rocq mentions removed from conv:implicit; `ech`
+  renamed chan and glossed; the caption of fig:worlds says what W ⊕_ρ C and
+  a constraint are; fig:world-example no longer says "first creation";
+  `Sub-Ex` and `E-Pack` no longer named in def:oracles; session subtyping
+  ⊑ points to the appendix; tk(o) defined in def:lf-ann; the stop clause of
+  P uses ∗ as a term; overfull displays split.
+- F. Lock-free parts are marked only by the shade. `lfcolor` is deleted.
+  `\lfadd` in running text shades word by word (`\lfw`, map2tex.py
+  `shade_words`), the "(LF)" mark of appendix heads too.
+- G. Type variables α (`\tvar`), ordinal indices β (`\ix`) and γ (`\ixs`),
+  one macro per role in notation.tex. map2tex.py renames Z, α, β in its
+  output (a β that names a β step keeps its letter).
+- H. Every type in cTy, see B.
+- I. paper/ holds only build inputs. Moved to .claude/notes/paper/: PLAN.md,
+  README.md, preview/, tools/, rocqrefs.py, old-draft/, llncs.cls,
+  splncs04*.bst, rocq-logo.svg. paper/Makefile calls the generators there.
+
+### Symbol audit (body, in reading order)
+
+| symbol | defined or glossed | where |
+|---|---|---|
+| o, c±, ō, k, e, v, p = (C, E), let | fig:syntax | §2.1 |
+| step relations, reachability | caption of fig:syntax, App. B | §2.1 |
+| terminated, deadlock-free | def:df | §2.1 |
+| ρ, ι, x⁺, x·κ, x̄ | fig:worlds and its caption | §2.2 |
+| sel, bra, payload | fig:worlds caption | §2.2 |
+| W, ≺_A, Point_A, ≺_W, ≼_W, cons, ⊑, ⊔, W ⊕_ρ C, C[ρ] | fig:worlds and caption | §2.2 |
+| T, U, S, C, S_x, ⊸^u_l, □, ∃^l, Skip, S.S, μα, α, ᾱ | fig:types | §3.1 |
+| duality, ≈, unfold, contractive | caption of fig:types, App. C | §3.1 |
+| ap, bounds ⊥ ⊤, T[x·j̄] | fig:types | §3.1 |
+| shade, X / Y, a, m, [c], ε, N, η, Δ − ε, ranked | conv:lf (gloss, forward refs) | §3.1 |
+| Inst, disjoint contexts | conv:implicit | §3.1 |
+| Γ ; Δ ⊢^F_{W,N} e : T ! ε | def:judgment | §3.2 |
+| unl, tfree, 𝒯₀, Γ ⊢_W x ≺ y, ≼, Γ ⊢ C[x̄], F = X ∪ ▵v, F ◁ H, u ≺ F, x ≺ H, l ≼ H, ≤, Δ₁,Δ₂ | def:side | §3.2 |
+| tree, base, ≺^ρ_C, acyc, conserv, rankable | def:creation | §3.4 |
+| S_m, C_m | ex:milner-typed | §3.3 |
+| Σ ⊢^{N,η}_W p : T, tk_η, Σ^η, pfree, chans, Σ̄, ∥_Σ, pairs, ends | def:proc-judgment | §3.5 |
+| V, E, P, β, Θ, W ⊢, ap(Θ), fends, ≐ | def:rel-anatomy | §4 |
+| stable, offered, link, Θ\|_A, Θ \ A, A ≺_W B | def:readiness | §4.2 |
+| at, Obl, κ = κ_DF | fig:term-rel and caption | §4.2 |
+| chan, sdual, opened, matches, closed, iface, Pobl, τ | def:proc-conds, fig:proc-obl | §4.3 |
+| ⊨ (terms, processes), G, \|Δ\|, den_Y | def:sem-judgments | §4.3 |
+| W_a, W_b, thread, other | ex:flag, prop:flag-semantic | §4.4 |
+| lock-free, runs, parts, maximal, wfair, pend | def:lf | §5.1 |
+| f(o), credit, tickets, tk, cost, aging, N, η | def:lf-ann | §5.2 |
+| ranked, ϱ | def:ranked | §5.3 |
+| Fuel, Φ, S^{f,m}, σ, d, idle | def:fuel | §5.4 |
+| (q, K, W_a), L, E[κ_L], κ_L, "K fits q and Σ" | def:lf-rel | §5.4 |
+| ⫦ (lock-free judgment), erase | def:lf-judgment | §5.4 |
+| \|·\| (erasure of annotations), ⊨[κ_L] | thm:lf-fundamental | §5.4 |
+| ⇒, ⇐, annotated t, \|t\| | def:algo | §6 |
+| oracles, ⊑ | def:oracles | §6 |
+
+Glossed only, defined in the appendix: evaluation contexts (lem:bind),
+Ord rules, subtyping, aging, step costs, fuel of values, "K fits q and Σ"
+(eight of eleven conjuncts), den_Y.
+
+### Simplifications added in revision 3
+
+| item | body form | map and Rocq form |
+|---|---|---|
+| disjointness | one line of conv:implicit, no premise in P-Connect, thm:compose, thm:lf-compose, V-Arrow, O-Recv, Q-Tau, Q-Send, Q-Recv | disjoint, ##, # premises, sth st_disj, conn cn_* disjointness, send_split and recv_ok first conjuncts |
+| W in rule-figure headers | dropped (rules leave W implicit already) | typed W ... |
+| P-Term effect | ε | c |
+| thm:compose (1) | pfree Σ ∧ pairs(Θ_B, C₀) | sth Θ Σ Θ_B C (with Θ = Σ ∪ Θ_B, disjointness) |
+| thm:compose (2), thm:lf-compose (2) | pfree of Σ₁, Σ₂, Σ_C, Σ̄_C as the dual of Σ_C | conn (cut_dual up to ≈) |
+| process obligations | Q-Tau, Q-Send, Q-Recv with opened, matches, closed, iface | send_split, recv_ok, recv_back, recv_env |
+| E and P | rules E and P with three premises each, inductive reading in the caption | Erel, Prel as least fixed points (Eind, Pind) |
+| index letters | β main, γ smaller (\ix, \ixs) | α, β |
+| type variables | α (\tvar) | Z |
+| ranked | ranked W implies cons W (swf_sacyc), the claim "differ only on infinite worlds" dropped | w-wf |
+| ech | chan | ech |
+| \dual | uncoloured, it applies to points, ends and session types | none |
+| worked LF example | numbers of LFCycle.v (tickets N/2 = 2), counters from the fuel obligations | cy_typedN |
+
+### Open questions for the author
+
+1. Theorem names. The brief cited SemFlag.v theorems that are not in v2.
+   The body cites `sbv_rejected`, `sbv_thread_E`, `sbv_deadlock_free`.
+2. The flag world W_a = ({x, y}, {x ≺ ȳ}) treats the constants x, y as
+   bases, which is how the Rocq names them (NConst 0, 1). Say if the body
+   should name them ρ₀, ρ₁ instead.
+3. fig:world-example omits the shifted facts x⁺ ≺ y. Draw them, or keep
+   the caption remark.
+4. Process obligations in the body cost about half a page. Keep them in
+   the body (feedback D) or move fig:proc-obl back to the appendix.
+5. The first paper sets type metavariables in sans serif (lrlight Ty sort).
+   Kept, so T, U, S render as sans serif in cTy.
+6. GAP 5 (no map program uses S.S) is resolved by the scheduler, whose
+   protocol is !∗.Close. The map's ex-milner does not say so yet.
+7. Contribution 6 says "no axioms for deadlock freedom". th-sound says no
+   classical hypothesis enters, confirm with `Print Assumptions soundness`.
 
 ## Build
 
