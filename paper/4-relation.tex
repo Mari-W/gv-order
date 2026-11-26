@@ -13,7 +13,7 @@
 $\Vrel{W}{\alpha}{\Theta}{T}$ is the set of values that own exactly the ends of $\Theta$ and are safe at $T$ in the world $W$ at the ordinal index $\alpha$ (\cref{app:sr-ord}). It is defined by recursion on $\alpha$ and $T$. Unit, pairs and injections are related componentwise (\cref{app:v-rel}).
 \begin{itemize}
   \item An end. $o \in \Vrel{W}{\alpha}{\{o \mapsto S'_x\}}{S_x}$ when $S' \approx S$.
-  \item A closure. $\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}$ when $\mathrm{dom}\,\Theta = \fends(e)$, $l \preccurlyeq \ap(\Theta)$, and for each $W' \sqsupseteq W$, $\beta < \alpha$, future $F$ with $W' \vdash u \prec F$ and argument $w \in \Vrel{W'}{\beta}{\Theta'}{T}$ with $\Theta'$ disjoint from $\Theta$,
+  \item A closure. $\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}$ when $\mathrm{dom}\,\Theta = \fends(e)$, the set of ends in $e$, $l \preccurlyeq \ap(\Theta)$, and for each $W' \sqsupseteq W$, $\beta < \alpha$, future $F$ with $W' \vdash u \prec F$ and argument $w \in \Vrel{W'}{\beta}{\Theta'}{T}$ with $\Theta'$ disjoint from $\Theta$,
   \[ e[w/b] \in \Erel{W'}{\beta}{\Theta \cup \Theta'}{U}{F}. \]
   \item A box. $\tbox{f}{e} \in \Vrel{W}{\alpha}{\varnothing}{\Box(\forall\bar\iota\,\bar Z.\,C.\ \ast \multimap^{u} U)}$ when $e$ holds no end, and for each $W' \sqsupseteq W$, points $\bar x$ with $W' \vdash C[\bar x]$, session types $\bar s$, $\beta < \alpha$ and future $F$ with $u[\bar x] \prec F$,
   \[ e[\tbox{f}{e}/f] \in \Erel{W'}{\beta}{\varnothing}{U[\bar s][\bar x]}{F}. \]
@@ -66,7 +66,7 @@ Spawn, close, choice and link are in \cref{app:e-obl}.
 
 \begin{lemma}[Bind \rocq{Erel_bind}]
 \label{lem:bind}
-Let $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and let $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$. Then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
+Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}). Let $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and let $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$. Then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
 \end{lemma}
 
 \subsection{Processes}

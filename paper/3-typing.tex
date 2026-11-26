@@ -30,7 +30,7 @@ The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the
   \item A future is $F = X \cup \up{v}$, a finite set $X$ of bounds and the points $\up{v}$ above a bound $v$.
   \item $u \prec F$ holds when $\Gamma \vdash_W u \prec y$ for each $y \in X$ and $\Gamma \vdash_W u \preccurlyeq v$. For a type or context $H$, $x \prec H$ and $l \preccurlyeq H$ compare with each point of $\ap(H)$.
   \item $F \held H = F \cup \ap(H)$ is the future of a term that runs while the thread holds $H$.
-  \item $\Gamma \vdash C[\bar x]$ holds when each fact of $C$ at $\bar x$ is derivable. $\unl\,\Delta$ holds when each entry of $\Delta$ is a box type.
+  \item $\Gamma \vdash C[\bar x]$ holds when each fact of $C$ at $\bar x$ is derivable. $\unl\,\Delta$ holds when each entry of $\Delta$ is a box type. $T \leq U$ is subtyping, which compares session types up to equivalence (\cref{app:t-subs}).
 \end{itemize}
 \end{definition}
 % PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment, t-contexts
