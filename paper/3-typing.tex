@@ -19,7 +19,7 @@
 
 \begin{convention}[Lock-free parts]
 \label{conv:lf}
-A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $\sty_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term and the bound $N$ (\cref{def:lf-ann}). $\lenv - \varepsilon$ ages $\lenv$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
+A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $\sty_x^{a,m}$, a static lower bound on the counter of the end and its reset value, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term and the bound $N$ (\cref{def:lf-ann}). $\lenv - \varepsilon$ is $\lenv$ with each credit lowered by $\varepsilon$. $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
 \end{convention}
 
 \begin{convention}[Implicit premises]

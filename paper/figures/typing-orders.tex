@@ -13,8 +13,8 @@
     \and
     \infer*[lab=E-Box]
       {B = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB) \\ \unl\,\lenv \\\\
-       \forall \bar s.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, f : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
-      {\tyj{\cGamma}{\lenv}{F}{\tbox{f}{\tm}}{B}\eff{0}}
+       \forall \bar s.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, \tmB{} : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tbox{\tmB{}}{\tm}}{B}\eff{0}}
     \label{rule:E-Box}
   \end{rules}
   \figrule

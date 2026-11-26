@@ -14,22 +14,22 @@
     \label{rule:Q-Tau}
     \and
     \infer*[lab=Q-Send]
-      {\senv(o) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\
-       \senv \setminus o = \senv_v \uplus \senv_r \\\\
-       \mathrm{dom}\,\cTheta_e = \{o' \in \fends(\valB) \mid \ech(o') \in C\} \\
+      {\senv(\eo{}) \doteq (\sSend{\bar\iota}{\tyB}.\sty)_{x} \\
+       \senv \setminus \eo{} = \senv_v \uplus \senv_r \\\\
+       \mathrm{dom}\,\cTheta_e = \{\eo{}' \in \fends(\valB) \mid \ech(\eo{}') \in C\} \\
        \mathsf{opened}(\senv_e, \cTheta_e) \\\\
        \valB \in \Vrel{W}{\ix}{\senv_v \cup \cTheta_e}{\payload{\tyB}{x}} \\
-       \proc'\ \mathsf{at}\ (\senv_r \cup \senv_e)[o \mapsto \sty_{\pplus{x}}]}
-      {\mathsf{Pobl}^{W}_{\tsend\,o\,\valB}(\proc')}
+       \proc'\ \mathsf{at}\ (\senv_r \cup \senv_e)[\eo{} \mapsto \sty_{\pplus{x}}]}
+      {\mathsf{Pobl}^{W}_{\tsend\,\eo{}\,\valB}(\proc')}
     \label{rule:Q-Send}
     \and
     \infer*[lab=Q-Recv]
-      {\senv(o) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
-       \senv' = \senv[o \mapsto \sty_{\pplus{x}}] \\\\
+      {\senv(\eo{}) \doteq (\sRecvT{\bar\iota}{\tyB}.\sty)_{x} \\
+       \senv' = \senv[\eo{} \mapsto \sty_{\pplus{x}}] \\\\
        \forall \ixs < \ix.\ \forall \valB, \cTheta_2. \\\\
        \mathsf{matches}(\senv', \cTheta_2) \land \valB \in \Vrel{W}{\ixs}{\cTheta_2}{\payload{\tyB}{x}} \\\\
        \Rightarrow\ (C' \cup \mathsf{closed}(\senv', \cTheta_2),\ E') \in \Prel{W}{\ixs}{\mathsf{iface}(\senv', \cTheta_2)}{\ty}}
-      {\mathsf{Pobl}^{W}_{\trecv\,o\,\valB}(\proc')}
+      {\mathsf{Pobl}^{W}_{\trecv\,\eo{}\,\valB}(\proc')}
     \label{rule:Q-Recv}
   \end{rules}
   \figrule

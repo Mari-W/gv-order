@@ -58,14 +58,19 @@
 \newcommand{\maprow}[1]{\mapfit{#1}\par\medskip}
 \newcommand{\rulesep}{\qquad}
 
-% Appendix layout. Each block of the map is a numbered item, so that the
-% body can point at the formal definition of what it states in words.
+% Appendix layout. Each block of the map is a numbered Definition (a
+% definition in words and formulas) or Figure (a group of rules), so that
+% the body can point at the formal definition of what it states in words.
+% Arguments: title, block id, lf when the block exists only in the
+% lock-free instance, appdef or appfig, links to the Rocq.
 \newcounter{mapblk}[section]
 \renewcommand{\themapblk}{\thesection.\arabic{mapblk}}
-\newcommand{\mapblockhead}[3]{%
+\expandafter\def\csname mapkind@appdef\endcsname{Definition}
+\expandafter\def\csname mapkind@appfig\endcsname{Figure}
+\newcommand{\mapblockhead}[5]{%
   \par\medskip\noindent\refstepcounter{mapblk}%
-  {\bfseries\themapblk\quad #1\ifx&#3&\else\ \lfadd{\textsf{(LF)}}\fi}\label{app:#2}%
-  \hfill{\scriptsize\texttt{#2}}\par\nopagebreak\smallskip}
+  {\bfseries\csname mapkind@#4\endcsname\ \themapblk}\ (#1)\ifx&#3&\else\ \lfadd{\textsf{(LF)}}\fi
+  \label[#4]{app:#2}\ #5\par\nopagebreak\smallskip}
 \newcommand{\mapexamplehead}[2]{\par\medskip\noindent{\itshape #1}\label{app:#2}\hfill{\scriptsize\texttt{#2}}\par\nopagebreak}
 \newcommand{\mapdfvariant}{\par\noindent{\small Deadlock-free instance.}\par\nopagebreak}
 \newcommand{\mapsource}[1]{\par\noindent{\scriptsize\raggedright Rocq: #1\par}\medskip}

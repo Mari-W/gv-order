@@ -171,26 +171,82 @@ LFP_TAG = r'(\mathsf{lfp})'
 LFP_TEXT = r'(\text{least fixed point over steps of cost } 0)'
 
 
-# Presentation only. The paper writes type variables as alpha (macro \tvar)
-# and ordinal indices as beta and gamma (macros \ix and \ixs), so the map's
-# Z, alpha and beta are renamed here. A beta that names a beta step keeps
-# its letter.
-STEP_BETA = [r'\xrightarrow{\beta}', r'\mathsf{Obl}_{\beta}', r'\mathsf{Fobl}_{\beta}',
-             r'\kappa_\beta', r'\kappa_{\beta}', r'\mathsf{Obl}_\beta']
-
-
-def rename_vars(s):
-    for pat in STEP_BETA:
-        s = s.replace(pat, pat.replace(r'\beta', '@STEPBETA@'))
-    s = re.sub(r'(^|\n)(\s*)\\beta(\s*&)', lambda m: m.group(1) + m.group(2) + '@STEPBETA@' + m.group(3), s)
-    s = re.sub(r'\\beta(?![A-Za-z])', lambda m: r'\ixs', s)
-    s = re.sub(r'\\alpha(?![A-Za-z])', lambda m: r'\ix', s)
-    s = re.sub(r'(?<![A-Za-z\\])Z(?![A-Za-z])', lambda m: r'{\tvar}', s)
-    return s.replace('@STEPBETA@', r'\beta')
+# The map uses the letters of the paper: type variables alpha, ordinal
+# indices beta and gamma, a beta step keeps its letter.
 
 
 def tex(s, mode):
-    return rename_vars(strip_sym(resolve(s or '', mode)).replace(LFP_TAG, LFP_TEXT))
+    return colour(strip_sym(resolve(s or '', mode)).replace(LFP_TAG, LFP_TEXT))
+
+
+# Syntax colouring of the first paper (notation.tex): terms in cTm, types and
+# type metavariables in cTy. The map's constructors become the coloured paper
+# macros. Words in \text, \mathsf and the like are copied, except the term
+# keywords and the session types Close and Skip. Lock-free parts keep their
+# shade (\lfadd), which sets no text colour.
+TERM_KW = {'let', 'in', 'new', 'spawn', 'send', 'recv', 'close', 'select', 'branch', 'link', 'force', 'case', 'inj'}
+TYPE_KW = {'Close', 'Skip'}
+VERBATIM = re.compile(r'\\(text|textsf|textit|texttt|mathrm|mathit|mathcal|mathbb|operatorname|label|ref|begin|end)\s*\{')
+MATHSF = re.compile(r'\\mathsf\s*\{')
+TM_LETTER = re.compile(r"(?<![\\A-Za-z_^])(?<!_\{)(?<!\^\{)([evw])(?![A-Za-z])")
+TY_LETTER = re.compile(r"(?<![\\A-Za-z_^])(?<!_\{)(?<!\^\{)([TUS])(?![A-Za-z])(?!\^\{N)")
+SUBS = [
+    (re.compile(r'\\Box\s*\(\s*\\forall'), r'\\tyBox(\\tyforall '),
+    (re.compile(r'\\Box\s*\('), r'\\tyBox('),
+    (re.compile(r'\\exists\s*\^'), r'\\tyexists^'),
+    (re.compile(r'\\otimes(?![A-Za-z])'), r'\\tyotimes '),
+    (re.compile(r'\\oplus(?![A-Za-z_])(?!\s*_)'), r'\\tyoplus '),
+    (re.compile(r'\\multimap(?![A-Za-z])'), r'\\tymultimap '),
+    (re.compile(r'\\mu(?=\s*\\alpha)'), r'\\tymu'),
+    (re.compile(r'\\alpha(?![A-Za-z])'), r'{\\tvar}'),
+    (re.compile(r'\\Gamma(?![A-Za-z])'), r'{\\cGamma}'),
+    (re.compile(r'\\Delta(?![A-Za-z])'), r'{\\lenv}'),
+    (re.compile(r'\\Sigma(?![A-Za-z])'), r'{\\senv}'),
+    (re.compile(r'\\Theta(?![A-Za-z])'), r'{\\cTheta}'),
+    (re.compile(r'\\Phi(?![A-Za-z])'), r'{\\cPhi}'),
+    (re.compile(r'\\lambda(?![A-Za-z])'), r'{\\color{cTm}\\lambda}'),
+    (re.compile(r'\\langle(?![A-Za-z])'), r'\\mathopen{{\\color{cTm}\\langle}}'),
+    (re.compile(r'\\rangle(?![A-Za-z])'), r'\\mathclose{{\\color{cTm}\\rangle}}'),
+]
+
+
+def colour_plain(t):
+    for pat, rep in SUBS:
+        t = pat.sub(rep, t)
+    t = TM_LETTER.sub(r'{\\color{cTm}\1}', t)
+    t = TY_LETTER.sub(r'{\\color{cTy}\1}', t)
+    return t
+
+
+def colour(s):
+    out, i, last = [], 0, 0
+    while i < len(s):
+        m = VERBATIM.match(s, i) or MATHSF.match(s, i)
+        if m:
+            k = close(s, m.end() - 1)
+            out.append(colour_plain(s[last:i]))
+            word = s[m.end():k - 1]
+            if m.re is MATHSF and word in TERM_KW:
+                out.append('\\kw{' + word + '}')
+            elif m.re is MATHSF and word in TYPE_KW:
+                out.append('\\tyc{' + word + '}')
+            elif m.group(0).startswith('\\begin') or m.group(0).startswith('\\end'):
+                # \begin{array}{cols}: keep the column spec too
+                j = k
+                if m.group(0).startswith('\\begin') and j < len(s) and s[j] == '{':
+                    j = close(s, j)
+                out.append(s[i:j])
+                k = j
+            else:
+                out.append(s[i:k])
+            i = last = k
+            continue
+        if s[i] == '\\':
+            i += 2
+            continue
+        i += 1
+    out.append(colour_plain(s[last:]))
+    return ''.join(out)
 
 
 # ---------------------------------------------------------------- splitting
@@ -328,13 +384,13 @@ def prose(s, mode='both'):
     out = []
     for j, part in enumerate(re.split(r'(\$[^$]*\$)', s)):
         if j % 2:
-            out.append(part)
+            out.append(colour(part))
         else:
             part = re.sub(r'`([^`]*)`', lambda m: '\\texttt{' + m.group(1).replace('_', '\\_') + '}', part)
             part = part.replace('&', '\\&').replace('%', '\\%').replace('#', '\\#')
             part = re.sub(r'(?<!\\)_', r'\\_', part)
             out.append(part)
-    return shade_words(rename_vars(''.join(out)))
+    return shade_words(''.join(out))
 
 
 def split_words(s):
@@ -472,6 +528,32 @@ def highlight_code(code, keywords):
     return '\n'.join(out)
 
 
+# The appendix holds the definitions and rules the body refers to and does not
+# state itself. Blocks the body states in full (syntax, points and worlds, the
+# grammar of types, the annotations, ranked worlds, the value, term and process
+# relations, the bind lemma, the theorems, the oracles) are left out. Blocks no
+# part of the paper needs go to the supplement (paper/supplement.tex).
+APPENDIX = {
+    'syn-fends', 'syn-procs', 'syn-csub',
+    'sem-labels', 'sem-head', 'sem-ctx', 'sem-proc', 'sem-events', 'sem-props',
+    'ty-session', 'ty-dual', 'ty-equiv', 'ty-payload', 'w-wf', 'w-ext',
+    't-contexts', 't-side', 't-agecap', 'r-base', 'r-fun', 'r-data', 'r-boxes', 'r-ex',
+    'r-act', 'r-threads', 'r-new', 't-subs', 'p-typing',
+    'sr-ord', 'ct-costs', 'e-obl', 'rd', 'p-obls', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all',
+    'alg-annot', 'alg-judgment', 'alg-leaves', 'alg-elim', 'alg-intro', 'alg-struct',
+}
+SUPPLEMENT = {'t-consts', 't-lemmas', 'sr-reading', 'fu-vs', 'ty-kinds'}
+
+
+def rocq_names():
+    """Names that paper/rocqrefs.tex declares, so that each \\rocq link resolves."""
+    try:
+        txt = open(os.path.join(PAPER, 'rocqrefs.tex'), encoding='utf-8').read()
+    except OSError:
+        return set()
+    return set(re.findall(r'\\rocqdef\{([^}]*)\}', txt))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--map', default=os.path.join(ROOT, 'docs', 'explorer', 'map.json'))
@@ -485,18 +567,25 @@ def main():
     app = ['% Generated by .claude/notes/paper/tools/map2tex.py from docs/explorer/map.json. Do not edit.', '']
     rules_seen = {}
 
+    sup = ['% Generated by .claude/notes/paper/tools/map2tex.py from docs/explorer/map.json. Do not edit.',
+           '% Blocks of the map that the paper does not need, set in the supplement.', '']
+    refs = rocq_names()
     for s in m['sections']:
-        app.append(f"\\section{{{prose(s['title'])}}}\\label{{app:{s['id']}}}")
-        app.append('')
+        if any(b['id'] in APPENDIX for b in s['blocks']):
+            app.append(f"\\section{{{prose(s['title'])}}}\\label{{app:{s['id']}}}")
+            app.append('')
         for b in s['blocks']:
             bid = b['id']
+            out = app if bid in APPENDIX else sup if bid in SUPPLEMENT else []
             lfonly = b.get('modes') == ['lf']
             title = prose(b['title'])
-            src = '; '.join(f"{x['file']}: " + ', '.join(x.get('names', [])) for x in b.get('source', []))
-            app.append(f"\\mapblockhead{{{title}}}{{{bid}}}{{{'lf' if lfonly else ''}}}")
+            kind = 'appfig' if rules_of(b.get('formula') or '') else 'appdef'
+            names = [n for x in b.get('source', []) for n in x.get('names', []) if n in refs]
+            icons = ''.join(f'\\rocq{{{n}}}' for n in names[:2]) if out is app else ''
+            out.append(f"\\mapblockhead{{{title}}}{{{bid}}}{{{'lf' if lfonly else ''}}}{{{kind}}}{{{icons}}}")
             if 'table' in b:
                 define(defs, 'table', bid, table_tex(b))
-                app.append(f'\\mapfittext{{\\maptable{{{bid}}}}}')
+                out.append(f'\\mapfittext{{\\maptable{{{bid}}}}}')
             if b.get('formula'):
                 f = b['formula']
                 both = tex(f, 'both')
@@ -505,12 +594,12 @@ def main():
                 define(defs, 'block', bid, both)
                 define(defs, 'blockdf', bid, df)
                 define(defs, 'blocklf', bid, lf)
-                app.append(f'\\mapfit{{\\mapblock{{{bid}}}}}')
+                out.append(f'\\mapfit{{\\mapblock{{{bid}}}}}')
                 stripped = tex(f, 'df')
                 if 'variants' in b and 'df' in b['variants'] and \
                         re.sub(r'\s+', '', df) != re.sub(r'\s+', '', stripped):
-                    app.append('\\mapdfvariant')
-                    app.append(f'\\mapfit{{\\mapblockdf{{{bid}}}}}')
+                    out.append('\\mapdfvariant')
+                    out.append(f'\\mapfit{{\\mapblockdf{{{bid}}}}}')
                 for name, raw in rules_of(f):
                     key = rule_key(name)
                     if key in rules_seen:
@@ -518,8 +607,7 @@ def main():
                     rules_seen[key] = bid
                     define(defs, 'rule', key, tex(raw, 'both'))
                     define(defs, 'ruledf', key, tex(raw, 'df'))
-            app.append(f"\\mapsource{{{prose(src)}}}")
-            app.append('')
+            out.append('')
 
     defs.append('')
     defs.append('% rules: ' + ', '.join(f'{k} ({v})' for k, v in rules_seen.items()))
@@ -527,6 +615,8 @@ def main():
         fh.write('\n'.join(defs) + '\n')
     with open(os.path.join(a.out, 'appendix.tex'), 'w', encoding='utf-8') as fh:
         fh.write('\n'.join(app) + '\n')
+    with open(os.path.join(a.out, 'supplement-blocks.tex'), 'w', encoding='utf-8') as fh:
+        fh.write('\n'.join(sup) + '\n')
 
     # notes index
     notes = ['% Generated by .claude/notes/paper/tools/map2tex.py. Do not edit.',

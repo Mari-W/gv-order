@@ -1,8 +1,8 @@
 % Worked example of the lock-free annotations: the main thread of map
 % example ex-cycle at N = 4 (theories/examples/LFCycle.v, cy_typedN with
 % e_new' and e_new_at' of examples/LFTools.v: tickets N/2 = 2 per end).
-% Types from E-New, E-LetU, E-Close and Age-Credit; counters from the
-% fuel obligations of an action (def:fuel).
+% Types from E-New, E-LetU, E-Close and Lower-Credit; counters from the
+% obligations of an action (def:counters).
 \begin{figure}[tb]
   \small
   \centering
@@ -18,6 +18,6 @@
     \bottomrule
   \end{tabular}
   \Description{A table with one row per line of the main thread of the cycle, giving the annotated types of the ends c and d, the cost of the line and the counter of d.}
-  \caption{The main thread of \cref{ex:cycle} at $N = 4$. Each row gives the types of $c$ and $d$ after the line, the cost of the line and the counter $f(d)$ at run time, so closing $c$ ages the credit of $d$ from $2$ to $1$ and lowers $f(d)$ from $2$ to $1$.}
+  \caption{The main thread of \cref{ex:cycle} at $N = 4$. Each row gives the types of $c$ and $d$ after the line, the cost of the line and the counter $f(d)$ at run time, so closing $c$ lowers the credit of $d$ and its counter $f(d)$ from $2$ to $1$.}
   \label{fig:lf-example}
 \end{figure}

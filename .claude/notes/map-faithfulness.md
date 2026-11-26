@@ -1,6 +1,6 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at d8cde00f by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at 120a59da by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 
@@ -9,7 +9,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 | other | 1 |
 | simplified | 6 |
 | merged | 12 |
-| renamed | 45 |
+| renamed | 47 |
 | notation | 54 |
 
 ## Statements with no Rocq counterpart (other, 1)
@@ -31,19 +31,21 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **block w-order** (`sw_lt`, `w_lt`). The Rocq orders a world of typing by `sw_lt`, the closure `tc (swstep W)`, and a world of the relation by `w_lt`, which is program order or `w_ord` between points of its bases. Both are $\prec_W$ of the one notion, because `w_ord` is transitive and contains program order on the points of its bases.
 - **block w-ext** (`swext`, `wext`, `wmodels`, `aw_W`, `dmodels_exists`, `wstrict_of`). The Rocq extends a world of typing by `swext`, which asks the facts themselves, and a world of the relation by `wext`, which asks the order. Inclusion of facts implies inclusion of orders, and the map uses the order for both. The Rocq relates a world of typing to a larger world of the relation by `wmodels`, the constants among the bases and each fact in the order of the larger world. That is the inclusion of orders, because that order is transitive and contains program order, and the map writes it $W \sqsubseteq W'$ with $W'$ consistent. The growth `aw_W` of a world of the relation closes its order transitively, and the map adds the facts, whose order is the same closure. The consistent extension of a consistent world is `dmodels_exists`, through `wstrict_of`.
 - **block r-new** (`e_new`, `e_new_fld`). The Rocq has two constructors, e_new for a fresh base with a constraint and e_new_fld for a field without one. The map shows one rule whose triple $(p, \bar\rho, C)$ picks the case. With no bound point and the constraint $\top$ the existential is the plain product, so the field case is e_new_fld as stated.
-- **block soup** (`sp_pts`, `sp_dom`, `ctrs`, `kres`). The Rocq chooses an environment `A` of the relation and a protocol map `Π` of fuel per index, and reads counters and tickets off `K` by `ctrs`. The map writes them as one map $\Delta$. `sp_pts` and `sp_dom` make this exact, because they give `A` the points of `K` and give `A`, `Π` and `K` one domain.
+- **block soup** (`sp_pts`, `sp_dom`, `ctrs`, `kres`). The Rocq chooses an environment `A` of the relation and a protocol map `Π` of the counter relation per index, and reads counters and tickets off `K` by `ctrs`. The map writes them as one map $\Delta$. `sp_pts` and `sp_dom` make this exact, because they give `A` the points of `K` and give `A`, `Π` and `K` one domain.
 - **note w.world** (`sworld`, `world`). The Rocq has `sworld` for typing and `world` for the relation, shown as one notion in [[w-world]].
 - **note w.rlt** (`w_lt`, `sw_lt`). `w_lt` orders a world of the relation and `sw_lt` a world of typing. Both are $\prec_W$ of [[w-order]].
 - **note w.ext** (`swext`, `wext`). `swext` extends worlds of typing by their facts and `wext` worlds of the relation by their order. The map uses the order for both, as [[w-ext]] states.
 - **note w.ext** (`wmodels`, `wmodels_lt`). `wmodels` relates a world of typing to a world of the relation, which is consistent by its type. It asks the constants among the bases and each fact in the order of the larger world, which is ${\prec_W} \subseteq {\prec_{W'}}$ by `wmodels_lt`. The map writes this relation as $W \sqsubseteq W'$ with $\mathsf{cons}\,W'$.
 - **note fu.Phi** (`cenv`). The Rocq keeps the protocols in a map `penv` and the counters and tickets in a map `cenv`, and the formula shows both in one map $\Phi$ from $\mathsf{End}$ to $\mathsf{STy} \times \mathbb{N} \times \mathbb{N}$.
 - **note E-New.pos** (`e_new`, `e_new_fld`). The two constructors e_new and e_new_fld are the two cases of the triple.
-- **note sp.delta** (`sp_pts`, `sp_dom`). The Rocq keeps an environment `A` of the relation and a protocol map `Π` of fuel, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\Delta$ states the three maps.
+- **note sp.delta** (`sp_pts`, `sp_dom`). The Rocq keeps an environment `A` of the relation and a protocol map `Π` of the counter relation, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\Delta$ states the three maps.
 
-## Renamed (renamed, 45)
+## Renamed (renamed, 47)
 
 - **block w-wf** (`sacyc`). $\mathsf{cons}$ is `sacyc`. A world is consistent exactly when its order has no cycle.
 - **block w-wf** (`swf`). $\mathsf{ranked}$ for a world of typing is `swf`, which is `wf` of relation/Ranks.v at the order of the world, the existence of a rank function.
+- **block t-agecap** (`tage`, `lage`, `thage`). The Rocq calls $T - c$ aging (`tage`, `lage`, `thage`). The map says that the credits drop by the cost and names the rules Lower-Free, Lower-Credit, Lower-Idle and Lower-Arr.
+- **block fu** (`FuelE`, `Vfuel`, `fsem`). The Rocq calls $F$ and $FV$ fuel (`FuelE`, `Vfuel`, `fsem`) and the argument $d$ the frame. The map calls $F$ the counter relation, $FV$ the counters of values and $d$ the cost bound, because $d$ bounds the actions of the term as its cost does.
 - **note syn.values** (`is_val`). The Rocq writes the injections as `Inj`, shown as $\mathsf{inj}_i$, and `is_val` decides which terms are values.
 - **note proc.config** (`config`). The Rocq type `gmap nat expr` of the thread map is shown as $\mathbb{N} \rightharpoonup \mathsf{Expr}$, with $\mathsf{Expr}$ for the type `expr` of terms.
 - **note sx.kappai** (`bfield`). `bfield false` is $0$ and `bfield true` is $1$, shown as the fields $\kappa_{\mathsf{false}}$ and $\kappa_{\mathsf{true}}$.
@@ -59,13 +61,13 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note w.acyc** (`sacyc`, `w_ord_irrefl`). $\mathsf{cons}$ is `sacyc` for worlds of typing. A world of the relation is consistent by `w_ord_irrefl`.
 - **note w.models** (`dmodels_exists`, `wstrict_of`, `wmodels_exists`). $\mathsf{world\_wf}$ and $\mathsf{cons}$ stand for `sworld_wf` and `sacyc`\inmode{lf}{, and $\mathsf{ranked}$ for `swf`}. `dmodels_exists` gives a strict world of the relation that extends $W$, `wstrict_of`, which is $W$ with its own order.
 - **note new.rank** (`new_ok`, `gen_new_rel`, `in_tree0`, `ctx_pt`). $\mathsf{rankable}_{\Gamma}(\rho, C)$ names `∃ Sr, gen_new_rel W Γ C Sr`, the last conjunct of `new_ok` at a finite bound. $\mathsf{tree}(\rho)$ stands for the points that `in_tree0` describes, and $\mathsf{Point}_{\Gamma}$ for the points of the context that `ctx_pt` gives.
-- **note tj.hage** (`thage`, `lage`). $\mathsf{def}(H - c)$ stands for the Rocq relations `thage` and `lage`, which age the ends and the closures of $H$ by $c$.
+- **note tj.hage** (`thage`, `lage`). $\mathsf{def}(H - c)$ stands for the Rocq relations `thage` and `lage`, which lower the credits of the ends and the closures of $H$ by $c$ and which the Rocq calls aging.
 - **note lfi.measure** (`we`, `lf_rank`, `lf_adequacy`). $x$ is the point of $o$ that `we` reads from the ownership map.
 - **note ct.give** (`c_give`). The cost field `c_give` applies to $\mathsf{send}$, $\mathsf{select}$ and $\mathsf{close}$, which the formula names by their keywords.
 - **note ct.takek** (`c_take`). The cost field `c_take` applies to $\mathsf{recv}$ and $\mathsf{branch}$, which the formula names by their keywords.
 - **note ct.sync** (`ev_cost`). $\kappa_\ell$ is `tcost κ ℓ` and $\kappa_\sigma$ is `scost κ σ`.
 - **note rel.lfp** (`Eind`, `Pind`). $(\mathsf{lfp})$ marks the least fixpoints, the inductive types `Eind` and `Pind`.
-- **note rel.vsize** (`tsize`, `Vtop`, `RelA`, `osfix`). The Rocq builds the levels with `osfix` in `RelA` and measures types with `tsize`, written $\mathsf{size}$. `Vtop` unfolds `Vbody` with the fuel $\mathsf{size}\,T + 1$, which is the recursion on the size within a level.
+- **note rel.vsize** (`tsize`, `Vtop`, `RelA`, `osfix`). The Rocq builds the levels with `osfix` in `RelA` and measures types with `tsize`, written $\mathsf{size}$. `Vtop` unfolds `Vbody` with the bound $\mathsf{size}\,T + 1$, which is the recursion on the size within a level.
 - **note E.stop** (`Ebody`). $(\mathsf{stop})$ labels the first clause of `Ebody`.
 - **note E.ready** (`Ebody`). $(\mathsf{ready})$ labels the second clause of `Ebody`, and $\mathsf{irred}$ is the Rocq predicate `irred`.
 - **note E.step** (`Esteps`, `Eobl`). $(\mathsf{step})$ labels the clause that `Esteps` and `Eobl` state.
@@ -81,7 +83,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note fu.rty** (`rty`). $\mathsf{thread}$ is the constructor `RThread` of `rty`.
 - **note fu.val** (`Fdef`). $(\mathsf{stop})$ labels the value clause of `Fdef`, and $\mathsf{Val}$ is the set of terms that `is_val` accepts.
 - **note fu.step** (`Fdef`, `Fobl`). $(\mathsf{step})$ labels the step clause of `Fdef`, stated through `Fobl`.
-- **note F-Beta** (`f_beta`). $\mathsf{Fobl}_\beta$ is the clause `f_beta` of the fuel obligation.
+- **note F-Beta** (`f_beta`). $\mathsf{Fobl}_\beta$ is the clause `f_beta` of the counter obligation.
 - **note fu.fspare** (`fspare`). $\mathsf{positive}$ is the Rocq predicate `fspare`, and $\mathsf{idle}$ is `idle_at`.
 - **note sp.hold** (`hold`). $K$ maps an end to a record `hold` of thread, point, counter and tickets, shown as a tuple in $\mathbb{N} \times \mathsf{Point} \times \mathbb{N} \times \mathbb{N}$.
 - **note sp.own** (`soup_consistent`). $\mathsf{wa}$ names the conjuncts of `soup_consistent` other than `sp_pts` and `sp_dom`, which $\Delta : K$ states.
@@ -127,7 +129,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note P-Connect.wf** (`p_connect`, `ptyped_wf`). The rule asks `wok N (W1 ⊔ W2)` only. The join of the two component worlds is well formed by `ptyped_wf`, so the folded $\mathsf{cons}$\inmode{lf}{ and $\mathsf{ranked}$} of the join ask nothing more.
 - **note P-Term.wf** (`p_term`). `p_term` asks `sworld_wf W ∧ wok N W`. The map folds `sworld_wf` into $\mathsf{cons}$\inmode{lf}{ and $\mathsf{ranked}$}, and it shows `wok N W` as $\mathsf{cons}$ at $N = \infty$\inmode{lf}{ and as $\mathsf{ranked}$ at a finite bound}.
 - **note P-Connect.n** (`p_connect_n`). `p_connect_n` concludes a derivation at some world $W$ with $W \sqsubseteq W_1 \sqcup \cdots \sqcup W_n$ and $W_1 \sqcup \cdots \sqcup W_n \sqsubseteq W$, the join `sw_joins` of the list, because the binary joins of the fold nest to the left. Both have the same bases and the same facts, and the map writes the join.
-- **note sj.sw** (`sem_ptyped_sw`). The Rocq quantifies over the Rocq worlds of type `world` that `wmodels` relates to $W$, and the map writes them as consistent extensions. At each of them it reads `sem_ptyped`, whose Rocq notation is $\Sigma \vDash_W p : T$. The map writes that judgment out as $\forall \alpha.\ p \in P^{W'}_{\alpha}\llbracket \Sigma \vdash T \rrbracket$, so that $\vDash_W$ names this judgment alone.
+- **note sj.sw** (`sem_ptyped_sw`). The Rocq quantifies over the Rocq worlds of type `world` that `wmodels` relates to $W$, and the map writes them as consistent extensions. At each of them it reads `sem_ptyped`, whose Rocq notation is $\Sigma \vDash_W p : T$. The map writes that judgment out as $\forall \beta.\ p \in P^{W'}_{\beta}\llbracket \Sigma \vdash T \rrbracket$, so that $\vDash_W$ names this judgment alone.
 - **note sj.sw** (`sem_ptyped_sw`, `sem_ptyped`). At $\kappa_L$ the Rocq writes `⊫`. The map writes $\vDash[\kappa_L]$, the instance of the family $\vDash[\kappa]$, as for terms.
 - **note sj.den** (`sf_den`, `rest_ok`). `sf_den Y F` adds $Y$ when $F$ has a rest, and `rest_ok` asks each point of $Y$ above $u$ for the rest `RAbove u`. With no rest the Rocq still quantifies over $Y$ and adds nothing, which the map writes as $Y = \varnothing$. The Rocq future has no bounds in its set. A future with $\bot \in X$ is the Rocq future with the rest `RAll`, for which `rest_ok` asks nothing of $Y$, as [[t-contexts]] states.
 - **note sj.term** (`sem_typed`). The Rocq writes the judgment at $\kappa_L$ with a turnstile of its own, `⊫`, for `sem_typed κ_L` and `sem_ptyped κ_L`. The map writes $\vDash[\kappa_L]$, the instance of the family $\vDash[\kappa]$ at $\kappa_L$, so that one symbol serves each cost table.
