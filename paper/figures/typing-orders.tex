@@ -1,14 +1,15 @@
 % Creation and boxes. From map blocks r-new (one rule there with a triple,
-% two constructors e_new and e_new_fld in the Rocq) and r-boxes. E-New-Field,
-% E-Force, E-Open and E-Pack are in the appendix, glossed in the caption.
+% two constructors e_new and e_new_fld in the Rocq) and r-boxes. E-Force,
+% E-Open and E-Pack are in the appendix, glossed in the caption.
 \begin{figure}[tbp]
   \small
   \judghead{Creation and boxes}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
   \begin{rules}
     \infer*[lab=E-New]
-      {\unl\,\lenv \\ \acyc_{\rho}(C) \\ \conserv_{\cGamma}(\rho, C) \\\\
-       \lf{N \in \mathbb{N} \Rightarrow \rankable_{\cGamma}(\rho, C)} \\ \lf{m_1 + m_2 \leq N}}
-      {\tyj{\cGamma}{\lenv}{F}{\tnew}{\tyexists^{\bot}\rho.\ C.\ \sty_{\rho}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{\rho}}\lf{^{m_2,m_2}}}\eff{0}}
+      {(y, \bar\iota, C) \in \{(\rho, \rho, C)\} \cup \{(\fld{x}{\kappa}, \cdot, \varnothing)\} \\ \unl\,\lenv \\\\
+       \acyc_{\bar\iota}(C) \\ \conserv_{\cGamma}(\bar\iota, C) \\
+       \lf{N \in \mathbb{N} \Rightarrow \rankable_{\cGamma}(\bar\iota, C)} \\ \lf{m_1 + m_2 \leq N}}
+      {\tyj{\cGamma}{\lenv}{F}{\tnew}{\tyexists^{\bot}\bar\iota.\ C.\ \sty_{y}\lf{^{m_1,m_1}} \tyotimes \dual{\sty}_{\dual{y}}\lf{^{m_2,m_2}}}\eff{0}}
     \label{rule:E-New}
     \and
     \infer*[lab=E-Box]
@@ -19,6 +20,6 @@
   \end{rules}
   \figrule
   \Description{Inference rules E-New and E-Box.}
-  \caption{Creation and recursion, under \cref{conv:lf,conv:implicit}, with $\acyc$, $\conserv$ and $\rankable$ of \cref{def:creation}. E-New-Field creates a channel at a field $\fld{x}{\kappa}$ of any point and adds no facts, E-Force calls a box at points $\bar x$ with $\cGamma \vdash C[\bar x]$ and $u[\bar x] \prec F$, E-Open opens a held existential and assumes its constraint when the constraint is conservative over $\cGamma$, and E-Pack packs one (\cref{app:r-new,app:r-boxes,app:r-ex}).}
+  \caption{Creation and recursion, under \cref{conv:lf,conv:implicit}, with $\acyc$, $\conserv$ and $\rankable$ of \cref{def:creation}. A creation takes a fresh base $\rho$ with facts $C$ or a field $\fld{x}{\kappa}$ with no new facts, where the existential over no base is its body. E-Force calls a box at points $\bar x$ with $\cGamma \vdash C[\bar x]$ and $u[\bar x] \prec F$, E-Open opens a held existential and assumes its constraint when the constraint is conservative over $\cGamma$, and E-Pack packs one (\cref{app:r-new,app:r-boxes,app:r-ex}).}
   \label{fig:typing-orders}
 \end{figure}

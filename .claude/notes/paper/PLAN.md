@@ -808,3 +808,7 @@ beyond .claude/notes/map-faithfulness.md.
 7. Conclusion after related work, or related work as the very last section.
 8. Which related systems get a row in tab:subsume once examples are confirmed.
 9. E-Spawn in the body (quirk 8 of the list above, faithfulness question 4).
+
+## E-New as one rule (2026-11-27)
+
+The body shows E-New as the map's single rule: a fresh base ρ with facts C, or a field x·κ with no base and no facts, where the existential over no base is its body. The Rocq keeps two constructors, e_new and e_new_fld. In the field case acyc, conserv and rankable hold trivially (no new points, empty C), so the single rule is exact.

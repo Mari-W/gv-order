@@ -96,7 +96,7 @@ A future $F$ is a set of points, and $x \prec F$ holds when $\cGamma \vdash_W x 
   \end{array}
 \end{gather*}
 % PAR: reading the display, x and y the points of the listing, indices modulo 3, the first creation binds rho under C_m, each agent acts at x while it holds the ends at y and z, so it asks x below their duals, three facts per agent and their shifts for the close, 18 facts, the facts of fig:world-example | example: ex-milner | figure/rule: E-Close, fig:world-example | map: r-act, r-new
-% PAR: the remaining five channels are created at the fields rho.1 to rho.5 and add no facts | example: ex-milner | figure/rule: E-New-Field | map: r-new
+% PAR: the remaining five channels are created at the fields rho.1 to rho.5 and add no facts | example: ex-milner | figure/rule: E-New | map: r-new
 \end{example}
 
 % Listing in the appendix (app:ex-bit), cut from the body for space.
@@ -108,7 +108,7 @@ A future $F$ is a set of points, and $x \prec F$ holds when $\cGamma \vdash_W x 
 \subsection{Creation and Recursion}
 \label{sec:creation}
 
-% PAR: E-New, fresh base with a constraint or a field of a held point, the scheduler's first creation and its five field creations | example: ex-milner | figure/rule: E-New, E-New-Field | map: r-new
+% PAR: E-New, fresh base with a constraint or a field of a held point, the scheduler's first creation and its five field creations | example: ex-milner | figure/rule: E-New | map: r-new
 \input{figures/typing-orders}
 
 % PAR: acyc_new, acyclic in the new tree, conservative over the context, the scheduler's constraint acyclic because its facts rise with the field label | example: ex-milner | figure/rule: def:creation, fig:world-example | map: r-new, r-ex
@@ -116,13 +116,13 @@ A future $F$ is a set of points, and $x \prec F$ holds when $\cGamma \vdash_W x 
 \label{def:creation}
 The new points of the bases $\bar\iota$ are the points with a base in $\bar\iota$, and the other points are old. Below means derivably below in $\cGamma \vdash_W$ (\cref{app:r-new,app:r-ex}).
 \begin{itemize}
-  \item $\acyc_{\rho}(C)$ holds when the facts of $C$ among the new points of $\rho$ form no cycle together with program order, the facts $x \prec \pplus{x}$ and $x \prec \pplus{\dual{x}}$.
+  \item $\acyc_{\bar\iota}(C)$ holds when the facts of $C$ among the new points of $\bar\iota$ form no cycle together with program order, the facts $x \prec \pplus{x}$ and $x \prec \pplus{\dual{x}}$.
   \item $\conserv_{\cGamma}(\bar\iota, C)$ holds when each fact between two old points that $\cGamma, C(\bar\iota)$ derives, $\cGamma$ derives alone.
-  \item \lfw{$\rankable_{\cGamma}(\rho, C)$} \lfw{holds} \lfw{when} \lfw{the} \lfw{facts} \lfw{of} \lfw{$C$} \lfw{among} \lfw{the} \lfw{new} \lfw{points} \lfw{of} \lfw{$\rho$} \lfw{and} \lfw{program} \lfw{order} \lfw{are} \lfw{also} \lfw{well-founded,} \lfw{and} \lfw{some} \lfw{relation} \lfw{pairs} \lfw{new} \lfw{points} \lfw{$s$} \lfw{with} \lfw{finite} \lfw{nonempty} \lfw{sets} \lfw{$T$} \lfw{of} \lfw{old} \lfw{points} \lfw{such} \lfw{that} \lfw{each} \lfw{fact} \lfw{$u \prec y$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{a} \lfw{new} \lfw{point} \lfw{$u$} \lfw{to} \lfw{an} \lfw{old} \lfw{point} \lfw{$y$} \lfw{pairs} \lfw{$u$} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{lie} \lfw{below} \lfw{$y$,} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{new} \lfw{point} \lfw{$s'$} \lfw{with} \lfw{$s' \prec s$} \lfw{in} \lfw{$C$} \lfw{or} \lfw{program} \lfw{order} \lfw{is} \lfw{paired} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{each} \lfw{lie} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$,} \lfw{and} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{fact} \lfw{$z \prec s$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{an} \lfw{old} \lfw{point} \lfw{$z$} \lfw{has} \lfw{$z$} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$.}
+  \item \lfw{$\rankable_{\cGamma}(\bar\iota, C)$} \lfw{holds} \lfw{when} \lfw{the} \lfw{facts} \lfw{of} \lfw{$C$} \lfw{among} \lfw{the} \lfw{new} \lfw{points} \lfw{of} \lfw{$\bar\iota$} \lfw{and} \lfw{program} \lfw{order} \lfw{are} \lfw{also} \lfw{well-founded,} \lfw{and} \lfw{some} \lfw{relation} \lfw{pairs} \lfw{new} \lfw{points} \lfw{$s$} \lfw{with} \lfw{finite} \lfw{nonempty} \lfw{sets} \lfw{$T$} \lfw{of} \lfw{old} \lfw{points} \lfw{such} \lfw{that} \lfw{each} \lfw{fact} \lfw{$u \prec y$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{a} \lfw{new} \lfw{point} \lfw{$u$} \lfw{to} \lfw{an} \lfw{old} \lfw{point} \lfw{$y$} \lfw{pairs} \lfw{$u$} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{lie} \lfw{below} \lfw{$y$,} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{new} \lfw{point} \lfw{$s'$} \lfw{with} \lfw{$s' \prec s$} \lfw{in} \lfw{$C$} \lfw{or} \lfw{program} \lfw{order} \lfw{is} \lfw{paired} \lfw{with} \lfw{a} \lfw{set} \lfw{whose} \lfw{points} \lfw{each} \lfw{lie} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$,} \lfw{and} \lfw{for} \lfw{each} \lfw{pair} \lfw{$(s, T)$} \lfw{each} \lfw{fact} \lfw{$z \prec s$} \lfw{of} \lfw{$C$} \lfw{from} \lfw{an} \lfw{old} \lfw{point} \lfw{$z$} \lfw{has} \lfw{$z$} \lfw{below} \lfw{a} \lfw{point} \lfw{of} \lfw{$T$.}
 \end{itemize}
 \end{definition}
 % PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
-% PAR: mechanization insight, points are reused, a field creation may repeat, no labelling of points fixed before the run | example: ex-point-reuse | figure/rule: E-New-Field, app:ex-point-reuse | map: r-new, rd
+% PAR: mechanization insight, points are reused, a field creation may repeat, no labelling of points fixed before the run | example: ex-point-reuse | figure/rule: E-New, app:ex-point-reuse | map: r-new, rd
 % PAR: boxes, recursion, infinitely many facts in one constraint | example: ex-cs | figure/rule: E-Box, E-Force | map: r-boxes
 % PAR: creation inside a box at a field of an argument point | example: ex-between | figure/rule: E-New, E-Box | map: r-new, r-boxes
 % PAR: existentials abstract the points of a fresh base, E-Open conservative | example: ex-factory | figure/rule: E-Open, app:r-ex | map: r-ex
